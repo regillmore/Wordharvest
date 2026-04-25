@@ -66,3 +66,18 @@ Consequences:
 
 - Placeholder visuals should be readable and pleasant, not final.
 - Generated sprite sheets and textures need review for scale, palette, silhouette, and consistency before entering the main asset set.
+
+## 006 - Visible World Words
+
+Status: Accepted on 2026-04-25
+
+Decision: The player controls an embodied character by typing words that are visible in the world. Words are target labels, not a global command language.
+
+Context: The intended feel is a cozy top-down farm where the player reacts to readable affordances in the scene. A distant farmhouse can offer `house`; near it, the door can offer `door`. Similar crop actions can be disambiguated with synonyms such as `water`, `sprinkle`, `splash`, `drench`, and `douse`.
+
+Consequences:
+
+- Movement is normally produced by typing place, object, character, or action labels.
+- The deterministic core needs a target selector that owns visible words, distance rules, synonym assignment, and action resolution.
+- Rendering draws labels from the target selector instead of inventing words.
+- Directional movement words are useful only for debug tools or optional accessibility modes, not the default game language.

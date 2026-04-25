@@ -1,9 +1,12 @@
-import { parseTypedCommand } from './typing';
+import { normalizeTypedWord } from './typing';
+import { resolveWorldTarget, type WorldPoint } from './worldTargets';
 
 export type CropStage = 'empty' | 'seed' | 'sprout' | 'leaf' | 'ripe';
+export type PlayerLocation = 'farm' | 'house';
 
 export interface CropPlot {
   id: number;
+  position: WorldPoint;
   crop: 'turnip' | null;
   stage: CropStage;
   wateredToday: boolean;
@@ -14,54 +17,91 @@ export interface FarmState {
   day: number;
   coins: number;
   stamina: number;
-  selectedPlotId: number;
+  player: WorldPoint;
+  location: PlayerLocation;
   plots: CropPlot[];
   log: string[];
 }
 
 const startingPlots = 6;
 const maxLogEntries = 6;
+const startingPlayerPosition: WorldPoint = { x: 0, y: 5 };
 
 export function createFarmState(): FarmState {
   return {
     day: 1,
     coins: 25,
     stamina: 10,
-    selectedPlotId: 1,
+    player: startingPlayerPosition,
+    location: 'farm',
     plots: Array.from({ length: startingPlots }, (_, index) => ({
       id: index + 1,
+      position: {
+        x: (index % 3) - 1,
+        y: 3 + Math.floor(index / 3),
+      },
       crop: null,
       stage: 'empty',
       wateredToday: false,
       growth: 0,
     })),
-    log: ['A quiet morning begins. Try typing seed, water, pick, or sell.'],
+    log: ['A quiet morning begins. Type a visible word hovering in the world.'],
   };
 }
 
 export function applyTypedWord(state: FarmState, word: string): FarmState {
-  const command = parseTypedCommand(word);
+  const source = normalizeTypedWord(word);
+  const target = resolveWorldTarget(state, source);
 
-  if (command.kind === 'move') {
+  if (!source) {
+    return withLog(state, 'No word entered.');
+  }
+
+  if (!target) {
+    return withLog(state, `No visible target named "${source}".`);
+  }
+
+  const action = target.action;
+
+  if (action.kind === 'approach-house') {
     return withLog(
       {
         ...state,
-        selectedPlotId: moveSelection(state.selectedPlotId, command.direction),
+        player: action.destination,
+        location: 'farm',
       },
-      `Moved focus ${command.direction}.`,
+      'Walked up the path toward the farmhouse.',
     );
   }
 
-  if (command.kind !== 'farm') {
-    return withLog(state, command.source ? `No action for "${command.source}" yet.` : 'No word entered.');
+  if (action.kind === 'enter-house') {
+    return withLog(
+      {
+        ...state,
+        location: 'house',
+        player: { x: 0, y: 2.2 },
+      },
+      'Opened the farmhouse door and stepped inside.',
+    );
   }
 
-  const plot = state.plots.find((candidate) => candidate.id === state.selectedPlotId);
+  if (action.kind === 'exit-house') {
+    return withLog(
+      {
+        ...state,
+        location: 'farm',
+        player: action.destination,
+      },
+      'Stepped back into the farmyard.',
+    );
+  }
+
+  const plot = state.plots.find((candidate) => candidate.id === action.plotId);
   if (!plot) {
-    return withLog(state, 'No plot is selected.');
+    return withLog(state, 'That target is no longer available.');
   }
 
-  if (command.verb === 'plant') {
+  if (action.kind === 'plant-plot') {
     if (plot.crop) {
       return withLog(state, 'That plot already has a crop.');
     }
@@ -73,12 +113,12 @@ export function applyTypedWord(state: FarmState, word: string): FarmState {
     return updatePlot(
       state,
       { ...plot, crop: 'turnip', stage: 'seed', wateredToday: false, growth: 0 },
-      { coins: state.coins - 5, stamina: Math.max(0, state.stamina - 1) },
+      { coins: state.coins - 5, stamina: Math.max(0, state.stamina - 1), player: plot.position },
       'Planted turnip seeds.',
     );
   }
 
-  if (command.verb === 'water') {
+  if (action.kind === 'water-plot') {
     if (!plot.crop) {
       return withLog(state, 'Water splashes onto empty soil.');
     }
@@ -90,12 +130,12 @@ export function applyTypedWord(state: FarmState, word: string): FarmState {
     return updatePlot(
       state,
       { ...plot, wateredToday: true },
-      { stamina: Math.max(0, state.stamina - 1) },
+      { stamina: Math.max(0, state.stamina - 1), player: plot.position },
       'The watering can sings against the soil.',
     );
   }
 
-  if (command.verb === 'harvest') {
+  if (action.kind === 'harvest-plot') {
     if (plot.stage !== 'ripe') {
       return withLog(state, 'Nothing is ripe here yet.');
     }
@@ -103,16 +143,12 @@ export function applyTypedWord(state: FarmState, word: string): FarmState {
     return updatePlot(
       state,
       { ...plot, crop: null, stage: 'empty', wateredToday: false, growth: 0 },
-      { coins: state.coins + 12 },
+      { coins: state.coins + 12, player: plot.position },
       'Harvested a crisp turnip for 12 coins.',
     );
   }
 
-  if (command.verb === 'sell') {
-    return withLog(state, 'The shipping bin will arrive in the first prototype milestone.');
-  }
-
-  return withLog(state, describePlot(plot));
+  return withLog({ ...state, player: plot.position }, describePlot(plot));
 }
 
 export function advanceDay(state: FarmState): FarmState {
@@ -135,18 +171,11 @@ export function advanceDay(state: FarmState): FarmState {
       ...state,
       day: state.day + 1,
       stamina: 10,
+      location: 'farm',
       plots,
     },
     `Day ${state.day + 1} dawns.`,
   );
-}
-
-function moveSelection(selectedPlotId: number, direction: string): number {
-  if (direction === 'west' || direction === 'north') {
-    return selectedPlotId === 1 ? startingPlots : selectedPlotId - 1;
-  }
-
-  return selectedPlotId === startingPlots ? 1 : selectedPlotId + 1;
 }
 
 function stageForGrowth(growth: number): CropStage {
@@ -168,7 +197,7 @@ function stageForGrowth(growth: number): CropStage {
 function updatePlot(
   state: FarmState,
   updatedPlot: CropPlot,
-  patch: Partial<Pick<FarmState, 'coins' | 'stamina'>>,
+  patch: Partial<Pick<FarmState, 'coins' | 'stamina' | 'player'>>,
   message: string,
 ): FarmState {
   return withLog(

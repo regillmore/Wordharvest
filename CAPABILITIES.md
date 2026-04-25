@@ -25,8 +25,11 @@ Complete when a player can:
 ## Typing Controls
 
 - Word buffer: Complete when typed letters appear clearly, can be corrected, and dispatch on Enter or Space.
-- Context verbs: Complete when the same word can safely mean different things in farm, menu, and dialogue contexts only when the UI makes that context obvious.
-- Word targets: Complete when interactable objects can display or imply valid words without cluttering the world.
+- Embodied player: Complete when the player unit is visible, moves toward typed targets, and performs actions only through visible world words.
+- Distance vocabulary: Complete when distant objects expose broad labels such as `house`, while nearby targets expose specific labels such as `door`.
+- Context verbs: Complete when the same word can safely mean different things in farm, menu, and dialogue contexts only when the visible vocabulary makes that context obvious.
+- Word targets: Complete when interactable objects display valid words without cluttering the world.
+- Synonym assignment: Complete when similar nearby actions can use word families such as `water`, `sprinkle`, `splash`, `drench`, and `douse` without ambiguity.
 - Assist modes: Complete when slower players can enable longer time windows, shorter required words, or non-punitive mistakes.
 - Mastery: Complete when streaks, accuracy, and word variety grant satisfying rewards without blocking relaxed play.
 
@@ -35,6 +38,7 @@ Complete when a player can:
 - Farm map: Complete when the farm supports plots, paths, house, shipping bin, storage, and upgrade locations.
 - Town edge: Complete when there is at least one connected non-farm area with shops, NPCs, and seasonal decoration.
 - Interaction: Complete when signs, doors, chests, shops, and NPCs all share consistent interaction feedback.
+- Navigation: Complete when movement is handled by typing visible place, object, and character labels rather than direct directional commands.
 - Secrets: Complete when optional discoveries reward observation, typing skill, or seasonal timing.
 
 ## Crops, Crafting, and Progression
@@ -78,6 +82,7 @@ Complete when a player can:
 ## Automation and Durability
 
 - Unit coverage: Complete when core typing, crop, save, economy, and content registries have tests.
+- Target coverage: Complete when visible target labels, synonym assignment, and distance-based target specificity have tests.
 - Browser coverage: Complete when Playwright verifies boot, typing a farm action, save/load, and settings.
 - CI: Complete when every pull request runs typecheck, tests, build, and browser smoke where practical.
 - Agent handoff: Complete when each feature task updates docs, tests, and "Complete when..." status.

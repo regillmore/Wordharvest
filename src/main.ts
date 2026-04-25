@@ -1,7 +1,8 @@
 import { Howler } from 'howler';
 import { Application, Container, Graphics, Text } from 'pixi.js';
-import { advanceDay, applyTypedWord, createFarmState, type FarmState } from './core/gameState';
-import { normalizeTypedWord, parseTypedCommand } from './core/typing';
+import { advanceDay, applyTypedWord, createFarmState, type CropStage, type FarmState } from './core/gameState';
+import { normalizeTypedWord } from './core/typing';
+import { doorPosition, housePosition, listWorldTargets, type WorldPoint, type WorldTarget } from './core/worldTargets';
 import './style.css';
 
 const root = document.querySelector<HTMLDivElement>('#app');
@@ -31,6 +32,7 @@ root.innerHTML = `
       <section class="word-panel" aria-live="polite">
         <p class="label">Typed word</p>
         <p id="typed-word" class="typed-word"></p>
+        <p class="label">Nearby words</p>
         <p id="word-preview" class="word-preview"></p>
       </section>
       <section>
@@ -97,9 +99,15 @@ window.addEventListener('keydown', (event) => {
 
 redraw();
 
+interface Viewport {
+  originX: number;
+  originY: number;
+  scale: number;
+}
+
 function redraw(): void {
   app.stage.removeChildren();
-  app.stage.addChild(createFarmScene(farm));
+  app.stage.addChild(createScene(farm));
   redrawHud();
 }
 
@@ -119,77 +127,165 @@ function redrawHud(): void {
   staminaValue.textContent = String(farm.stamina);
   typedWord.textContent = typedBuffer || '...';
 
-  const preview = parseTypedCommand(typedBuffer);
-  wordPreview.textContent =
-    preview.kind === 'unknown'
-      ? 'Try seed, water, pick, sell, north, south, east, or west.'
-      : `${preview.kind}: ${preview.source}`;
+  const visibleTargets = listWorldTargets(farm);
+  const exactTarget = visibleTargets.find((target) => target.word === normalizeTypedWord(typedBuffer));
+  wordPreview.textContent = exactTarget
+    ? `Target: ${exactTarget.label}`
+    : visibleTargets.map((target) => target.label).join(', ');
 
   farmLog.innerHTML = farm.log.map((entry) => `<li>${entry}</li>`).join('');
 }
 
-function createFarmScene(state: FarmState): Container {
+function createScene(state: FarmState): Container {
+  if (state.location === 'house') {
+    return createHouseInterior(state);
+  }
+
+  return createFarmExterior(state);
+}
+
+function createFarmExterior(state: FarmState): Container {
   const scene = new Container();
   const width = app.renderer.width;
   const height = app.renderer.height;
-  const plotSize = Math.max(64, Math.min(104, Math.floor(width / 8)));
-  const gap = 14;
-  const totalWidth = plotSize * 3 + gap * 2;
-  const startX = Math.max(24, Math.floor((width - totalWidth) / 2));
-  const startY = Math.max(72, Math.floor((height - plotSize * 2 - gap) / 2));
+  const viewport = createViewport(width, height);
 
   scene.addChild(rect(0, 0, width, height, 0x7dbf68));
-  scene.addChild(rect(0, Math.floor(height * 0.62), width, Math.floor(height * 0.38), 0x5f9b59));
-  scene.addChild(rect(0, 0, width, 64, 0x8dccd8));
+  scene.addChild(rect(0, Math.floor(height * 0.66), width, Math.floor(height * 0.34), 0x5f9b59));
+  scene.addChild(rect(0, 0, width, Math.floor(height * 0.2), 0x8dccd8));
 
-  state.plots.forEach((plot, index) => {
-    const column = index % 3;
-    const row = Math.floor(index / 3);
-    const x = startX + column * (plotSize + gap);
-    const y = startY + row * (plotSize + gap);
-    const selected = plot.id === state.selectedPlotId;
+  drawPath(scene, viewport);
+  drawHouse(scene, viewport);
 
-    scene.addChild(rect(x - 4, y - 4, plotSize + 8, plotSize + 8, selected ? 0xffd166 : 0x6d8a48));
-    scene.addChild(rect(x, y, plotSize, plotSize, 0x8f5f34));
-    scene.addChild(cropMarker(x, y, plotSize, plot.stage));
-  });
+  for (const plot of state.plots) {
+    const point = worldToScreen(viewport, plot.position);
+    const plotSize = viewport.scale * 0.72;
+    scene.addChild(rect(point.x - plotSize / 2, point.y - plotSize / 2, plotSize, plotSize, 0x8f5f34));
+    scene.addChild(cropMarker(point.x, point.y, plotSize, plot.stage));
+  }
 
-  scene.addChild(
-    new Text({
-      text: 'Type a word, then press Enter or Space.',
-      style: {
-        fill: '#1d2b22',
-        fontFamily: 'Georgia, serif',
-        fontSize: 18,
-      },
-      x: 24,
-      y: 22,
-    }),
-  );
+  drawPlayer(scene, viewport, state.player);
+  drawTargets(scene, viewport, listWorldTargets(state));
 
   return scene;
+}
+
+function createHouseInterior(state: FarmState): Container {
+  const scene = new Container();
+  const width = app.renderer.width;
+  const height = app.renderer.height;
+  const viewport = createViewport(width, height);
+
+  scene.addChild(rect(0, 0, width, height, 0xd8c49a));
+  scene.addChild(rect(0, 0, width, Math.floor(height * 0.18), 0xa96f48));
+  scene.addChild(rect(width * 0.18, height * 0.22, width * 0.24, height * 0.18, 0x7f5138));
+  scene.addChild(rect(width * 0.58, height * 0.26, width * 0.2, height * 0.14, 0x6d4b36));
+  scene.addChild(rect(width * 0.43, height * 0.64, width * 0.14, height * 0.22, 0x3c5f46));
+
+  drawPlayer(scene, viewport, state.player);
+  drawTargets(scene, viewport, listWorldTargets(state));
+
+  return scene;
+}
+
+function createViewport(width: number, height: number): Viewport {
+  return {
+    originX: width / 2,
+    originY: Math.max(88, height * 0.16),
+    scale: Math.max(56, Math.min(92, Math.floor(Math.min(width / 6, height / 6.4)))),
+  };
+}
+
+function worldToScreen(viewport: Viewport, point: WorldPoint): WorldPoint {
+  return {
+    x: viewport.originX + point.x * viewport.scale,
+    y: viewport.originY + point.y * viewport.scale,
+  };
+}
+
+function drawPath(scene: Container, viewport: Viewport): void {
+  const door = worldToScreen(viewport, doorPosition);
+  const lowerFarm = worldToScreen(viewport, { x: 0, y: 5.3 });
+  const pathWidth = viewport.scale * 0.48;
+
+  scene.addChild(rect(door.x - pathWidth / 2, door.y, pathWidth, lowerFarm.y - door.y, 0xc8ad72));
+}
+
+function drawHouse(scene: Container, viewport: Viewport): void {
+  const house = worldToScreen(viewport, housePosition);
+  const door = worldToScreen(viewport, doorPosition);
+  const houseWidth = viewport.scale * 2.1;
+  const houseHeight = viewport.scale * 1.1;
+
+  scene.addChild(rect(house.x - houseWidth / 2, house.y + viewport.scale * 0.12, houseWidth, houseHeight, 0xd79b5d));
+  scene.addChild(rect(house.x - houseWidth * 0.58, house.y - viewport.scale * 0.08, houseWidth * 1.16, viewport.scale * 0.34, 0x7d3f2a));
+  scene.addChild(rect(door.x - viewport.scale * 0.18, door.y - viewport.scale * 0.2, viewport.scale * 0.36, viewport.scale * 0.55, 0x4f3328));
+  scene.addChild(rect(house.x - viewport.scale * 0.68, house.y + viewport.scale * 0.42, viewport.scale * 0.32, viewport.scale * 0.26, 0xf4e3a3));
+  scene.addChild(rect(house.x + viewport.scale * 0.36, house.y + viewport.scale * 0.42, viewport.scale * 0.32, viewport.scale * 0.26, 0xf4e3a3));
+}
+
+function drawPlayer(scene: Container, viewport: Viewport, position: WorldPoint): void {
+  const point = worldToScreen(viewport, position);
+  const body = new Graphics();
+
+  body.circle(point.x, point.y, viewport.scale * 0.18).fill(0x2f5d46);
+  body.circle(point.x, point.y - viewport.scale * 0.18, viewport.scale * 0.13).fill(0xf1c27d);
+  body.rect(point.x - viewport.scale * 0.2, point.y - viewport.scale * 0.36, viewport.scale * 0.4, viewport.scale * 0.08).fill(0xf4d35e);
+
+  scene.addChild(body);
+}
+
+function drawTargets(scene: Container, viewport: Viewport, targets: WorldTarget[]): void {
+  for (const target of targets) {
+    const point = worldToScreen(viewport, target.position);
+    scene.addChild(wordLabel(target.label, point.x, point.y - viewport.scale * 0.34));
+  }
+}
+
+function wordLabel(word: string, x: number, y: number): Container {
+  const container = new Container();
+  const text = new Text({
+    text: word,
+    style: {
+      fill: '#172018',
+      fontFamily: 'Inter, system-ui, sans-serif',
+      fontSize: 16,
+      fontWeight: '800',
+    },
+  });
+  const paddingX = 8;
+  const paddingY = 5;
+  const width = text.width + paddingX * 2;
+  const height = text.height + paddingY * 2;
+
+  container.addChild(rect(0, 0, width, height, 0xfff5cf));
+  text.x = paddingX;
+  text.y = paddingY - 1;
+  container.addChild(text);
+  container.x = x - width / 2;
+  container.y = y - height;
+
+  return container;
 }
 
 function rect(x: number, y: number, width: number, height: number, color: number): Graphics {
   return new Graphics().rect(x, y, width, height).fill(color);
 }
 
-function cropMarker(x: number, y: number, size: number, stage: string): Graphics {
+function cropMarker(x: number, y: number, size: number, stage: CropStage): Graphics {
   const marker = new Graphics();
-  const centerX = x + size / 2;
-  const centerY = y + size / 2;
 
   if (stage === 'empty') {
-    marker.moveTo(x + 12, centerY).lineTo(x + size - 12, centerY).stroke({ color: 0x734626, width: 3 });
+    marker.moveTo(x - size * 0.34, y).lineTo(x + size * 0.34, y).stroke({ color: 0x734626, width: 3 });
     return marker;
   }
 
-  marker.circle(centerX, centerY, stage === 'ripe' ? size * 0.22 : size * 0.14);
+  marker.circle(x, y, stage === 'ripe' ? size * 0.22 : size * 0.14);
   marker.fill(stage === 'ripe' ? 0xf4d35e : 0x2f7d32);
 
   if (stage === 'leaf' || stage === 'ripe') {
-    marker.ellipse(centerX - 12, centerY + 8, 16, 8).fill(0x3fa34d);
-    marker.ellipse(centerX + 12, centerY + 8, 16, 8).fill(0x3fa34d);
+    marker.ellipse(x - size * 0.15, y + size * 0.1, size * 0.18, size * 0.09).fill(0x3fa34d);
+    marker.ellipse(x + size * 0.15, y + size * 0.1, size * 0.18, size * 0.09).fill(0x3fa34d);
   }
 
   return marker;

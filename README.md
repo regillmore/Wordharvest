@@ -1,6 +1,6 @@
 # Wordharvest
 
-Wordharvest is a cozy top-down farming game where the player tends crops, explores a small rural world, and acts by typing short words instead of pressing traditional action buttons. The target feel is calm, readable, and satisfying: quick word gestures should make planting, watering, harvesting, crafting, and chatting feel tactile without turning the game into a typing drill.
+Wordharvest is a cozy top-down farming game where the player tends crops, explores a small rural world, and acts by typing short words hovering over things in the scene. The target feel is calm, readable, and satisfying: typing `house` might walk the player toward home, typing `door` up close might step inside, and nearby crops might invite `water`, `sprinkle`, `splash`, or `drench` without turning the game into a typing drill.
 
 ## Stack
 

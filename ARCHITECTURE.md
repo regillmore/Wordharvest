@@ -43,16 +43,18 @@ The long-term loop should use:
 
 ## Typing Control Model
 
-Typing is the primary verb layer. The input system maintains a word buffer and dispatches completed words into the current context.
+The player has an embodied unit in the world. Typing does not issue abstract movement commands; it reacts to words the world is currently offering.
 
-Examples:
+The renderer displays a small vocabulary of nearby or visible words over actionable things. Typing one of those words queues the character to walk to the target and act on it. Distance controls specificity:
 
-- Movement words: `up`, `down`, `left`, `right`, plus thematic aliases such as `north` and `home`.
-- Farm words: `seed`, `water`, `pick`, `hoe`, `axe`, `sell`.
-- Social words: villager names, mood words, gift words, and dialogue keywords.
-- Menu words: `map`, `bag`, `craft`, `save`, `pause`.
+- From farther away, the farmhouse may show `house`; typing it walks the player close to the farmhouse.
+- Near the farmhouse, the door may show `door`; typing it walks to the door and enters.
+- Near several crops that need the same action, each crop gets a related word such as `water`, `sprinkle`, `splash`, `drench`, or `douse`.
+- Menus and dialogue can still use typed words, but they should be explicit modal contexts with their own visible vocabulary.
 
-Completion should be forgiving enough for cozy play: clear target words, short early vocabulary, good feedback, and optional assist modes. Challenge can come from longer words, streaks, timed festivals, and mastery goals later.
+This makes the game feel like reading and responding to a living scene. The core target selector owns which words are visible, which target each word resolves to, and what action will be queued. Rendering should only draw those target labels.
+
+Completion should be forgiving enough for cozy play: clear labels, short early vocabulary, no hidden required words, good feedback, and optional assist modes. Challenge can come from longer words, dense scenes, timed festivals, streaks, and mastery goals later.
 
 ## Save Model
 
@@ -94,6 +96,7 @@ Generated art should be reviewed, normalized, and checked into `public/assets` o
 ## Testing Strategy
 
 - Unit tests: typing parser, farm simulation, economy, inventory, save migration, content validation.
+- Target tests: visible word assignment, distance-based specificity, synonym pools, and action resolution.
 - Golden state tests: known action sequences produce expected farm states.
 - Browser smoke tests: app boots, canvas renders, HUD updates, keyboard typing dispatches actions.
 - Visual checks: milestone screenshots for desktop viewport sizes.
