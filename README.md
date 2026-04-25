@@ -36,6 +36,12 @@ Useful scripts:
 - `npm run install:browsers`: install the Chromium browser used by Playwright.
 - `npm run verify`: run typecheck, unit tests, and production build.
 
+## GitHub Pages
+
+This project must be deployed from the Vite production build, not directly from the repository root. In GitHub repository settings, go to **Pages**, set **Build and deployment** to **GitHub Actions**, then run the `Deploy Pages` workflow.
+
+The built `dist/index.html` should reference files like `/Wordharvest/assets/index-*.js`. If the deployed site requests `/src/main.ts`, GitHub Pages is serving the source `index.html` instead of the built artifact.
+
 ## Project Docs
 
 - [ARCHITECTURE.md](ARCHITECTURE.md): system design, module boundaries, save model, and testing strategy.

@@ -15,7 +15,8 @@ Complete when:
 - [x] CI workflow is configured for typecheck, unit tests, and build.
 - [x] GitHub Pages deployment workflow is configured.
 - [ ] First GitHub Actions run passes on `main`.
-- [ ] GitHub Pages deployment is enabled in repository settings.
+- [ ] GitHub Pages deployment source is set to GitHub Actions in repository settings.
+- [ ] Deployed `dist/index.html` loads `/Wordharvest/assets/index-*.js`, not `/src/main.ts`.
 
 ## Milestone 1 - Playable Farm Prototype
 
