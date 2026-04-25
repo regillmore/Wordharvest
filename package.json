@@ -1,0 +1,35 @@
+{
+  "name": "wordharvest",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A cozy top-down farming game with word-typing controls.",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "install:browsers": "playwright install chromium",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "verify": "npm run typecheck && npm run test && npm run build"
+  },
+  "dependencies": {
+    "howler": "^2.2.4",
+    "pixi.js": "^8.13.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "latest",
+    "@playwright/test": "latest",
+    "@types/howler": "^2.2.12",
+    "@types/node": "latest",
+    "@vitest/coverage-v8": "latest",
+    "eslint": "latest",
+    "typescript": "latest",
+    "typescript-eslint": "latest",
+    "vite": "^8.0.10",
+    "vitest": "latest"
+  }
+}
