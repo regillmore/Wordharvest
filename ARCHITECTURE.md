@@ -72,6 +72,7 @@ Prefer typed registries over loose string lookups:
 
 - `CropDefinition`
 - `WordDefinition`
+- `TargetWordDefinition`
 - `RecipeDefinition`
 - `AchievementDefinition`
 - `QuestDefinition`

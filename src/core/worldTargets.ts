@@ -1,3 +1,8 @@
+import {
+  nextWordForTargetRole,
+  primaryWordForTargetRole,
+  type TargetWordRole,
+} from '../content/targetWords';
 import type { CropPlot, FarmState } from './gameState';
 import { normalizeTypedWord } from './typing';
 
@@ -36,11 +41,6 @@ const doorActionRange = 2;
 const cropActionRange = 2.15;
 const shippingBinRange = 3.2;
 
-const plantWords = ['seed', 'plant', 'sow', 'crop', 'turnip'];
-const waterWords = ['water', 'sprinkle', 'splash', 'drench', 'douse', 'soak'];
-const harvestWords = ['pick', 'reap', 'gather', 'pluck', 'harvest'];
-const inspectWords = ['look', 'check', 'watch', 'tend', 'visit'];
-
 export function listWorldTargets(state: FarmState): WorldTarget[] {
   if (state.pendingAction) {
     return [];
@@ -50,16 +50,16 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
     return [
       {
         id: 'house-exit',
-        word: 'outside',
-        label: 'outside',
+        word: primaryWordForTargetRole('exit-outside'),
+        label: primaryWordForTargetRole('exit-outside'),
         position: { x: 0, y: 2.4 },
         distance: 0,
         action: { kind: 'exit-house', destination: houseExitPosition },
       },
       {
         id: 'farm-exit',
-        word: 'farm',
-        label: 'farm',
+        word: primaryWordForTargetRole('exit-farm'),
+        label: primaryWordForTargetRole('exit-farm'),
         position: { x: 1.2, y: 2.1 },
         distance: 0,
         action: { kind: 'exit-house', destination: houseExitPosition },
@@ -75,8 +75,8 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
   if (doorDistance <= doorActionRange) {
     targets.push({
       id: 'farmhouse-door',
-      word: 'door',
-      label: 'door',
+      word: primaryWordForTargetRole('enter-house'),
+      label: primaryWordForTargetRole('enter-house'),
       position: doorPosition,
       distance: doorDistance,
       action: { kind: 'enter-house' },
@@ -84,8 +84,8 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
   } else if (houseDistance <= houseSightRange) {
     targets.push({
       id: 'farmhouse',
-      word: 'house',
-      label: 'house',
+      word: primaryWordForTargetRole('approach-house'),
+      label: primaryWordForTargetRole('approach-house'),
       position: housePosition,
       distance: houseDistance,
       action: { kind: 'approach-house', destination: houseApproachPosition },
@@ -95,8 +95,8 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
   if (shippingBinDistance <= shippingBinRange) {
     targets.push({
       id: 'shipping-bin',
-      word: 'bin',
-      label: 'bin',
+      word: primaryWordForTargetRole('ship-bin'),
+      label: primaryWordForTargetRole('ship-bin'),
       position: shippingBinPosition,
       distance: shippingBinDistance,
       action: { kind: 'ship-inventory' },
@@ -111,7 +111,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
     .filter(({ distance }) => distance <= cropActionRange)
     .sort((left, right) => left.distance - right.distance || left.plot.id - right.plot.id);
 
-  const actionWordIndexes: Record<string, number> = {};
+  const actionWordIndexes: Partial<Record<TargetWordRole, number>> = {};
 
   for (const { plot, distance } of visiblePlots) {
     const target = targetForPlot(plot, distance, actionWordIndexes);
@@ -141,30 +141,30 @@ export function distanceBetween(left: WorldPoint, right: WorldPoint): number {
 function targetForPlot(
   plot: CropPlot,
   distance: number,
-  actionWordIndexes: Record<string, number>,
+  actionWordIndexes: Partial<Record<TargetWordRole, number>>,
 ): WorldTarget | undefined {
   if (!plot.crop) {
-    return plotTarget(plot, distance, nextWord('plant', plantWords, actionWordIndexes), {
+    return plotTarget(plot, distance, nextWordForTargetRole('plant-crop', actionWordIndexes), {
       kind: 'plant-plot',
       plotId: plot.id,
     });
   }
 
   if (plot.stage === 'ripe') {
-    return plotTarget(plot, distance, nextWord('harvest', harvestWords, actionWordIndexes), {
+    return plotTarget(plot, distance, nextWordForTargetRole('harvest-crop', actionWordIndexes), {
       kind: 'harvest-plot',
       plotId: plot.id,
     });
   }
 
   if (!plot.wateredToday) {
-    return plotTarget(plot, distance, nextWord('water', waterWords, actionWordIndexes), {
+    return plotTarget(plot, distance, nextWordForTargetRole('water-crop', actionWordIndexes), {
       kind: 'water-plot',
       plotId: plot.id,
     });
   }
 
-  return plotTarget(plot, distance, nextWord('inspect', inspectWords, actionWordIndexes), {
+  return plotTarget(plot, distance, nextWordForTargetRole('inspect-crop', actionWordIndexes), {
     kind: 'inspect-plot',
     plotId: plot.id,
   });
@@ -184,11 +184,4 @@ function plotTarget(
     distance,
     action,
   };
-}
-
-function nextWord(kind: string, words: string[], actionWordIndexes: Record<string, number>): string {
-  const index = actionWordIndexes[kind] ?? 0;
-  actionWordIndexes[kind] = index + 1;
-
-  return words[index % words.length];
 }

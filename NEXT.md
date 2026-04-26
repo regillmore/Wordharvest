@@ -27,6 +27,7 @@ Complete when:
 - [x] The player unit is visible in the world.
 - [x] Distant and near targets can expose different words, such as `house` and `door`.
 - [x] Similar nearby crop actions can use synonyms such as `water` and `sprinkle`.
+- [x] Target labels are defined in a typed content catalog with validation tests.
 - [x] Typed labels queue walking to the target before the action completes.
 - [x] The player can type visible labels to plant, water, harvest, enter the house, and use the shipping bin.
 - [x] Crops visibly progress through stages over days.
@@ -67,10 +68,10 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Promote target labels into typed content definitions with validation tests.
-2. Add tile-aware path previews and blocked-path feedback.
-3. Add a shop or seed source so planting no longer spends coins directly.
-4. Add a visible save indicator for restored save timestamps.
-5. Replace generated tone placeholders with authored audio assets.
-6. Add farm/town transition boundaries for the next explorable area.
-7. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
+1. Add tile-aware path previews and blocked-path feedback.
+2. Add a shop or seed source so planting no longer spends coins directly.
+3. Add a visible save indicator for restored save timestamps.
+4. Replace generated tone placeholders with authored audio assets.
+5. Add farm/town transition boundaries for the next explorable area.
+6. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
+7. Expand target word catalog roles for shops, villagers, and menus.
