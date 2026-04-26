@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createFarmState, type FarmState } from './gameState';
+import { applyTypedWord, createFarmState, type FarmState } from './gameState';
 import { listWorldTargets } from './worldTargets';
 
 describe('world targets', () => {
@@ -31,5 +31,12 @@ describe('world targets', () => {
 
     expect(words).toContain('water');
     expect(words).toContain('sprinkle');
+  });
+
+  it('hides target labels while an action is already queued', () => {
+    const state = applyTypedWord(createFarmState(), 'house');
+
+    expect(state.pendingAction?.label).toBe('house');
+    expect(listWorldTargets(state)).toEqual([]);
   });
 });

@@ -39,6 +39,10 @@ const harvestWords = ['pick', 'reap', 'gather', 'pluck', 'harvest'];
 const inspectWords = ['look', 'check', 'watch', 'tend', 'visit'];
 
 export function listWorldTargets(state: FarmState): WorldTarget[] {
+  if (state.pendingAction) {
+    return [];
+  }
+
   if (state.location === 'house') {
     return [
       {

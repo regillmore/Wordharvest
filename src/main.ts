@@ -1,6 +1,6 @@
 import { Howler } from 'howler';
 import { Application, Container, Graphics, Text } from 'pixi.js';
-import { advanceDay, applyTypedWord, createFarmState, type CropStage, type FarmState } from './core/gameState';
+import { advanceDay, advanceFarmTime, applyTypedWord, createFarmState, type CropStage, type FarmState } from './core/gameState';
 import { normalizeTypedWord } from './core/typing';
 import { doorPosition, housePosition, listWorldTargets, type WorldPoint, type WorldTarget } from './core/worldTargets';
 import './style.css';
@@ -97,6 +97,15 @@ window.addEventListener('keydown', (event) => {
   }
 });
 
+app.ticker.add((ticker) => {
+  if (!farm.pendingAction) {
+    return;
+  }
+
+  farm = advanceFarmTime(farm, ticker.deltaMS / 1000);
+  redraw();
+});
+
 redraw();
 
 interface Viewport {
@@ -126,6 +135,14 @@ function redrawHud(): void {
   coinValue.textContent = String(farm.coins);
   staminaValue.textContent = String(farm.stamina);
   typedWord.textContent = typedBuffer || '...';
+
+  nextDay.disabled = Boolean(farm.pendingAction);
+
+  if (farm.pendingAction) {
+    wordPreview.textContent = `Walking to ${farm.pendingAction.label}...`;
+    farmLog.innerHTML = farm.log.map((entry) => `<li>${entry}</li>`).join('');
+    return;
+  }
 
   const visibleTargets = listWorldTargets(farm);
   const exactTarget = visibleTargets.find((target) => target.word === normalizeTypedWord(typedBuffer));

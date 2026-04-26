@@ -1,5 +1,5 @@
 import { normalizeTypedWord } from './typing';
-import { resolveWorldTarget, type WorldPoint } from './worldTargets';
+import { resolveWorldTarget, type WorldPoint, type WorldTargetAction } from './worldTargets';
 
 export type CropStage = 'empty' | 'seed' | 'sprout' | 'leaf' | 'ripe';
 export type PlayerLocation = 'farm' | 'house';
@@ -13,18 +13,27 @@ export interface CropPlot {
   growth: number;
 }
 
+export interface PendingWorldAction {
+  word: string;
+  label: string;
+  destination: WorldPoint;
+  action: WorldTargetAction;
+}
+
 export interface FarmState {
   day: number;
   coins: number;
   stamina: number;
   player: WorldPoint;
   location: PlayerLocation;
+  pendingAction: PendingWorldAction | null;
   plots: CropPlot[];
   log: string[];
 }
 
 const startingPlots = 6;
 const maxLogEntries = 6;
+const walkSpeed = 3.2;
 const startingPlayerPosition: WorldPoint = { x: 0, y: 5 };
 
 export function createFarmState(): FarmState {
@@ -34,6 +43,7 @@ export function createFarmState(): FarmState {
     stamina: 10,
     player: startingPlayerPosition,
     location: 'farm',
+    pendingAction: null,
     plots: Array.from({ length: startingPlots }, (_, index) => ({
       id: index + 1,
       position: {
@@ -51,6 +61,11 @@ export function createFarmState(): FarmState {
 
 export function applyTypedWord(state: FarmState, word: string): FarmState {
   const source = normalizeTypedWord(word);
+
+  if (state.pendingAction) {
+    return withLog(state, `Finish walking to ${state.pendingAction.label} first.`);
+  }
+
   const target = resolveWorldTarget(state, source);
 
   if (!source) {
@@ -63,6 +78,57 @@ export function applyTypedWord(state: FarmState, word: string): FarmState {
 
   const action = target.action;
 
+  return withLog(
+    {
+      ...state,
+      pendingAction: {
+        word: target.word,
+        label: target.label,
+        destination: destinationForAction(target.position, action),
+        action,
+      },
+    },
+    `Heading toward ${target.label}.`,
+  );
+}
+
+export function advanceFarmTime(state: FarmState, deltaSeconds: number): FarmState {
+  if (!state.pendingAction || deltaSeconds <= 0) {
+    return state;
+  }
+
+  const nextPlayer = moveToward(state.player, state.pendingAction.destination, walkSpeed * deltaSeconds);
+  const arrived = pointsEqual(nextPlayer, state.pendingAction.destination);
+  const movedState = {
+    ...state,
+    player: nextPlayer,
+  };
+
+  if (!arrived) {
+    return movedState;
+  }
+
+  return completePendingAction(movedState);
+}
+
+export function completePendingAction(state: FarmState): FarmState {
+  if (!state.pendingAction) {
+    return state;
+  }
+
+  const pendingAction = state.pendingAction;
+
+  return completeWorldAction(
+    {
+      ...state,
+      player: pendingAction.destination,
+      pendingAction: null,
+    },
+    pendingAction.action,
+  );
+}
+
+function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmState {
   if (action.kind === 'approach-house') {
     return withLog(
       {
@@ -152,6 +218,10 @@ export function applyTypedWord(state: FarmState, word: string): FarmState {
 }
 
 export function advanceDay(state: FarmState): FarmState {
+  if (state.pendingAction) {
+    return withLog(state, `Finish walking to ${state.pendingAction.label} before ending the day.`);
+  }
+
   const plots = state.plots.map((plot) => {
     if (!plot.crop) {
       return { ...plot, wateredToday: false };
@@ -208,6 +278,34 @@ function updatePlot(
     },
     message,
   );
+}
+
+function destinationForAction(targetPosition: WorldPoint, action: WorldTargetAction): WorldPoint {
+  if (action.kind === 'approach-house') {
+    return action.destination;
+  }
+
+  return targetPosition;
+}
+
+function moveToward(origin: WorldPoint, destination: WorldPoint, distance: number): WorldPoint {
+  const offsetX = destination.x - origin.x;
+  const offsetY = destination.y - origin.y;
+  const remainingDistance = Math.hypot(offsetX, offsetY);
+
+  if (remainingDistance <= distance || remainingDistance === 0) {
+    return destination;
+  }
+
+  const ratio = distance / remainingDistance;
+  return {
+    x: origin.x + offsetX * ratio,
+    y: origin.y + offsetY * ratio,
+  };
+}
+
+function pointsEqual(left: WorldPoint, right: WorldPoint): boolean {
+  return left.x === right.x && left.y === right.y;
 }
 
 function withLog(state: FarmState, message: string): FarmState {

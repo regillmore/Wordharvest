@@ -26,6 +26,7 @@ Complete when:
 - [x] The player unit is visible in the world.
 - [x] Distant and near targets can expose different words, such as `house` and `door`.
 - [x] Similar nearby crop actions can use synonyms such as `water` and `sprinkle`.
+- [x] Typed labels queue walking to the target before the action completes.
 - [ ] The player can type visible labels to plant, water, harvest, enter the house, and use the shipping bin.
 - [ ] Crops visibly progress through stages over days.
 - [ ] Actions produce HUD feedback and audio placeholders.
@@ -65,10 +66,10 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add queued walking animation instead of instant target jumps.
-2. Add a shipping bin target and crop inventory before coin conversion.
-3. Add local save/load with schema versioning.
-4. Replace the placeholder scene with a tile-based farm view.
-5. Add the first audio channel wrapper and mute/options state.
-6. Create a visual style guide before generating or importing sprite sheets.
-7. Promote target labels into typed content definitions with validation tests.
+1. Add a shipping bin target and crop inventory before coin conversion.
+2. Add local save/load with schema versioning.
+3. Replace the placeholder scene with a tile-based farm view.
+4. Add the first audio channel wrapper and mute/options state.
+5. Create a visual style guide before generating or importing sprite sheets.
+6. Promote target labels into typed content definitions with validation tests.
+7. Add tile-aware path previews and blocked-path feedback.
