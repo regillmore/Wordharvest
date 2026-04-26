@@ -92,6 +92,7 @@ root.innerHTML = `
         <button id="load-game" type="button">Load</button>
         <button id="reset-game" type="button">Reset</button>
         <p id="save-status" class="save-status" role="status" aria-live="polite"></p>
+        <p id="save-timestamp" class="save-timestamp"></p>
       </footer>
     </aside>
   </main>
@@ -111,6 +112,7 @@ const saveGame = requireElement<HTMLButtonElement>('#save-game');
 const loadGame = requireElement<HTMLButtonElement>('#load-game');
 const resetGame = requireElement<HTMLButtonElement>('#reset-game');
 const saveStatus = requireElement<HTMLElement>('#save-status');
+const saveTimestamp = requireElement<HTMLElement>('#save-timestamp');
 const mutedControl = requireElement<HTMLInputElement>('#audio-muted');
 const musicVolume = requireElement<HTMLInputElement>('#music-volume');
 const ambienceVolume = requireElement<HTMLInputElement>('#ambience-volume');
@@ -139,9 +141,11 @@ saveGame.addEventListener('click', () => {
     return;
   }
 
-  localStorage.setItem(saveKey, serializeSave(farm));
+  const savedAt = new Date().toISOString();
+  localStorage.setItem(saveKey, serializeSave(farm, savedAt));
   farm = addFarmLog(farm, 'Saved the farm.');
   saveStatus.textContent = 'Saved.';
+  saveTimestamp.textContent = `Last saved: ${formatSaveTimestamp(savedAt)}`;
   audio.play('save');
   redraw();
 });
@@ -158,6 +162,7 @@ loadGame.addEventListener('click', () => {
   if (!rawSave) {
     farm = addFarmLog(farm, 'No local save found.');
     saveStatus.textContent = 'No save found.';
+    saveTimestamp.textContent = 'No save restored.';
     audio.play('error');
     redraw();
     return;
@@ -167,6 +172,7 @@ loadGame.addEventListener('click', () => {
   if (!result.ok) {
     farm = addFarmLog(farm, result.error);
     saveStatus.textContent = 'Load failed.';
+    saveTimestamp.textContent = 'Stored save could not be loaded.';
     audio.play('error');
     redraw();
     return;
@@ -174,6 +180,7 @@ loadGame.addEventListener('click', () => {
 
   farm = addFarmLog(result.state, result.migrated ? 'Loaded and migrated the farm.' : 'Loaded the farm.');
   saveStatus.textContent = result.migrated ? 'Loaded migrated save.' : 'Loaded.';
+  saveTimestamp.textContent = `${result.migrated ? 'Restored migrated save' : 'Restored save'}: ${formatSaveTimestamp(result.savedAt)}`;
   audio.play('load');
   redraw();
 });
@@ -183,6 +190,7 @@ resetGame.addEventListener('click', () => {
   farm = addFarmLog(createFarmState(), 'Reset the local save.');
   typedBuffer = '';
   saveStatus.textContent = 'Reset.';
+  saveTimestamp.textContent = 'No save restored.';
   audio.play('load');
   redraw();
 });
@@ -240,6 +248,7 @@ app.ticker.add((ticker) => {
 });
 
 syncAudioControls();
+syncSaveTimestampFromStorage();
 redraw();
 
 interface Viewport {
@@ -311,6 +320,29 @@ function syncAudioControls(): void {
   musicVolume.value = String(audioSettings.musicVolume);
   ambienceVolume.value = String(audioSettings.ambienceVolume);
   effectsVolume.value = String(audioSettings.effectsVolume);
+}
+
+function syncSaveTimestampFromStorage(): void {
+  const rawSave = localStorage.getItem(saveKey);
+  if (!rawSave) {
+    saveTimestamp.textContent = 'No save restored.';
+    return;
+  }
+
+  const result = deserializeSave(rawSave);
+  saveTimestamp.textContent = result.ok
+    ? `Stored save: ${formatSaveTimestamp(result.savedAt)}`
+    : 'Stored save could not be loaded.';
+}
+
+function formatSaveTimestamp(savedAt: string): string {
+  const date = new Date(savedAt);
+
+  if (Number.isNaN(date.getTime())) {
+    return 'unknown time';
+  }
+
+  return `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 }
 
 function playCueForLatestLog(): void {

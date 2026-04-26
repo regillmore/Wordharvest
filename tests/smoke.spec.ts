@@ -30,6 +30,7 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Saved.')).toBeVisible();
+  await expect(page.locator('#save-timestamp')).toContainText(/^Last saved: \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
 
   await page.getByRole('button', { name: 'End Day' }).click();
   await expect(page.locator('#day-value')).toHaveText('2');
@@ -38,9 +39,11 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.locator('#day-value')).toHaveText('1');
   await expect(page.locator('#coin-value')).toHaveText('25');
   await expect(page.locator('#seed-value')).toHaveText('2');
+  await expect(page.locator('#save-timestamp')).toContainText(/^Restored save: \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
 
   await page.getByRole('button', { name: 'Reset' }).click();
   await expect(page.locator('#coin-value')).toHaveText('25');
+  await expect(page.locator('#save-timestamp')).toHaveText('No save restored.');
 
   await page.getByRole('button', { name: 'Load' }).click();
   await expect(page.getByText('No save found.')).toBeVisible();

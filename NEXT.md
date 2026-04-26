@@ -35,6 +35,7 @@ Complete when:
 - [x] Planting consumes seed inventory and seeds come from a visible farm source.
 - [x] Actions produce HUD feedback and audio placeholders.
 - [x] A local save can be created, loaded, and reset.
+- [x] Save/load feedback includes a visible restored save timestamp.
 - [x] Unit tests cover the action sequence from seed to sale.
 
 ## Milestone 2 - First Spring Slice
@@ -70,9 +71,8 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add a visible save indicator for restored save timestamps.
-2. Replace generated tone placeholders with authored audio assets.
-3. Add farm/town transition boundaries for the next explorable area.
-4. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
-5. Expand target word catalog roles for shops, villagers, and menus.
-6. Add blocked-tile visual language to the style guide and tile set.
+1. Replace generated tone placeholders with authored audio assets.
+2. Add farm/town transition boundaries for the next explorable area.
+3. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
+4. Expand target word catalog roles for shops, villagers, and menus.
+5. Add blocked-tile visual language to the style guide and tile set.

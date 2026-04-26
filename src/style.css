@@ -212,13 +212,18 @@ h1 {
   gap: 8px;
 }
 
-.save-status {
+.save-status,
+.save-timestamp {
   grid-column: 1 / -1;
   min-height: 20px;
   margin: 0;
   color: #526352;
   font-size: 0.9rem;
   line-height: 1.35;
+}
+
+.save-timestamp {
+  color: #6b5d42;
 }
 
 @media (max-width: 760px) {
