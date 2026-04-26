@@ -12,6 +12,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "install:browsers": "playwright install chromium",
+    "assets:audio": "node scripts/write-audio-assets.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "verify": "npm run typecheck && npm run test && npm run build"

@@ -1,5 +1,18 @@
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { cueForLogMessage, defaultAudioSettings, deserializeAudioSettings, normalizeAudioSettings, serializeAudioSettings } from './audio';
+import {
+  audioCueFiles,
+  audioCueSource,
+  cueForLogMessage,
+  defaultAudioSettings,
+  deserializeAudioSettings,
+  normalizeAudioSettings,
+  serializeAudioSettings,
+  type AudioCue,
+} from './audio';
+
+const allCues: AudioCue[] = ['type', 'walk', 'plant', 'water', 'harvest', 'ship', 'door', 'day', 'save', 'load', 'error'];
 
 describe('audio settings', () => {
   it('normalizes partial or invalid settings', () => {
@@ -37,10 +50,23 @@ describe('audio settings', () => {
     expect(deserializeAudioSettings('not json')).toEqual(defaultAudioSettings);
   });
 
-  it('maps farm log messages to placeholder cues', () => {
+  it('maps farm log messages to authored cues', () => {
     expect(cueForLogMessage('Planted turnip seeds.')).toBe('plant');
     expect(cueForLogMessage('The watering can sings against the soil.')).toBe('water');
     expect(cueForLogMessage('No visible target named "door".')).toBe('error');
     expect(cueForLogMessage('A quiet morning begins.')).toBeNull();
+  });
+
+  it('registers authored wav files for every cue', () => {
+    expect(Object.keys(audioCueFiles).sort()).toEqual([...allCues].sort());
+    expect(new Set(Object.values(audioCueFiles)).size).toBe(allCues.length);
+
+    for (const cue of allCues) {
+      const fileName = audioCueFiles[cue];
+
+      expect(fileName.endsWith('.wav')).toBe(true);
+      expect(audioCueSource(cue)).toBe(`/assets/audio/${fileName}`);
+      expect(existsSync(resolve(process.cwd(), 'public/assets/audio', fileName))).toBe(true);
+    }
   });
 });
