@@ -1,6 +1,15 @@
 import { Howler } from 'howler';
 import { Application, Container, Graphics, Text } from 'pixi.js';
-import { advanceDay, advanceFarmTime, applyTypedWord, createFarmState, type CropStage, type FarmState } from './core/gameState';
+import {
+  addFarmLog,
+  advanceDay,
+  advanceFarmTime,
+  applyTypedWord,
+  createFarmState,
+  type CropStage,
+  type FarmState,
+} from './core/gameState';
+import { deserializeSave, serializeSave } from './core/save';
 import { normalizeTypedWord } from './core/typing';
 import {
   doorPosition,
@@ -20,6 +29,8 @@ if (!root) {
 
 let farm = createFarmState();
 let typedBuffer = '';
+
+const saveKey = 'wordharvest:save:v1';
 
 root.innerHTML = `
   <main class="game-shell">
@@ -47,8 +58,12 @@ root.innerHTML = `
         <p class="label">Farm log</p>
         <ol id="farm-log" class="farm-log"></ol>
       </section>
-      <footer>
+      <footer class="actions">
         <button id="next-day" type="button">End Day</button>
+        <button id="save-game" type="button">Save</button>
+        <button id="load-game" type="button">Load</button>
+        <button id="reset-game" type="button">Reset</button>
+        <p id="save-status" class="save-status" role="status" aria-live="polite"></p>
       </footer>
     </aside>
   </main>
@@ -63,6 +78,10 @@ const typedWord = requireElement<HTMLElement>('#typed-word');
 const wordPreview = requireElement<HTMLElement>('#word-preview');
 const farmLog = requireElement<HTMLOListElement>('#farm-log');
 const nextDay = requireElement<HTMLButtonElement>('#next-day');
+const saveGame = requireElement<HTMLButtonElement>('#save-game');
+const loadGame = requireElement<HTMLButtonElement>('#load-game');
+const resetGame = requireElement<HTMLButtonElement>('#reset-game');
+const saveStatus = requireElement<HTMLElement>('#save-status');
 
 Howler.volume(0.7);
 
@@ -77,6 +96,55 @@ canvasHost.appendChild(app.canvas);
 
 nextDay.addEventListener('click', () => {
   farm = advanceDay(farm);
+  redraw();
+});
+
+saveGame.addEventListener('click', () => {
+  if (farm.pendingAction) {
+    farm = addFarmLog(farm, `Finish walking to ${farm.pendingAction.label} before saving.`);
+    redraw();
+    return;
+  }
+
+  localStorage.setItem(saveKey, serializeSave(farm));
+  farm = addFarmLog(farm, 'Saved the farm.');
+  saveStatus.textContent = 'Saved.';
+  redraw();
+});
+
+loadGame.addEventListener('click', () => {
+  if (farm.pendingAction) {
+    farm = addFarmLog(farm, `Finish walking to ${farm.pendingAction.label} before loading.`);
+    redraw();
+    return;
+  }
+
+  const rawSave = localStorage.getItem(saveKey);
+  if (!rawSave) {
+    farm = addFarmLog(farm, 'No local save found.');
+    saveStatus.textContent = 'No save found.';
+    redraw();
+    return;
+  }
+
+  const result = deserializeSave(rawSave);
+  if (!result.ok) {
+    farm = addFarmLog(farm, result.error);
+    saveStatus.textContent = 'Load failed.';
+    redraw();
+    return;
+  }
+
+  farm = addFarmLog(result.state, result.migrated ? 'Loaded and migrated the farm.' : 'Loaded the farm.');
+  saveStatus.textContent = result.migrated ? 'Loaded migrated save.' : 'Loaded.';
+  redraw();
+});
+
+resetGame.addEventListener('click', () => {
+  localStorage.removeItem(saveKey);
+  farm = addFarmLog(createFarmState(), 'Reset the local save.');
+  typedBuffer = '';
+  saveStatus.textContent = 'Reset.';
   redraw();
 });
 
@@ -147,6 +215,8 @@ function redrawHud(): void {
   typedWord.textContent = typedBuffer || '...';
 
   nextDay.disabled = Boolean(farm.pendingAction);
+  saveGame.disabled = Boolean(farm.pendingAction);
+  loadGame.disabled = Boolean(farm.pendingAction);
 
   if (farm.pendingAction) {
     wordPreview.textContent = `Walking to ${farm.pendingAction.label}...`;

@@ -43,6 +43,11 @@ button:focus-visible {
   outline-offset: 2px;
 }
 
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
 .game-shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
@@ -156,6 +161,21 @@ h1 {
   margin: 0;
   padding: 0 0 0 18px;
   color: #2b332b;
+  line-height: 1.35;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.save-status {
+  grid-column: 1 / -1;
+  min-height: 20px;
+  margin: 0;
+  color: #526352;
+  font-size: 0.9rem;
   line-height: 1.35;
 }
 

@@ -265,6 +265,10 @@ export function advanceDay(state: FarmState): FarmState {
   );
 }
 
+export function addFarmLog(state: FarmState, message: string): FarmState {
+  return withLog(state, message);
+}
+
 function stageForGrowth(growth: number): CropStage {
   if (growth >= 3) {
     return 'ripe';

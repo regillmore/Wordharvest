@@ -14,9 +14,9 @@ Complete when:
 - [x] Dependencies are installed and locked.
 - [x] CI workflow is configured for typecheck, unit tests, and build.
 - [x] GitHub Pages deployment workflow is configured.
-- [ ] First GitHub Actions run passes on `main`.
-- [ ] GitHub Pages deployment source is set to GitHub Actions in repository settings.
-- [ ] Deployed `dist/index.html` loads `/Wordharvest/assets/index-*.js`, not `/src/main.ts`.
+- [x] First GitHub Actions run passes on `main`.
+- [x] GitHub Pages deployment source is set to GitHub Actions in repository settings.
+- [x] Deployed `dist/index.html` loads `/Wordharvest/assets/index-*.js`, not `/src/main.ts`.
 
 ## Milestone 1 - Playable Farm Prototype
 
@@ -30,7 +30,7 @@ Complete when:
 - [x] The player can type visible labels to plant, water, harvest, enter the house, and use the shipping bin.
 - [x] Crops visibly progress through stages over days.
 - [ ] Actions produce HUD feedback and audio placeholders.
-- [ ] A local save can be created, loaded, and reset.
+- [x] A local save can be created, loaded, and reset.
 - [x] Unit tests cover the action sequence from seed to sale.
 
 ## Milestone 2 - First Spring Slice
@@ -66,10 +66,10 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add local save/load with schema versioning.
-2. Add the first audio channel wrapper and mute/options state.
-3. Replace the placeholder scene with a tile-based farm view.
-4. Create a visual style guide before generating or importing sprite sheets.
-5. Promote target labels into typed content definitions with validation tests.
-6. Add tile-aware path previews and blocked-path feedback.
-7. Add a shop or seed source so planting no longer spends coins directly.
+1. Add the first audio channel wrapper and mute/options state.
+2. Replace the placeholder scene with a tile-based farm view.
+3. Create a visual style guide before generating or importing sprite sheets.
+4. Promote target labels into typed content definitions with validation tests.
+5. Add tile-aware path previews and blocked-path feedback.
+6. Add a shop or seed source so planting no longer spends coins directly.
+7. Add a visible save indicator for restored save timestamps.
