@@ -3,6 +3,7 @@ import {
   primaryWordForTargetRole,
   type TargetWordRole,
 } from '../content/targetWords';
+import { starterCropId, type CropId } from '../content/crops';
 import type { CropPlot, FarmState } from './gameState';
 import { normalizeTypedWord } from './typing';
 
@@ -23,8 +24,8 @@ export type WorldTargetAction =
   | { kind: 'talk-villager' }
   | { kind: 'open-menu'; menu: MenuId; destination: WorldPoint }
   | { kind: 'ship-inventory' }
-  | { kind: 'buy-turnip-seeds' }
-  | { kind: 'plant-plot'; plotId: number }
+  | { kind: 'buy-seeds'; crop: CropId }
+  | { kind: 'plant-plot'; plotId: number; crop: CropId }
   | { kind: 'water-plot'; plotId: number }
   | { kind: 'harvest-plot'; plotId: number }
   | { kind: 'inspect-plot'; plotId: number };
@@ -157,7 +158,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
       label: primaryWordForTargetRole('seed-source'),
       position: seedSourcePosition,
       distance: seedSourceDistance,
-      action: { kind: 'buy-turnip-seeds' },
+      action: { kind: 'buy-seeds', crop: starterCropId },
     });
   }
 
@@ -258,6 +259,7 @@ function targetForPlot(
     return plotTarget(plot, distance, nextWordForTargetRole('plant-crop', actionWordIndexes), {
       kind: 'plant-plot',
       plotId: plot.id,
+      crop: starterCropId,
     });
   }
 

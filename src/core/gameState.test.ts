@@ -49,7 +49,7 @@ describe('farm state', () => {
   it('buys turnip seeds from the visible seed source', () => {
     let state: FarmState = {
       ...createFarmState(),
-      seeds: { turnip: 0 },
+      seeds: { ...createFarmState().seeds, turnip: 0 },
     };
 
     state = applyTypedWord(state, 'seeds');
@@ -64,7 +64,7 @@ describe('farm state', () => {
   it('does not plant when the seed bag is empty', () => {
     let state: FarmState = {
       ...createFarmState(),
-      seeds: { turnip: 0 },
+      seeds: { ...createFarmState().seeds, turnip: 0 },
     };
 
     state = settleAction(applyTypedWord(state, 'seed'));
@@ -152,6 +152,27 @@ describe('farm state', () => {
     state = settleAction(state);
     expect(state.coins).toBe(25);
     expect(state.log[0]).toBe('The shipping bin is empty.');
+  });
+
+  it('ships every harvested crop using catalog prices', () => {
+    let state = applyTypedWord(
+      {
+        ...createFarmState(),
+        inventory: {
+          ...createFarmState().inventory,
+          radish: 2,
+          pea: 1,
+        },
+      },
+      'bin',
+    );
+
+    state = settleAction(state);
+
+    expect(state.coins).toBe(83);
+    expect(state.inventory.radish).toBe(0);
+    expect(state.inventory.pea).toBe(0);
+    expect(state.log[0]).toBe('Shipped 2 radishes and 1 snap pea for 58 coins.');
   });
 
   it('rejects visible targets when no walkable tile path exists', () => {

@@ -1,4 +1,5 @@
-import { createFarmState, type CropId, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
+import { cropCatalog, emptyCropCounts, isCropId, type CropId } from '../content/crops';
+import { createFarmState, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
 import type { WorldPoint } from './worldTargets';
 
 export const SAVE_SCHEMA_VERSION = 2;
@@ -201,7 +202,7 @@ function parseCropId(value: unknown): CropId | null | undefined {
     return null;
   }
 
-  if (value === 'turnip') {
+  if (isCropId(value)) {
     return value;
   }
 
@@ -215,9 +216,13 @@ function parseCropStage(value: unknown): CropStage | null {
 }
 
 function normalizeInventory(value: Record<string, unknown> | Inventory): Inventory {
-  return {
-    turnip: readNumber(value.turnip, 0),
-  };
+  const inventory = emptyCropCounts();
+
+  for (const definition of cropCatalog) {
+    inventory[definition.id] = readNumber(value[definition.id], 0);
+  }
+
+  return inventory;
 }
 
 function parseLog(value: unknown): string[] | null {

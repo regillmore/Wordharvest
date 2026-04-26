@@ -21,6 +21,7 @@ describe('save codec', () => {
       expect(result.state.day).toBe(state.day);
       expect(result.state.coins).toBe(state.coins);
       expect(result.state.seeds.turnip).toBe(state.seeds.turnip);
+      expect(result.state.seeds.radish).toBe(0);
       expect(result.state.plots).toEqual(state.plots);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(false);
@@ -50,6 +51,30 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.state.location).toBe('town');
       expect(result.state.player).toEqual({ x: 0, y: 5.6 });
+    }
+  });
+
+  it('normalizes missing catalog crop counts from saved inventory records', () => {
+    const olderState = createFarmState();
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: SAVE_SCHEMA_VERSION,
+        savedAt: '2026-03-01T00:00:00.000Z',
+        state: {
+          ...olderState,
+          seeds: { turnip: 1 },
+          inventory: { turnip: 2 },
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.seeds.turnip).toBe(1);
+      expect(result.state.seeds.radish).toBe(0);
+      expect(result.state.inventory.turnip).toBe(2);
+      expect(result.state.inventory.pea).toBe(0);
     }
   });
 

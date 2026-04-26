@@ -1,3 +1,13 @@
+import {
+  cropCountsWith,
+  cropDefinition,
+  emptyCropCounts,
+  stageForCropGrowth,
+  starterCropId,
+  type CropCounts,
+  type CropGrowthStage,
+  type CropId,
+} from '../content/crops';
 import { findFarmPath } from '../world/pathfinding';
 import { normalizeTypedWord } from './typing';
 import {
@@ -9,11 +19,10 @@ import {
   type WorldTargetAction,
 } from './worldTargets';
 
-export type CropStage = 'empty' | 'seed' | 'sprout' | 'leaf' | 'ripe';
+export type CropStage = 'empty' | CropGrowthStage;
 export type PlayerLocation = 'farm' | 'house' | 'town';
-export type CropId = 'turnip';
 
-export type Inventory = Record<CropId, number>;
+export type Inventory = CropCounts;
 
 export interface CropPlot {
   id: number;
@@ -49,8 +58,6 @@ const startingPlots = 6;
 const maxLogEntries = 6;
 const walkSpeed = 3.2;
 const startingPlayerPosition: WorldPoint = { x: 0, y: 5 };
-const seedPacketCost = 6;
-const seedPacketQuantity = 3;
 
 export function createFarmState(): FarmState {
   return {
@@ -60,12 +67,8 @@ export function createFarmState(): FarmState {
     player: startingPlayerPosition,
     location: 'farm',
     pendingAction: null,
-    seeds: {
-      turnip: seedPacketQuantity,
-    },
-    inventory: {
-      turnip: 0,
-    },
+    seeds: cropCountsWith(starterCropId, cropDefinition(starterCropId).seedPacketQuantity),
+    inventory: emptyCropCounts(),
     plots: Array.from({ length: startingPlots }, (_, index) => ({
       id: index + 1,
       position: {
@@ -243,8 +246,8 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     return shipInventory(state);
   }
 
-  if (action.kind === 'buy-turnip-seeds') {
-    return buyTurnipSeeds(state);
+  if (action.kind === 'buy-seeds') {
+    return buySeeds(state, action.crop);
   }
 
   if (action.kind === 'visit-shop') {
@@ -269,22 +272,24 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
       return withLog(state, 'That plot already has a crop.');
     }
 
-    if (state.seeds.turnip <= 0) {
-      return withLog(state, 'No turnip seeds in your bag.');
+    const crop = cropDefinition(action.crop);
+
+    if (state.seeds[action.crop] <= 0) {
+      return withLog(state, `No ${crop.seedName} in your bag.`);
     }
 
     return updatePlot(
       state,
-      { ...plot, crop: 'turnip', stage: 'seed', wateredToday: false, growth: 0 },
+      { ...plot, crop: action.crop, stage: 'seed', wateredToday: false, growth: 0 },
       {
         seeds: {
           ...state.seeds,
-          turnip: state.seeds.turnip - 1,
+          [action.crop]: state.seeds[action.crop] - 1,
         },
         stamina: Math.max(0, state.stamina - 1),
         player: plot.position,
       },
-      'Planted turnip seeds.',
+      `Planted ${crop.seedName}.`,
     );
   }
 
@@ -306,9 +311,11 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
   }
 
   if (action.kind === 'harvest-plot') {
-    if (plot.stage !== 'ripe') {
+    if (!plot.crop || plot.stage !== 'ripe') {
       return withLog(state, 'Nothing is ripe here yet.');
     }
+
+    const crop = cropDefinition(plot.crop);
 
     return updatePlot(
       state,
@@ -316,11 +323,11 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
       {
         inventory: {
           ...state.inventory,
-          turnip: state.inventory.turnip + 1,
+          [crop.id]: state.inventory[crop.id] + 1,
         },
         player: plot.position,
       },
-      'Harvested a crisp turnip.',
+      crop.harvestMessage,
     );
   }
 
@@ -342,7 +349,7 @@ export function advanceDay(state: FarmState): FarmState {
       ...plot,
       growth,
       wateredToday: false,
-      stage: stageForGrowth(growth),
+      stage: stageForCropGrowth(plot.crop, growth),
     };
   });
 
@@ -362,22 +369,6 @@ export function addFarmLog(state: FarmState, message: string): FarmState {
   return withLog(state, message);
 }
 
-function stageForGrowth(growth: number): CropStage {
-  if (growth >= 3) {
-    return 'ripe';
-  }
-
-  if (growth === 2) {
-    return 'leaf';
-  }
-
-  if (growth === 1) {
-    return 'sprout';
-  }
-
-  return 'seed';
-}
-
 function updatePlot(
   state: FarmState,
   updatedPlot: CropPlot,
@@ -394,54 +385,66 @@ function updatePlot(
   );
 }
 
-function buyTurnipSeeds(state: FarmState): FarmState {
-  if (state.coins < seedPacketCost) {
-    return withLog(state, `Turnip seed packets cost ${seedPacketCost} coins.`);
+function buySeeds(state: FarmState, cropId: CropId): FarmState {
+  const crop = cropDefinition(cropId);
+
+  if (state.coins < crop.seedPacketPrice) {
+    return withLog(state, `${capitalize(crop.seedName)} cost ${crop.seedPacketPrice} coins.`);
   }
 
   return withLog(
     {
       ...state,
-      coins: state.coins - seedPacketCost,
+      coins: state.coins - crop.seedPacketPrice,
       seeds: {
         ...state.seeds,
-        turnip: state.seeds.turnip + seedPacketQuantity,
+        [crop.id]: state.seeds[crop.id] + crop.seedPacketQuantity,
       },
     },
-    `Bought ${seedPacketQuantity} turnip seeds for ${seedPacketCost} coins.`,
+    `Bought ${crop.seedPacketQuantity} ${crop.seedName} for ${crop.seedPacketPrice} coins.`,
   );
 }
 
 function shipInventory(state: FarmState): FarmState {
-  const turnips = state.inventory.turnip;
+  const shipments = Object.entries(state.inventory)
+    .map(([cropId, count]) => ({
+      crop: cropDefinition(cropId as CropId),
+      count,
+    }))
+    .filter((shipment) => shipment.count > 0);
 
-  if (turnips === 0) {
+  if (shipments.length === 0) {
     return withLog(state, 'The shipping bin is empty.');
   }
 
-  const coinsEarned = turnips * 12;
-  const cropName = turnips === 1 ? 'turnip' : 'turnips';
+  const coinsEarned = shipments.reduce((sum, shipment) => sum + shipment.count * shipment.crop.sellPrice, 0);
+  const shippedInventory = {
+    ...state.inventory,
+  };
+
+  for (const shipment of shipments) {
+    shippedInventory[shipment.crop.id] = 0;
+  }
 
   return withLog(
     {
       ...state,
       coins: state.coins + coinsEarned,
-      inventory: {
-        ...state.inventory,
-        turnip: 0,
-      },
+      inventory: shippedInventory,
     },
-    `Shipped ${turnips} ${cropName} for ${coinsEarned} coins.`,
+    `Shipped ${shipmentSummary(shipments)} for ${coinsEarned} coins.`,
   );
 }
 
 function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options'): string {
+  const starterCrop = cropDefinition(starterCropId);
+
   if (menu === 'journal') {
-    return `Journal: Day ${state.day}, ${state.coins} coins, ${state.seeds.turnip} turnip seeds.`;
+    return `Journal: Day ${state.day}, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}.`;
   }
 
   if (menu === 'inventory') {
-    return `Pack: ${state.inventory.turnip} turnips, ${state.seeds.turnip} turnip seeds.`;
+    return `Pack: ${state.inventory[starterCrop.id]} ${starterCrop.pluralName}, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}.`;
   }
 
   return 'Options: audio, save, load, and reset controls are on the HUD.';
@@ -479,5 +482,15 @@ function describePlot(plot: CropPlot): string {
     return `Plot ${plot.id} is empty.`;
   }
 
-  return `Plot ${plot.id} holds a ${plot.stage} ${plot.crop}.`;
+  return `Plot ${plot.id} holds a ${plot.stage} ${cropDefinition(plot.crop).name}.`;
+}
+
+function shipmentSummary(shipments: Array<{ crop: ReturnType<typeof cropDefinition>; count: number }>): string {
+  return shipments
+    .map((shipment) => `${shipment.count} ${shipment.count === 1 ? shipment.crop.name : shipment.crop.pluralName}`)
+    .join(' and ');
+}
+
+function capitalize(value: string): string {
+  return `${value.slice(0, 1).toUpperCase()}${value.slice(1)}`;
 }
