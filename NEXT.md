@@ -51,7 +51,7 @@ Complete when:
 - [x] The town shop sells crop seed packets through typed crop labels.
 - [x] Weather changes crop planning through visible forecasts and rainy dawn watering.
 - [x] A shop sells seeds and at least one upgrade.
-- [ ] The player has a first-season objective with progress tracking.
+- [x] The player has a first-season objective with progress tracking.
 - [ ] The game supports at least seven in-game days of meaningful play.
 
 ## Milestone 3 - Cozy Durability
@@ -77,6 +77,6 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add a first-season objective with progress tracking.
-2. Add seven-day play pacing with enough goals to make each day meaningful.
-3. Add a fuller seed and crop pack summary for the expanded crop roster.
+1. Add seven-day play pacing with enough goals to make each day meaningful.
+2. Add a fuller seed and crop pack summary for the expanded crop roster.
+3. Add objective completion affordances beyond the first reward log.

@@ -27,6 +27,8 @@ describe('save codec', () => {
       expect(result.state.weather).toBe(state.weather);
       expect(result.state.forecast).toBe(state.forecast);
       expect(result.state.upgrades.wateringCan).toBe(state.upgrades.wateringCan);
+      expect(result.state.seasonObjective.id).toBe('springBasket');
+      expect(result.state.seasonObjective.shipped.turnip).toBe(0);
       expect(result.state.plots).toEqual(state.plots);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(false);
@@ -56,6 +58,29 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.state.location).toBe('town');
       expect(result.state.player).toEqual({ x: 0, y: 5.6 });
+    }
+  });
+
+  it('migrates a version 4 save by adding the first-season objective', () => {
+    const olderState = createFarmState();
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 4,
+        savedAt: '2026-04-01T00:00:00.000Z',
+        state: {
+          ...olderState,
+          seasonObjective: undefined,
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.seasonObjective.id).toBe('springBasket');
+      expect(result.state.seasonObjective.completed).toBe(false);
+      expect(result.state.seasonObjective.shipped.carrot).toBe(0);
+      expect(result.migrated).toBe(true);
     }
   });
 

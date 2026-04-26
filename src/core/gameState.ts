@@ -18,6 +18,13 @@ import {
   type UpgradeFlags,
   type UpgradeId,
 } from '../content/upgrades';
+import {
+  createObjectiveProgress,
+  objectiveDefinition,
+  objectiveDetailText,
+  recordObjectiveShipments,
+  type ObjectiveProgress,
+} from '../content/objectives';
 import { forecastForDay, weatherDefinition, weatherForDay, type WeatherId } from '../content/weather';
 import { findFarmPath } from '../world/pathfinding';
 import { normalizeTypedWord } from './typing';
@@ -64,6 +71,7 @@ export interface FarmState {
   seeds: Inventory;
   inventory: Inventory;
   upgrades: UpgradeFlags;
+  seasonObjective: ObjectiveProgress;
   plots: CropPlot[];
   log: string[];
 }
@@ -87,6 +95,7 @@ export function createFarmState(): FarmState {
     seeds: cropCountsWith(starterCropId, cropDefinition(starterCropId).seedPacketQuantity),
     inventory: emptyCropCounts(),
     upgrades: emptyUpgradeFlags(),
+    seasonObjective: createObjectiveProgress(),
     plots: Array.from({ length: startingPlots }, (_, index) => ({
       id: index + 1,
       position: {
@@ -470,6 +479,13 @@ function shipInventory(state: FarmState): FarmState {
   }
 
   const coinsEarned = shipments.reduce((sum, shipment) => sum + shipment.count * shipment.crop.sellPrice, 0);
+  const objectiveUpdate = recordObjectiveShipments(
+    state.seasonObjective,
+    shipments.map((shipment) => ({ crop: shipment.crop.id, count: shipment.count })),
+  );
+  const objectiveReward = objectiveUpdate.newlyCompleted
+    ? objectiveDefinition(objectiveUpdate.progress.id).rewardCoins
+    : 0;
   const shippedInventory = {
     ...state.inventory,
   };
@@ -478,13 +494,18 @@ function shipInventory(state: FarmState): FarmState {
     shippedInventory[shipment.crop.id] = 0;
   }
 
-  return withLog(
+  const shipmentLog = `Shipped ${shipmentSummary(shipments)} for ${coinsEarned} coins.`;
+
+  return withLogs(
     {
       ...state,
-      coins: state.coins + coinsEarned,
+      coins: state.coins + coinsEarned + objectiveReward,
       inventory: shippedInventory,
+      seasonObjective: objectiveUpdate.progress,
     },
-    `Shipped ${shipmentSummary(shipments)} for ${coinsEarned} coins.`,
+    objectiveUpdate.newlyCompleted
+      ? [objectiveDefinition(objectiveUpdate.progress.id).completedLog, shipmentLog]
+      : [shipmentLog],
   );
 }
 
@@ -496,7 +517,7 @@ function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options
     const forecast = weatherDefinition(state.forecast);
     const can = state.upgrades.wateringCan ? 'tin can' : 'basic can';
 
-    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}.`;
+    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}.`;
   }
 
   if (menu === 'inventory') {
@@ -527,9 +548,13 @@ function pointsEqual(left: WorldPoint, right: WorldPoint): boolean {
 }
 
 function withLog(state: FarmState, message: string): FarmState {
+  return withLogs(state, [message]);
+}
+
+function withLogs(state: FarmState, messages: readonly string[]): FarmState {
   return {
     ...state,
-    log: [message, ...state.log].slice(0, maxLogEntries),
+    log: [...messages, ...state.log].slice(0, maxLogEntries),
   };
 }
 

@@ -14,6 +14,7 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#weather-value')).toHaveText('Sunny');
   await expect(page.locator('#forecast-value')).toHaveText('Sunny');
   await expect(page.locator('#can-value')).toHaveText('Basic');
+  await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: 0/3 crops shipped');
 
   await page.keyboard.type('seed');
   await page.keyboard.press('Enter');
@@ -75,7 +76,8 @@ test('opens menu words from typed labels', async ({ page }) => {
 
   await page.keyboard.type('journal');
   await page.keyboard.press('Enter');
-  await expect(page.getByText('Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can.')).toBeVisible();
+  await expect(page.getByText(/Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can\./)).toBeVisible();
+  await expect(page.locator('#farm-log').getByText(/Spring Basket: 0\/3 crops shipped/)).toBeVisible();
 });
 
 test('saves, loads, and resets the local farm slot', async ({ page }) => {

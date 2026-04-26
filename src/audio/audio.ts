@@ -112,6 +112,10 @@ export function cueForLogMessage(message: string): AudioCue | null {
     return 'ship';
   }
 
+  if (message.startsWith('Spring Basket complete')) {
+    return 'ship';
+  }
+
   if (message.startsWith('Bought')) {
     return 'ship';
   }

@@ -8,6 +8,8 @@ describe('farm state', () => {
     expect(state.weather).toBe('sunny');
     expect(state.forecast).toBe('sunny');
     expect(state.upgrades.wateringCan).toBe(false);
+    expect(state.seasonObjective.id).toBe('springBasket');
+    expect(state.seasonObjective.completed).toBe(false);
   });
 
   it('queues a visible typed target before completing it on arrival', () => {
@@ -53,6 +55,8 @@ describe('farm state', () => {
     state = settleAction(state);
     expect(state.coins).toBe(37);
     expect(state.inventory.turnip).toBe(0);
+    expect(state.seasonObjective.shipped.turnip).toBe(1);
+    expect(state.seasonObjective.completed).toBe(false);
     expect(state.log[0]).toBe('Shipped 1 turnip for 12 coins.');
   });
 
@@ -203,7 +207,9 @@ describe('farm state', () => {
     const state = applyTypedWord(createFarmState(), 'journal');
 
     expect(state.pendingAction).toBeNull();
-    expect(state.log[0]).toBe('Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can.');
+    expect(state.log[0]).toBe(
+      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1).',
+    );
   });
 
   it('advances weather and lets rain water planted crops at dawn', () => {
@@ -270,7 +276,34 @@ describe('farm state', () => {
     expect(state.coins).toBe(83);
     expect(state.inventory.radish).toBe(0);
     expect(state.inventory.pea).toBe(0);
+    expect(state.seasonObjective.shipped.radish).toBe(2);
     expect(state.log[0]).toBe('Shipped 2 radishes and 1 snap pea for 58 coins.');
+  });
+
+  it('completes the Spring Basket objective from required shipments', () => {
+    let state = applyTypedWord(
+      {
+        ...createFarmState(),
+        coins: 0,
+        inventory: {
+          ...createFarmState().inventory,
+          turnip: 1,
+          radish: 1,
+          carrot: 1,
+        },
+      },
+      'bin',
+    );
+
+    state = settleAction(state);
+
+    expect(state.coins).toBe(71);
+    expect(state.inventory.turnip).toBe(0);
+    expect(state.inventory.radish).toBe(0);
+    expect(state.inventory.carrot).toBe(0);
+    expect(state.seasonObjective.completed).toBe(true);
+    expect(state.log[0]).toBe('Spring Basket complete! Mira added 25 coins for the market table.');
+    expect(state.log[1]).toBe('Shipped 1 turnip and 1 radish and 1 carrot for 46 coins.');
   });
 
   it('rejects visible targets when no walkable tile path exists', () => {

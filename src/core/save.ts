@@ -1,12 +1,13 @@
 import { cropCatalog, emptyCropCounts, isCropId, type CropId } from '../content/crops';
+import { normalizeObjectiveProgress } from '../content/objectives';
 import { emptyUpgradeFlags, upgradeCatalog, type UpgradeFlags } from '../content/upgrades';
 import { forecastForDay, isWeatherId, weatherForDay, type WeatherId } from '../content/weather';
 import { createFarmState, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
 import type { WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 4;
+export const SAVE_SCHEMA_VERSION = 5;
 
-export interface SaveDataV4 {
+export interface SaveDataV5 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -17,7 +18,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV4 = {
+  const saveData: SaveDataV5 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -40,7 +41,11 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
-    return deserializeV4(parsed);
+    return deserializeV5(parsed);
+  }
+
+  if (parsed.schemaVersion === 4) {
+    return migrateV4(parsed);
   }
 
   if (parsed.schemaVersion === 3) {
@@ -69,13 +74,14 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
     seeds: normalizeInventory(state.seeds),
     inventory: normalizeInventory(state.inventory),
     upgrades: normalizeUpgrades(state.upgrades),
+    seasonObjective: normalizeObjectiveProgress(state.seasonObjective),
     plots: state.plots.map((plot) => ({ ...plot, position: { ...plot.position } })),
     player: { ...state.player },
     log: state.log.slice(0, 6),
   };
 }
 
-function deserializeV4(data: Record<string, unknown>): LoadSaveResult {
+function deserializeV5(data: Record<string, unknown>): LoadSaveResult {
   if (typeof data.savedAt !== 'string') {
     return { ok: false, error: 'Save data is missing a saved timestamp.' };
   }
@@ -86,6 +92,19 @@ function deserializeV4(data: Record<string, unknown>): LoadSaveResult {
   }
 
   return { ok: true, state, savedAt: data.savedAt, migrated: false };
+}
+
+function migrateV4(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function migrateV3(data: Record<string, unknown>): LoadSaveResult {
@@ -189,6 +208,7 @@ function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null):
     seeds,
     inventory: normalizeInventory(isRecord(value.inventory) ? value.inventory : {}),
     upgrades: normalizeUpgrades(isRecord(value.upgrades) ? value.upgrades : {}),
+    seasonObjective: normalizeObjectiveProgress(value.seasonObjective),
     plots,
     log,
   });
