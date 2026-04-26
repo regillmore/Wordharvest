@@ -15,6 +15,8 @@ export type WorldTargetAction =
   | { kind: 'approach-house'; destination: WorldPoint }
   | { kind: 'enter-house' }
   | { kind: 'exit-house'; destination: WorldPoint }
+  | { kind: 'enter-town'; destination: WorldPoint }
+  | { kind: 'return-farm'; destination: WorldPoint }
   | { kind: 'ship-inventory' }
   | { kind: 'buy-turnip-seeds' }
   | { kind: 'plant-plot'; plotId: number }
@@ -37,12 +39,16 @@ export const houseApproachPosition: WorldPoint = { x: 0, y: 1.7 };
 export const houseExitPosition: WorldPoint = { x: 0, y: 1.9 };
 export const shippingBinPosition: WorldPoint = { x: 2, y: 4.4 };
 export const seedSourcePosition: WorldPoint = { x: -2, y: 2.4 };
+export const townGatePosition: WorldPoint = { x: 0, y: 6 };
+export const townArrivalPosition: WorldPoint = { x: 0, y: 5.6 };
+export const farmReturnPosition: WorldPoint = { x: 0, y: 5.7 };
 
 const houseSightRange = 7;
 const doorActionRange = 2;
 const cropActionRange = 2.15;
 const shippingBinRange = 3.2;
 const seedSourceRange = 4;
+const townGateRange = 2.4;
 
 export function listWorldTargets(state: FarmState): WorldTarget[] {
   if (state.pendingAction) {
@@ -70,11 +76,25 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
     ];
   }
 
+  if (state.location === 'town') {
+    return [
+      {
+        id: 'town-farm-return',
+        word: primaryWordForTargetRole('exit-farm'),
+        label: primaryWordForTargetRole('exit-farm'),
+        position: farmReturnPosition,
+        distance: distanceBetween(state.player, farmReturnPosition),
+        action: { kind: 'return-farm', destination: farmReturnPosition },
+      },
+    ];
+  }
+
   const targets: WorldTarget[] = [];
   const doorDistance = distanceBetween(state.player, doorPosition);
   const houseDistance = distanceBetween(state.player, housePosition);
   const shippingBinDistance = distanceBetween(state.player, shippingBinPosition);
   const seedSourceDistance = distanceBetween(state.player, seedSourcePosition);
+  const townGateDistance = distanceBetween(state.player, townGatePosition);
 
   if (doorDistance <= doorActionRange) {
     targets.push({
@@ -118,6 +138,17 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
     });
   }
 
+  if (townGateDistance <= townGateRange) {
+    targets.push({
+      id: 'town-gate',
+      word: primaryWordForTargetRole('enter-town'),
+      label: primaryWordForTargetRole('enter-town'),
+      position: townGatePosition,
+      distance: townGateDistance,
+      action: { kind: 'enter-town', destination: townGatePosition },
+    });
+  }
+
   const visiblePlots = state.plots
     .map((plot) => ({
       plot,
@@ -150,7 +181,12 @@ export function resolveWorldTarget(state: FarmState, typedWord: string): WorldTa
 }
 
 export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
-  if (target.action.kind === 'approach-house' || target.action.kind === 'exit-house') {
+  if (
+    target.action.kind === 'approach-house' ||
+    target.action.kind === 'exit-house' ||
+    target.action.kind === 'enter-town' ||
+    target.action.kind === 'return-farm'
+  ) {
     return target.action.destination;
   }
 

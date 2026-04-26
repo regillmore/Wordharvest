@@ -30,6 +30,7 @@ Complete when:
 - [x] Target labels are defined in a typed content catalog with validation tests.
 - [x] Typed labels queue walking to the target before the action completes.
 - [x] Typed targets use tile-aware paths with preview and blocked-path feedback.
+- [x] Farm/town transition boundaries use the same typed-label walking flow.
 - [x] The player can type visible labels to plant, water, harvest, enter the house, and use the shipping bin.
 - [x] Crops visibly progress through stages over days.
 - [x] Planting consumes seed inventory and seeds come from a visible farm source.
@@ -71,7 +72,6 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add farm/town transition boundaries for the next explorable area.
-2. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
-3. Expand target word catalog roles for shops, villagers, and menus.
-4. Add blocked-tile visual language to the style guide and tile set.
+1. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
+2. Expand target word catalog roles for shops, villagers, and menus.
+3. Add blocked-tile visual language to the style guide and tile set.

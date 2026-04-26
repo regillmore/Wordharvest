@@ -1,9 +1,16 @@
-import { normalizeTypedWord } from './typing';
-import { destinationForWorldTarget, resolveWorldTarget, type WorldPoint, type WorldTargetAction } from './worldTargets';
 import { findFarmPath } from '../world/pathfinding';
+import { normalizeTypedWord } from './typing';
+import {
+  destinationForWorldTarget,
+  farmReturnPosition,
+  resolveWorldTarget,
+  townArrivalPosition,
+  type WorldPoint,
+  type WorldTargetAction,
+} from './worldTargets';
 
 export type CropStage = 'empty' | 'seed' | 'sprout' | 'leaf' | 'ripe';
-export type PlayerLocation = 'farm' | 'house';
+export type PlayerLocation = 'farm' | 'house' | 'town';
 export type CropId = 'turnip';
 
 export type Inventory = Record<CropId, number>;
@@ -196,6 +203,28 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
         player: action.destination,
       },
       'Stepped back into the farmyard.',
+    );
+  }
+
+  if (action.kind === 'enter-town') {
+    return withLog(
+      {
+        ...state,
+        location: 'town',
+        player: townArrivalPosition,
+      },
+      'Followed the south path toward town.',
+    );
+  }
+
+  if (action.kind === 'return-farm') {
+    return withLog(
+      {
+        ...state,
+        location: 'farm',
+        player: farmReturnPosition,
+      },
+      'Walked back up the lane to the farm.',
     );
   }
 

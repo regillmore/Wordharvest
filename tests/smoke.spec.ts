@@ -17,6 +17,21 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.getByText('door')).toBeVisible();
 });
 
+test('travels between the farm and town edge through typed labels', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#word-preview')).toContainText('town');
+
+  await page.keyboard.type('town');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Followed the south path toward town.')).toBeVisible();
+  await expect(page.locator('#word-preview')).toHaveText('farm');
+
+  await page.keyboard.type('farm');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Walked back up the lane to the farm.')).toBeVisible();
+  await expect(page.locator('#word-preview')).toContainText('town');
+});
+
 test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();

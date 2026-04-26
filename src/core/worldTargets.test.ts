@@ -41,6 +41,18 @@ describe('world targets', () => {
     expect(listWorldTargets(createFarmState()).map((target) => target.word)).toContain('seeds');
   });
 
+  it('shows the town boundary on the farm and a farm return target in town', () => {
+    expect(listWorldTargets(createFarmState()).map((target) => target.word)).toContain('town');
+
+    const townState: FarmState = {
+      ...createFarmState(),
+      location: 'town',
+      player: { x: 0, y: 5.6 },
+    };
+
+    expect(listWorldTargets(townState).map((target) => target.word)).toEqual(['farm']);
+  });
+
   it('hides target labels while an action is already queued', () => {
     const state = applyTypedWord(createFarmState(), 'house');
 

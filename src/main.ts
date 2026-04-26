@@ -19,6 +19,7 @@ import {
   resolveWorldTarget,
   seedSourcePosition,
   shippingBinPosition,
+  townGatePosition,
   type WorldPoint,
   type WorldTarget,
 } from './core/worldTargets';
@@ -358,6 +359,10 @@ function createScene(state: FarmState, typedWord: string): Container {
     return createHouseInterior(state);
   }
 
+  if (state.location === 'town') {
+    return createTownEdge(state, typedWord);
+  }
+
   return createFarmExterior(state, typedWord);
 }
 
@@ -374,6 +379,7 @@ function createFarmExterior(state: FarmState, typedWord: string): Container {
   drawHouse(scene, viewport);
   drawSeedSource(scene, viewport);
   drawShippingBin(scene, viewport);
+  drawTownGate(scene, viewport);
 
   for (const plot of state.plots) {
     const point = worldToScreen(viewport, plot.position);
@@ -382,6 +388,31 @@ function createFarmExterior(state: FarmState, typedWord: string): Container {
     scene.addChild(cropMarker(point.x, point.y, plotSize, plot.stage));
   }
 
+  drawPlayer(scene, viewport, state.player);
+  drawTargets(scene, viewport, listWorldTargets(state));
+
+  return scene;
+}
+
+function createTownEdge(state: FarmState, typedWord: string): Container {
+  const scene = new Container();
+  const width = app.renderer.width;
+  const height = app.renderer.height;
+  const viewport = createViewport(width, height);
+
+  scene.addChild(rect(0, 0, width, height, 0xa9d6d0));
+  scene.addChild(rect(0, height * 0.54, width, height * 0.46, 0x82b66f));
+
+  const laneCenter = worldToScreen(viewport, { x: 0, y: 5.7 });
+  scene.addChild(rect(laneCenter.x - viewport.scale * 0.55, height * 0.48, viewport.scale * 1.1, height * 0.52, 0xc8ad72));
+  scene.addChild(rect(laneCenter.x - viewport.scale * 2.5, height * 0.48, viewport.scale * 1.08, viewport.scale * 0.78, 0xd79b5d));
+  scene.addChild(rect(laneCenter.x - viewport.scale * 2.62, height * 0.38, viewport.scale * 1.32, viewport.scale * 0.32, 0x7d3f2a));
+  scene.addChild(rect(laneCenter.x + viewport.scale * 1.36, height * 0.5, viewport.scale * 1.18, viewport.scale * 0.72, 0xc98c42));
+  scene.addChild(rect(laneCenter.x + viewport.scale * 1.22, height * 0.41, viewport.scale * 1.46, viewport.scale * 0.3, 0x8b5a3c));
+  scene.addChild(rect(laneCenter.x - viewport.scale * 0.22, height * 0.42, viewport.scale * 0.44, viewport.scale * 0.34, 0x5f715f));
+  scene.addChild(rect(laneCenter.x - viewport.scale * 0.32, height * 0.74, viewport.scale * 0.64, viewport.scale * 0.12, 0xe7d39f));
+
+  drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
   drawPlayer(scene, viewport, state.player);
   drawTargets(scene, viewport, listWorldTargets(state));
 
@@ -558,6 +589,18 @@ function drawShippingBin(scene: Container, viewport: Viewport): void {
   scene.addChild(rect(bin.x - width / 2, bin.y - height / 2, width, height, 0x8b5a3c));
   scene.addChild(rect(bin.x - width * 0.58, bin.y - height * 0.66, width * 1.16, height * 0.18, 0x5c3a28));
   scene.addChild(rect(bin.x - width * 0.38, bin.y - height * 0.16, width * 0.76, height * 0.08, 0xe7d39f));
+}
+
+function drawTownGate(scene: Container, viewport: Viewport): void {
+  const gate = worldToScreen(viewport, townGatePosition);
+  const width = viewport.scale * 1.2;
+  const postWidth = viewport.scale * 0.12;
+  const postHeight = viewport.scale * 0.74;
+
+  scene.addChild(rect(gate.x - width / 2, gate.y - postHeight * 0.15, postWidth, postHeight, 0x7b4e2c));
+  scene.addChild(rect(gate.x + width / 2 - postWidth, gate.y - postHeight * 0.15, postWidth, postHeight, 0x7b4e2c));
+  scene.addChild(rect(gate.x - width * 0.42, gate.y - postHeight * 0.36, width * 0.84, viewport.scale * 0.18, 0xe7d39f));
+  scene.addChild(rect(gate.x - width * 0.08, gate.y - postHeight * 0.12, width * 0.16, viewport.scale * 0.42, 0xc8ad72));
 }
 
 function drawSeedSource(scene: Container, viewport: Viewport): void {

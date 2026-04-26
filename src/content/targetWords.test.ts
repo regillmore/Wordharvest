@@ -20,6 +20,7 @@ describe('target word catalog', () => {
       'enter-house',
       'exit-outside',
       'exit-farm',
+      'enter-town',
       'ship-bin',
       'seed-source',
       'plant-crop',
@@ -34,6 +35,7 @@ describe('target word catalog', () => {
   it('returns primary words for single target labels', () => {
     expect(primaryWordForTargetRole('approach-house')).toBe('house');
     expect(primaryWordForTargetRole('enter-house')).toBe('door');
+    expect(primaryWordForTargetRole('enter-town')).toBe('town');
     expect(primaryWordForTargetRole('ship-bin')).toBe('bin');
     expect(primaryWordForTargetRole('seed-source')).toBe('seeds');
   });

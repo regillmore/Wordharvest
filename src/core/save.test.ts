@@ -38,6 +38,21 @@ describe('save codec', () => {
     }
   });
 
+  it('round-trips the town location', () => {
+    const state = {
+      ...createFarmState(),
+      location: 'town' as const,
+      player: { x: 0, y: 5.6 },
+    };
+    const result = deserializeSave(serializeSave(state));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.location).toBe('town');
+      expect(result.state.player).toEqual({ x: 0, y: 5.6 });
+    }
+  });
+
   it('migrates a version 1 save by adding seed inventory', () => {
     const olderState = createFarmState();
     const result = deserializeSave(

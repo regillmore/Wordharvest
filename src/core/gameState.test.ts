@@ -92,6 +92,21 @@ describe('farm state', () => {
     expect(state.location).toBe('farm');
   });
 
+  it('travels through the farm boundary to town and back', () => {
+    let state = applyTypedWord(createFarmState(), 'town');
+
+    expect(state.pendingAction?.label).toBe('town');
+    state = settleAction(state);
+    expect(state.location).toBe('town');
+    expect(state.log[0]).toBe('Followed the south path toward town.');
+
+    state = applyTypedWord(state, 'farm');
+    expect(state.pendingAction?.label).toBe('farm');
+    state = settleAction(state);
+    expect(state.location).toBe('farm');
+    expect(state.log[0]).toBe('Walked back up the lane to the farm.');
+  });
+
   it('rejects words that are not visible from the player position', () => {
     const state = applyTypedWord(createFarmState(), 'door');
 

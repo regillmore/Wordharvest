@@ -193,7 +193,7 @@ function parseWorldPoint(value: unknown): WorldPoint | null {
 }
 
 function parseLocation(value: unknown): PlayerLocation | null {
-  return value === 'farm' || value === 'house' ? value : null;
+  return value === 'farm' || value === 'house' || value === 'town' ? value : null;
 }
 
 function parseCropId(value: unknown): CropId | null | undefined {

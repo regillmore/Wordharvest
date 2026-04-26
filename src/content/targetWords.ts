@@ -5,6 +5,7 @@ export type TargetWordRole =
   | 'enter-house'
   | 'exit-outside'
   | 'exit-farm'
+  | 'enter-town'
   | 'ship-bin'
   | 'seed-source'
   | 'plant-crop'
@@ -49,7 +50,13 @@ export const targetWordCatalog = [
     role: 'exit-farm',
     category: 'place',
     words: ['farm'],
-    description: 'Interior label that exits the farmhouse to the farm.',
+    description: 'Contextual label that returns from an interior or neighboring area to the farm.',
+  },
+  {
+    role: 'enter-town',
+    category: 'place',
+    words: ['town'],
+    description: 'Farm boundary label that follows the south path toward the town edge.',
   },
   {
     role: 'ship-bin',
@@ -176,6 +183,7 @@ const requiredTargetWordRoles: readonly TargetWordRole[] = [
   'enter-house',
   'exit-outside',
   'exit-farm',
+  'enter-town',
   'ship-bin',
   'seed-source',
   'plant-crop',
