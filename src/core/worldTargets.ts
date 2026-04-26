@@ -57,14 +57,7 @@ const seedSourceRange = 4;
 const townGateRange = 2.4;
 const shopShelfRange = 1.2;
 
-const shopSeedLabelOffsets: readonly WorldPoint[] = [
-  { x: -0.68, y: -0.72 },
-  { x: -0.18, y: -0.98 },
-  { x: 0.34, y: -0.72 },
-  { x: 0.84, y: -0.98 },
-];
-
-const shopUpgradeLabelOffsets: readonly WorldPoint[] = [{ x: 1.08, y: -0.56 }];
+const shopUpgradeLabelOffsets: readonly WorldPoint[] = [{ x: 1.55, y: 0.21 }];
 
 export function listWorldTargets(state: FarmState): WorldTarget[] {
   if (state.pendingAction) {
@@ -269,7 +262,7 @@ function menuTarget(
 
 function shopSeedTargets(player: WorldPoint): WorldTarget[] {
   return cropCatalog.map((crop, index) => {
-    const offset = shopSeedLabelOffsets[index % shopSeedLabelOffsets.length] ?? { x: 0, y: 0 };
+    const offset = shopSeedLabelOffset(index);
     const position = {
       x: townShopPosition.x + offset.x,
       y: townShopPosition.y + offset.y,
@@ -285,6 +278,17 @@ function shopSeedTargets(player: WorldPoint): WorldTarget[] {
       action: { kind: 'buy-seeds', crop: crop.id, destination: townShopPosition },
     };
   });
+}
+
+function shopSeedLabelOffset(index: number): WorldPoint {
+  const columns = 3;
+  const column = index % columns;
+  const row = Math.floor(index / columns);
+
+  return {
+    x: -1.55 + column * 1.55,
+    y: -1.35 + row * 0.52,
+  };
 }
 
 function shopUpgradeTargets(player: WorldPoint): WorldTarget[] {

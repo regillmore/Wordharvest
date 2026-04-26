@@ -46,7 +46,7 @@ Complete when:
 
 Complete when:
 
-- [ ] Spring has 10-15 crop definitions with growth times, prices, and word tags.
+- [x] Spring has 10-15 crop definitions with growth times, prices, and word tags.
 - [x] Spring crop catalog schema exists with the first four crop definitions and validation coverage.
 - [x] The town shop sells crop seed packets through typed crop labels.
 - [x] Weather changes crop planning through visible forecasts and rainy dawn watering.
@@ -77,6 +77,6 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Expand the Spring crop roster toward 10-15 balanced crop definitions.
+1. Add crop-specific planting selection for non-turnip seed packets.
 2. Add a first-season objective with progress tracking.
 3. Add seven-day play pacing with enough goals to make each day meaningful.

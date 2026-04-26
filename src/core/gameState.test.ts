@@ -122,7 +122,10 @@ describe('farm state', () => {
 
     state = settleAction(applyTypedWord(state, 'shop'));
     expect(state.location).toBe('town');
-    expect(state.log[0]).toBe('The shop shelf is open: turnip, radish, pea, strawberry, or can.');
+    expect(state.log[0]).toMatch(/^The shop shelf is open:/);
+    expect(state.log[0]).toContain('turnip');
+    expect(state.log[0]).toContain('spinach');
+    expect(state.log[0]).toContain('can');
 
     state = settleAction(applyTypedWord(state, 'hello'));
     expect(state.location).toBe('town');
@@ -139,6 +142,12 @@ describe('farm state', () => {
     expect(state.coins).toBe(17);
     expect(state.seeds.radish).toBe(2);
     expect(state.log[0]).toBe('Bought 2 radish seeds for 8 coins.');
+
+    state = applyTypedWord(state, 'carrot');
+
+    expect(state.coins).toBe(10);
+    expect(state.seeds.carrot).toBe(2);
+    expect(state.log[0]).toBe('Bought 2 carrot seeds for 7 coins.');
 
     state = applyTypedWord({ ...state, coins: 0 }, 'strawberry');
 

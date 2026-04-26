@@ -23,6 +23,7 @@ describe('save codec', () => {
       expect(result.state.coins).toBe(state.coins);
       expect(result.state.seeds.turnip).toBe(state.seeds.turnip);
       expect(result.state.seeds.radish).toBe(0);
+      expect(result.state.seeds.carrot).toBe(0);
       expect(result.state.weather).toBe(state.weather);
       expect(result.state.forecast).toBe(state.forecast);
       expect(result.state.upgrades.wateringCan).toBe(state.upgrades.wateringCan);
@@ -100,8 +101,10 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.state.seeds.turnip).toBe(1);
       expect(result.state.seeds.radish).toBe(0);
+      expect(result.state.seeds.spinach).toBe(0);
       expect(result.state.inventory.turnip).toBe(2);
       expect(result.state.inventory.pea).toBe(0);
+      expect(result.state.inventory.potato).toBe(0);
       expect(result.state.weather).toBe('sunny');
       expect(result.state.forecast).toBe('sunny');
       expect(result.state.upgrades.wateringCan).toBe(false);

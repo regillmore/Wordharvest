@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { cropCatalog, shopWordForCrop } from '../content/crops';
 import { applyTypedWord, createFarmState, type FarmState } from './gameState';
 import { listWorldTargets, townShopPosition } from './worldTargets';
 
@@ -72,8 +73,15 @@ describe('world targets', () => {
     const words = targets.map((target) => target.word);
     const radishTarget = targets.find((target) => target.word === 'radish');
     const canTarget = targets.find((target) => target.word === 'can');
+    const seedTargets = targets.filter((target) => target.id.startsWith('town-shop-seeds-'));
+    const seedPositions = new Set(seedTargets.map((target) => `${target.position.x},${target.position.y}`));
 
-    expect(words).toEqual(expect.arrayContaining(['turnip', 'radish', 'pea', 'strawberry', 'can']));
+    expect(words).toEqual(
+      expect.arrayContaining([...cropCatalog.map((crop) => shopWordForCrop(crop.id)), 'can']),
+    );
+    expect(seedTargets).toHaveLength(cropCatalog.length);
+    expect(seedPositions.size).toBe(cropCatalog.length);
+    expect(seedPositions.has(`${canTarget?.position.x},${canTarget?.position.y}`)).toBe(false);
     expect(radishTarget?.action).toEqual({
       kind: 'buy-seeds',
       crop: 'radish',

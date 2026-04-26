@@ -3,7 +3,18 @@ import { normalizeTypedWord } from '../core/typing';
 export type SeasonId = 'spring' | 'summer' | 'fall' | 'winter';
 export type CropGrowthStage = 'seed' | 'sprout' | 'leaf' | 'ripe';
 
-const cropIds = ['turnip', 'radish', 'pea', 'strawberry'] as const;
+const cropIds = [
+  'turnip',
+  'radish',
+  'pea',
+  'strawberry',
+  'carrot',
+  'lettuce',
+  'potato',
+  'onion',
+  'tulip',
+  'spinach',
+] as const;
 
 export type CropId = (typeof cropIds)[number];
 export type CropCounts = Record<CropId, number>;
@@ -112,6 +123,120 @@ export const cropCatalog = [
     ],
     harvestMessage: 'Harvested a sweet strawberry.',
   },
+  {
+    id: 'carrot',
+    name: 'carrot',
+    pluralName: 'carrots',
+    seedName: 'carrot seeds',
+    season: 'spring',
+    growthDays: 4,
+    sellPrice: 16,
+    seedPacketPrice: 7,
+    seedPacketQuantity: 2,
+    wordTags: ['carrot', 'orange', 'root', 'steady'],
+    stageThresholds: [
+      { stage: 'seed', minGrowth: 0 },
+      { stage: 'sprout', minGrowth: 1 },
+      { stage: 'leaf', minGrowth: 3 },
+      { stage: 'ripe', minGrowth: 4 },
+    ],
+    harvestMessage: 'Harvested a bright carrot.',
+  },
+  {
+    id: 'lettuce',
+    name: 'lettuce',
+    pluralName: 'lettuces',
+    seedName: 'lettuce seeds',
+    season: 'spring',
+    growthDays: 3,
+    sellPrice: 14,
+    seedPacketPrice: 7,
+    seedPacketQuantity: 2,
+    wordTags: ['lettuce', 'leaf', 'salad', 'quick'],
+    stageThresholds: [
+      { stage: 'seed', minGrowth: 0 },
+      { stage: 'sprout', minGrowth: 1 },
+      { stage: 'leaf', minGrowth: 2 },
+      { stage: 'ripe', minGrowth: 3 },
+    ],
+    harvestMessage: 'Harvested a crisp lettuce.',
+  },
+  {
+    id: 'potato',
+    name: 'potato',
+    pluralName: 'potatoes',
+    seedName: 'potato eyes',
+    season: 'spring',
+    growthDays: 5,
+    sellPrice: 24,
+    seedPacketPrice: 11,
+    seedPacketQuantity: 2,
+    wordTags: ['potato', 'tuber', 'hearty', 'earth'],
+    stageThresholds: [
+      { stage: 'seed', minGrowth: 0 },
+      { stage: 'sprout', minGrowth: 2 },
+      { stage: 'leaf', minGrowth: 4 },
+      { stage: 'ripe', minGrowth: 5 },
+    ],
+    harvestMessage: 'Harvested a sturdy potato.',
+  },
+  {
+    id: 'onion',
+    name: 'onion',
+    pluralName: 'onions',
+    seedName: 'onion sets',
+    season: 'spring',
+    growthDays: 4,
+    sellPrice: 17,
+    seedPacketPrice: 8,
+    seedPacketQuantity: 2,
+    wordTags: ['onion', 'bulb', 'savory', 'pantry'],
+    stageThresholds: [
+      { stage: 'seed', minGrowth: 0 },
+      { stage: 'sprout', minGrowth: 1 },
+      { stage: 'leaf', minGrowth: 3 },
+      { stage: 'ripe', minGrowth: 4 },
+    ],
+    harvestMessage: 'Harvested a round onion.',
+  },
+  {
+    id: 'tulip',
+    name: 'tulip',
+    pluralName: 'tulips',
+    seedName: 'tulip bulbs',
+    season: 'spring',
+    growthDays: 5,
+    sellPrice: 20,
+    seedPacketPrice: 10,
+    seedPacketQuantity: 2,
+    wordTags: ['tulip', 'flower', 'gift', 'bright'],
+    stageThresholds: [
+      { stage: 'seed', minGrowth: 0 },
+      { stage: 'sprout', minGrowth: 2 },
+      { stage: 'leaf', minGrowth: 4 },
+      { stage: 'ripe', minGrowth: 5 },
+    ],
+    harvestMessage: 'Harvested a cheerful tulip.',
+  },
+  {
+    id: 'spinach',
+    name: 'spinach',
+    pluralName: 'spinach bundles',
+    seedName: 'spinach seeds',
+    season: 'spring',
+    growthDays: 3,
+    sellPrice: 15,
+    seedPacketPrice: 7,
+    seedPacketQuantity: 2,
+    wordTags: ['spinach', 'leafy', 'green', 'early'],
+    stageThresholds: [
+      { stage: 'seed', minGrowth: 0 },
+      { stage: 'sprout', minGrowth: 1 },
+      { stage: 'leaf', minGrowth: 2 },
+      { stage: 'ripe', minGrowth: 3 },
+    ],
+    harvestMessage: 'Harvested a bundle of spinach.',
+  },
 ] as const satisfies readonly CropDefinition[];
 
 const cropDefinitionsById = new Map<CropId, CropDefinition>(cropCatalog.map((definition) => [definition.id, definition]));
@@ -186,6 +311,10 @@ export function validateCropCatalog(): CropCatalogValidationResult {
 
     if (!isPositiveInteger(definition.seedPacketQuantity)) {
       errors.push(`Crop ${definition.id} must have a positive integer seedPacketQuantity.`);
+    }
+
+    if (definition.seedPacketPrice >= definition.sellPrice * definition.seedPacketQuantity) {
+      errors.push(`Crop ${definition.id} seed packet must be cheaper than its harvested crop value.`);
     }
 
     validateWordTags(definition, errors);
