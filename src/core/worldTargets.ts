@@ -134,6 +134,14 @@ export function resolveWorldTarget(state: FarmState, typedWord: string): WorldTa
   return listWorldTargets(state).find((target) => target.word === word);
 }
 
+export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
+  if (target.action.kind === 'approach-house' || target.action.kind === 'exit-house') {
+    return target.action.destination;
+  }
+
+  return target.position;
+}
+
 export function distanceBetween(left: WorldPoint, right: WorldPoint): number {
   return Math.hypot(left.x - right.x, left.y - right.y);
 }

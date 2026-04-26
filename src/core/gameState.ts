@@ -1,5 +1,6 @@
 import { normalizeTypedWord } from './typing';
-import { resolveWorldTarget, type WorldPoint, type WorldTargetAction } from './worldTargets';
+import { destinationForWorldTarget, resolveWorldTarget, type WorldPoint, type WorldTargetAction } from './worldTargets';
+import { findFarmPath } from '../world/pathfinding';
 
 export type CropStage = 'empty' | 'seed' | 'sprout' | 'leaf' | 'ripe';
 export type PlayerLocation = 'farm' | 'house';
@@ -20,6 +21,7 @@ export interface PendingWorldAction {
   word: string;
   label: string;
   destination: WorldPoint;
+  path: WorldPoint[];
   action: WorldTargetAction;
 }
 
@@ -84,6 +86,12 @@ export function applyTypedWord(state: FarmState, word: string): FarmState {
   }
 
   const action = target.action;
+  const destination = destinationForWorldTarget(target);
+  const pathResult = findFarmPath(state.player, destination);
+
+  if (!pathResult.ok) {
+    return withLog(state, `No clear path to ${target.label}.`);
+  }
 
   return withLog(
     {
@@ -91,7 +99,8 @@ export function applyTypedWord(state: FarmState, word: string): FarmState {
       pendingAction: {
         word: target.word,
         label: target.label,
-        destination: destinationForAction(target.position, action),
+        destination,
+        path: pathResult.path,
         action,
       },
     },
@@ -104,8 +113,14 @@ export function advanceFarmTime(state: FarmState, deltaSeconds: number): FarmSta
     return state;
   }
 
-  const nextPlayer = moveToward(state.player, state.pendingAction.destination, walkSpeed * deltaSeconds);
-  const arrived = pointsEqual(nextPlayer, state.pendingAction.destination);
+  const nextWaypoint = state.pendingAction.path[0];
+
+  if (!nextWaypoint) {
+    return completePendingAction(state);
+  }
+
+  const nextPlayer = moveToward(state.player, nextWaypoint, walkSpeed * deltaSeconds);
+  const arrived = pointsEqual(nextPlayer, nextWaypoint);
   const movedState = {
     ...state,
     player: nextPlayer,
@@ -115,7 +130,16 @@ export function advanceFarmTime(state: FarmState, deltaSeconds: number): FarmSta
     return movedState;
   }
 
-  return completePendingAction(movedState);
+  const pendingAction = {
+    ...state.pendingAction,
+    path: state.pendingAction.path.slice(1),
+  };
+  const nextState = {
+    ...movedState,
+    pendingAction,
+  };
+
+  return pendingAction.path.length === 0 ? completePendingAction(nextState) : nextState;
 }
 
 export function completePendingAction(state: FarmState): FarmState {
@@ -322,14 +346,6 @@ function shipInventory(state: FarmState): FarmState {
     },
     `Shipped ${turnips} ${cropName} for ${coinsEarned} coins.`,
   );
-}
-
-function destinationForAction(targetPosition: WorldPoint, action: WorldTargetAction): WorldPoint {
-  if (action.kind === 'approach-house') {
-    return action.destination;
-  }
-
-  return targetPosition;
 }
 
 function moveToward(origin: WorldPoint, destination: WorldPoint, distance: number): WorldPoint {

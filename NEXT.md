@@ -29,6 +29,7 @@ Complete when:
 - [x] Similar nearby crop actions can use synonyms such as `water` and `sprinkle`.
 - [x] Target labels are defined in a typed content catalog with validation tests.
 - [x] Typed labels queue walking to the target before the action completes.
+- [x] Typed targets use tile-aware paths with preview and blocked-path feedback.
 - [x] The player can type visible labels to plant, water, harvest, enter the house, and use the shipping bin.
 - [x] Crops visibly progress through stages over days.
 - [x] Actions produce HUD feedback and audio placeholders.
@@ -68,10 +69,10 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add tile-aware path previews and blocked-path feedback.
-2. Add a shop or seed source so planting no longer spends coins directly.
-3. Add a visible save indicator for restored save timestamps.
-4. Replace generated tone placeholders with authored audio assets.
-5. Add farm/town transition boundaries for the next explorable area.
-6. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
-7. Expand target word catalog roles for shops, villagers, and menus.
+1. Add a shop or seed source so planting no longer spends coins directly.
+2. Add a visible save indicator for restored save timestamps.
+3. Replace generated tone placeholders with authored audio assets.
+4. Add farm/town transition boundaries for the next explorable area.
+5. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
+6. Expand target word catalog roles for shops, villagers, and menus.
+7. Add blocked-tile visual language to the style guide and tile set.

@@ -7,6 +7,7 @@ describe('farm state', () => {
 
     state = applyTypedWord(state, 'seed');
     expect(state.pendingAction?.label).toBe('seed');
+    expect(state.pendingAction?.path.length).toBeGreaterThan(0);
     expect(state.coins).toBe(25);
 
     state = settleAction(state);
@@ -88,6 +89,19 @@ describe('farm state', () => {
     state = settleAction(state);
     expect(state.coins).toBe(25);
     expect(state.log[0]).toBe('The shipping bin is empty.');
+  });
+
+  it('rejects visible targets when no walkable tile path exists', () => {
+    const state = applyTypedWord(
+      {
+        ...createFarmState(),
+        player: { x: 3, y: 5 },
+      },
+      'bin',
+    );
+
+    expect(state.pendingAction).toBeNull();
+    expect(state.log[0]).toBe('No clear path to bin.');
   });
 });
 

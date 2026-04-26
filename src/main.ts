@@ -12,14 +12,17 @@ import {
 import { deserializeSave, serializeSave } from './core/save';
 import { normalizeTypedWord } from './core/typing';
 import {
+  destinationForWorldTarget,
   doorPosition,
   housePosition,
   listWorldTargets,
+  resolveWorldTarget,
   shippingBinPosition,
   type WorldPoint,
   type WorldTarget,
 } from './core/worldTargets';
 import { farmTiles, type FarmTile, type FarmTileKind } from './world/farmMap';
+import { findFarmPath } from './world/pathfinding';
 import './style.css';
 
 const root = document.querySelector<HTMLDivElement>('#app');
@@ -244,7 +247,7 @@ interface Viewport {
 
 function redraw(): void {
   app.stage.removeChildren();
-  app.stage.addChild(createScene(farm));
+  app.stage.addChild(createScene(farm, typedBuffer));
   redrawHud();
 }
 
@@ -314,15 +317,15 @@ function playCueForLatestLog(): void {
   }
 }
 
-function createScene(state: FarmState): Container {
+function createScene(state: FarmState, typedWord: string): Container {
   if (state.location === 'house') {
     return createHouseInterior(state);
   }
 
-  return createFarmExterior(state);
+  return createFarmExterior(state, typedWord);
 }
 
-function createFarmExterior(state: FarmState): Container {
+function createFarmExterior(state: FarmState, typedWord: string): Container {
   const scene = new Container();
   const width = app.renderer.width;
   const height = app.renderer.height;
@@ -331,6 +334,7 @@ function createFarmExterior(state: FarmState): Container {
   scene.addChild(rect(0, 0, width, height, 0x8dccd8));
 
   drawFarmTiles(scene, viewport);
+  drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
   drawHouse(scene, viewport);
   drawShippingBin(scene, viewport);
 
@@ -345,6 +349,22 @@ function createFarmExterior(state: FarmState): Container {
   drawTargets(scene, viewport, listWorldTargets(state));
 
   return scene;
+}
+
+function pathPreviewForState(state: FarmState, typedWord: string): WorldPoint[] {
+  if (state.pendingAction) {
+    return [state.player, ...state.pendingAction.path];
+  }
+
+  const target = resolveWorldTarget(state, typedWord);
+
+  if (!target) {
+    return [];
+  }
+
+  const pathResult = findFarmPath(state.player, destinationForWorldTarget(target));
+
+  return pathResult.ok ? [state.player, ...pathResult.path] : [];
 }
 
 function createHouseInterior(state: FarmState): Container {
@@ -384,6 +404,31 @@ function drawFarmTiles(scene: Container, viewport: Viewport): void {
   for (const tile of farmTiles) {
     scene.addChild(tileGraphic(viewport, tile));
   }
+}
+
+function drawPathPreview(scene: Container, viewport: Viewport, path: WorldPoint[]): void {
+  if (path.length < 2) {
+    return;
+  }
+
+  const graphic = new Graphics();
+  const firstPoint = worldToScreen(viewport, path[0]);
+
+  graphic.moveTo(firstPoint.x, firstPoint.y);
+
+  for (const point of path.slice(1)) {
+    const screenPoint = worldToScreen(viewport, point);
+    graphic.lineTo(screenPoint.x, screenPoint.y);
+  }
+
+  graphic.stroke({ color: 0xfff5cf, alpha: 0.82, width: Math.max(3, viewport.scale * 0.08) });
+
+  for (const point of path.slice(1)) {
+    const screenPoint = worldToScreen(viewport, point);
+    graphic.circle(screenPoint.x, screenPoint.y, Math.max(4, viewport.scale * 0.08)).fill({ color: 0xf4d35e, alpha: 0.85 });
+  }
+
+  scene.addChild(graphic);
 }
 
 function tileGraphic(viewport: Viewport, tile: FarmTile): Graphics {
