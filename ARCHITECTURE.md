@@ -82,7 +82,7 @@ Each registry needs validation tests before it becomes large.
 
 ## Asset Pipeline
 
-Early development should use procedural placeholders and tiny hand-authored sprite sheets. Once the game feel stabilizes, define a visual style guide before generating or commissioning assets.
+Early development should use procedural placeholders and tiny hand-authored sprite sheets. The visual style guide in `docs/STYLE_GUIDE.md` is the source of truth before generating or commissioning assets.
 
 GPT Image Generation can help with:
 

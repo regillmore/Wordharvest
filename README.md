@@ -49,3 +49,4 @@ The built `dist/index.html` should reference files like `/Wordharvest/assets/ind
 - [DECISIONS.md](DECISIONS.md): durable technical and product decisions.
 - [NEXT.md](NEXT.md): milestone plan and immediate task list.
 - [AGENTS.md](AGENTS.md): Codex agent workflow for planning, implementation, testing, and handoff.
+- [docs/STYLE_GUIDE.md](docs/STYLE_GUIDE.md): visual direction, palette, sprite rules, and asset acceptance criteria.

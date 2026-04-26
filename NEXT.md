@@ -67,10 +67,10 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Create a visual style guide before generating or importing sprite sheets.
-2. Promote target labels into typed content definitions with validation tests.
-3. Add tile-aware path previews and blocked-path feedback.
-4. Add a shop or seed source so planting no longer spends coins directly.
-5. Add a visible save indicator for restored save timestamps.
-6. Replace generated tone placeholders with authored audio assets.
-7. Add farm/town transition boundaries for the next explorable area.
+1. Promote target labels into typed content definitions with validation tests.
+2. Add tile-aware path previews and blocked-path feedback.
+3. Add a shop or seed source so planting no longer spends coins directly.
+4. Add a visible save indicator for restored save timestamps.
+5. Replace generated tone placeholders with authored audio assets.
+6. Add farm/town transition boundaries for the next explorable area.
+7. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
