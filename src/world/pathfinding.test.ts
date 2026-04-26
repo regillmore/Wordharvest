@@ -21,6 +21,15 @@ describe('farm pathfinding', () => {
     expect(blockedPath).toEqual({ ok: false, path: [] });
   });
 
+  it('treats authored fence tiles as blockers', () => {
+    const blockedPath = findFarmPath({ x: 0, y: 5 }, { x: -4, y: 2 });
+    const fenceTile = farmTileAt({ x: -4, y: 2 });
+
+    expect(fenceTile?.kind).toBe('fence');
+    expect(isWalkableFarmTile(fenceTile)).toBe(false);
+    expect(blockedPath).toEqual({ ok: false, path: [] });
+  });
+
   it('rounds world points to tile coordinates for path lookup', () => {
     expect(pointToTilePoint({ x: 2, y: 4.4 })).toEqual({ x: 2, y: 4 });
   });

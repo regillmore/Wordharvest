@@ -99,6 +99,15 @@ Tile rules:
 - Water can animate later, but the still frame must be readable.
 - Every walkable tile and blocked tile should be visually distinct before pathfinding lands.
 
+Blocked tile language:
+
+- Blocked tiles should read from their shape before the player tries to path through them.
+- Fence/edge tiles use warm wood posts plus two horizontal rails on a grass base. They mark soft farm boundaries and should never look like walkable paths.
+- Foundation tiles use solid plank or stone grids under buildings and large props. They should feel occupied, not like spare dirt.
+- Water uses a blue fill with bright ripples and remains blocked unless a future bridge or stepping-stone tile explicitly overrides it.
+- Future blocked objects should reuse one of these motifs: vertical barrier, occupied base, or natural hazard.
+- A blocker is accepted when the map contains at least one authored tile, pathfinding rejects it, and the renderer gives it a distinct silhouette.
+
 ## Characters
 
 Characters should be simple, expressive, and readable near the same scale as crop labels.

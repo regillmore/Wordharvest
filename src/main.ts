@@ -560,7 +560,7 @@ function tileColor(kind: FarmTileKind, x: number, y: number): number {
     return 0x4d9bbd;
   }
 
-  return 0x6b7d4e;
+  return (x + y) % 2 === 0 ? 0x78b86a : 0x70ad61;
 }
 
 function drawTileDetail(graphic: Graphics, kind: FarmTileKind, x: number, y: number, size: number): void {
@@ -581,6 +581,27 @@ function drawTileDetail(graphic: Graphics, kind: FarmTileKind, x: number, y: num
   if (kind === 'meadow') {
     graphic.circle(x + size * 0.28, y + size * 0.42, size * 0.035).fill(0xf4d35e);
     graphic.circle(x + size * 0.7, y + size * 0.66, size * 0.026).fill(0xf7a8a3);
+    return;
+  }
+
+  if (kind === 'foundation') {
+    graphic.moveTo(x + size * 0.08, y + size * 0.36).lineTo(x + size * 0.92, y + size * 0.36);
+    graphic.moveTo(x + size * 0.08, y + size * 0.62).lineTo(x + size * 0.92, y + size * 0.62);
+    graphic.moveTo(x + size * 0.34, y + size * 0.08).lineTo(x + size * 0.34, y + size * 0.92);
+    graphic.moveTo(x + size * 0.66, y + size * 0.08).lineTo(x + size * 0.66, y + size * 0.92);
+    graphic.stroke({ color: 0x8b5a3c, alpha: 0.5, width: 2 });
+    graphic.rect(x + size * 0.16, y + size * 0.16, size * 0.1, size * 0.1).fill(0xe7d39f);
+    graphic.rect(x + size * 0.74, y + size * 0.72, size * 0.1, size * 0.1).fill(0xe7d39f);
+    return;
+  }
+
+  if (kind === 'fence') {
+    graphic.rect(x + size * 0.1, y + size * 0.31, size * 0.8, size * 0.09).fill(0xe7d39f);
+    graphic.rect(x + size * 0.1, y + size * 0.58, size * 0.8, size * 0.09).fill(0xc8ad72);
+    graphic.rect(x + size * 0.16, y + size * 0.18, size * 0.13, size * 0.66).fill(0x7b4e2c);
+    graphic.rect(x + size * 0.71, y + size * 0.18, size * 0.13, size * 0.66).fill(0x7b4e2c);
+    graphic.rect(x + size * 0.16, y + size * 0.18, size * 0.13, size * 0.07).fill(0xb98357);
+    graphic.rect(x + size * 0.71, y + size * 0.18, size * 0.13, size * 0.07).fill(0xb98357);
     return;
   }
 

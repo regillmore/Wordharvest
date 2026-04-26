@@ -12,9 +12,18 @@ describe('farm map', () => {
     expect(farmTileAt({ x: 2, y: 4.4 })?.kind).toBe('path');
   });
 
+  it('authors fence tiles around blocked farm edges', () => {
+    const fenceTiles = farmTiles.filter((tile) => tile.kind === 'fence');
+
+    expect(fenceTiles.length).toBeGreaterThan(0);
+    expect(farmTileAt({ x: -4, y: 2 })?.kind).toBe('fence');
+    expect(farmTileAt({ x: 4, y: 3 })?.kind).toBe('fence');
+  });
+
   it('recognizes all authored tile kinds', () => {
     expect(isFarmTileKind('grass')).toBe(true);
     expect(isFarmTileKind('soil')).toBe(true);
+    expect(isFarmTileKind('fence')).toBe(true);
     expect(isFarmTileKind('bog')).toBe(false);
   });
 });

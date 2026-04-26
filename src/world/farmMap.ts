@@ -23,14 +23,14 @@ export const farmMapBounds: FarmMapBounds = {
 };
 
 const tileRows = [
-  'gggffgggg',
-  'ggffffggg',
-  'gggppgggg',
-  'gmmpppggg',
-  'gmsssppgg',
-  'gmsssppgg',
-  'gggppggwg',
-  'gggppgwww',
+  'xggffgggx',
+  'xgffffggx',
+  'xggppgggx',
+  'xmmpppggx',
+  'xmsssppgx',
+  'xmsssppgx',
+  'xggppggwg',
+  'xggppgwww',
 ] as const;
 
 const tileLegend: Record<string, FarmTileKind> = {
@@ -40,7 +40,10 @@ const tileLegend: Record<string, FarmTileKind> = {
   s: 'soil',
   f: 'foundation',
   w: 'water',
+  x: 'fence',
 };
+
+const farmTileKinds = new Set<FarmTileKind>(Object.values(tileLegend));
 
 export const farmTiles: FarmTile[] = tileRows.flatMap((row, rowIndex) =>
   [...row].map((symbol, columnIndex) => ({
@@ -58,7 +61,7 @@ export function farmTileAt(point: WorldPoint): FarmTile | undefined {
 }
 
 export function isFarmTileKind(kind: string): kind is FarmTileKind {
-  return Object.values(tileLegend).includes(kind as FarmTileKind) || kind === 'fence';
+  return farmTileKinds.has(kind as FarmTileKind);
 }
 
 function tileKindForSymbol(symbol: string): FarmTileKind {
