@@ -19,6 +19,7 @@ import {
   type WorldPoint,
   type WorldTarget,
 } from './core/worldTargets';
+import { farmTiles, type FarmTile, type FarmTileKind } from './world/farmMap';
 import './style.css';
 
 const root = document.querySelector<HTMLDivElement>('#app');
@@ -327,11 +328,9 @@ function createFarmExterior(state: FarmState): Container {
   const height = app.renderer.height;
   const viewport = createViewport(width, height);
 
-  scene.addChild(rect(0, 0, width, height, 0x7dbf68));
-  scene.addChild(rect(0, Math.floor(height * 0.66), width, Math.floor(height * 0.34), 0x5f9b59));
-  scene.addChild(rect(0, 0, width, Math.floor(height * 0.2), 0x8dccd8));
+  scene.addChild(rect(0, 0, width, height, 0x8dccd8));
 
-  drawPath(scene, viewport);
+  drawFarmTiles(scene, viewport);
   drawHouse(scene, viewport);
   drawShippingBin(scene, viewport);
 
@@ -381,12 +380,79 @@ function worldToScreen(viewport: Viewport, point: WorldPoint): WorldPoint {
   };
 }
 
-function drawPath(scene: Container, viewport: Viewport): void {
-  const door = worldToScreen(viewport, doorPosition);
-  const lowerFarm = worldToScreen(viewport, { x: 0, y: 5.3 });
-  const pathWidth = viewport.scale * 0.48;
+function drawFarmTiles(scene: Container, viewport: Viewport): void {
+  for (const tile of farmTiles) {
+    scene.addChild(tileGraphic(viewport, tile));
+  }
+}
 
-  scene.addChild(rect(door.x - pathWidth / 2, door.y, pathWidth, lowerFarm.y - door.y, 0xc8ad72));
+function tileGraphic(viewport: Viewport, tile: FarmTile): Graphics {
+  const point = worldToScreen(viewport, { x: tile.x, y: tile.y });
+  const size = viewport.scale;
+  const x = point.x - size / 2;
+  const y = point.y - size / 2;
+  const graphic = new Graphics().rect(x, y, size, size).fill(tileColor(tile.kind, tile.x, tile.y));
+
+  graphic.rect(x, y, size, size).stroke({ color: 0x5b7f56, alpha: 0.18, width: 1 });
+  drawTileDetail(graphic, tile.kind, x, y, size);
+
+  return graphic;
+}
+
+function tileColor(kind: FarmTileKind, x: number, y: number): number {
+  if (kind === 'grass') {
+    return (x + y) % 2 === 0 ? 0x78b86a : 0x70ad61;
+  }
+
+  if (kind === 'meadow') {
+    return (x + y) % 2 === 0 ? 0x84bf73 : 0x7ab36b;
+  }
+
+  if (kind === 'path') {
+    return 0xc8ad72;
+  }
+
+  if (kind === 'soil') {
+    return 0x8f5f34;
+  }
+
+  if (kind === 'foundation') {
+    return 0xb98357;
+  }
+
+  if (kind === 'water') {
+    return 0x4d9bbd;
+  }
+
+  return 0x6b7d4e;
+}
+
+function drawTileDetail(graphic: Graphics, kind: FarmTileKind, x: number, y: number, size: number): void {
+  if (kind === 'soil') {
+    graphic.moveTo(x + size * 0.18, y + size * 0.32).lineTo(x + size * 0.82, y + size * 0.32);
+    graphic.moveTo(x + size * 0.18, y + size * 0.52).lineTo(x + size * 0.82, y + size * 0.52);
+    graphic.moveTo(x + size * 0.18, y + size * 0.72).lineTo(x + size * 0.82, y + size * 0.72);
+    graphic.stroke({ color: 0x734626, alpha: 0.55, width: 2 });
+    return;
+  }
+
+  if (kind === 'path') {
+    graphic.circle(x + size * 0.28, y + size * 0.68, size * 0.035).fill(0xa88a56);
+    graphic.circle(x + size * 0.66, y + size * 0.34, size * 0.028).fill(0xe2c58a);
+    return;
+  }
+
+  if (kind === 'meadow') {
+    graphic.circle(x + size * 0.28, y + size * 0.42, size * 0.035).fill(0xf4d35e);
+    graphic.circle(x + size * 0.7, y + size * 0.66, size * 0.026).fill(0xf7a8a3);
+    return;
+  }
+
+  if (kind === 'water') {
+    graphic.moveTo(x + size * 0.16, y + size * 0.45).lineTo(x + size * 0.42, y + size * 0.38);
+    graphic.moveTo(x + size * 0.48, y + size * 0.62).lineTo(x + size * 0.82, y + size * 0.54);
+    graphic.stroke({ color: 0xa8dbe8, alpha: 0.7, width: 2 });
+  }
 }
 
 function drawHouse(scene: Container, viewport: Viewport): void {

@@ -23,6 +23,7 @@ Complete when:
 Complete when:
 
 - [x] The player sees a top-down farm scene.
+- [x] The farm scene is rendered from an authored tile map.
 - [x] The player unit is visible in the world.
 - [x] Distant and near targets can expose different words, such as `house` and `door`.
 - [x] Similar nearby crop actions can use synonyms such as `water` and `sprinkle`.
@@ -66,10 +67,10 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Replace the placeholder scene with a tile-based farm view.
-2. Create a visual style guide before generating or importing sprite sheets.
-3. Promote target labels into typed content definitions with validation tests.
-4. Add tile-aware path previews and blocked-path feedback.
-5. Add a shop or seed source so planting no longer spends coins directly.
-6. Add a visible save indicator for restored save timestamps.
-7. Replace generated tone placeholders with authored audio assets.
+1. Create a visual style guide before generating or importing sprite sheets.
+2. Promote target labels into typed content definitions with validation tests.
+3. Add tile-aware path previews and blocked-path feedback.
+4. Add a shop or seed source so planting no longer spends coins directly.
+5. Add a visible save indicator for restored save timestamps.
+6. Replace generated tone placeholders with authored audio assets.
+7. Add farm/town transition boundaries for the next explorable area.
