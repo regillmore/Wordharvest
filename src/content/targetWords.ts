@@ -6,6 +6,7 @@ export type TargetWordRole =
   | 'exit-outside'
   | 'exit-farm'
   | 'ship-bin'
+  | 'seed-source'
   | 'plant-crop'
   | 'water-crop'
   | 'harvest-crop'
@@ -55,6 +56,12 @@ export const targetWordCatalog = [
     category: 'object',
     words: ['bin'],
     description: 'Shipping bin label that sells inventory contents.',
+  },
+  {
+    role: 'seed-source',
+    category: 'object',
+    words: ['seeds', 'packet', 'crate', 'shop'],
+    description: 'Seed source label that buys a small packet of turnip seeds.',
   },
   {
     role: 'plant-crop',
@@ -170,6 +177,7 @@ const requiredTargetWordRoles: readonly TargetWordRole[] = [
   'exit-outside',
   'exit-farm',
   'ship-bin',
+  'seed-source',
   'plant-crop',
   'water-crop',
   'harvest-crop',

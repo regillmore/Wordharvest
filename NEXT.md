@@ -32,6 +32,7 @@ Complete when:
 - [x] Typed targets use tile-aware paths with preview and blocked-path feedback.
 - [x] The player can type visible labels to plant, water, harvest, enter the house, and use the shipping bin.
 - [x] Crops visibly progress through stages over days.
+- [x] Planting consumes seed inventory and seeds come from a visible farm source.
 - [x] Actions produce HUD feedback and audio placeholders.
 - [x] A local save can be created, loaded, and reset.
 - [x] Unit tests cover the action sequence from seed to sale.
@@ -69,10 +70,9 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add a shop or seed source so planting no longer spends coins directly.
-2. Add a visible save indicator for restored save timestamps.
-3. Replace generated tone placeholders with authored audio assets.
-4. Add farm/town transition boundaries for the next explorable area.
-5. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
-6. Expand target word catalog roles for shops, villagers, and menus.
-7. Add blocked-tile visual language to the style guide and tile set.
+1. Add a visible save indicator for restored save timestamps.
+2. Replace generated tone placeholders with authored audio assets.
+3. Add farm/town transition boundaries for the next explorable area.
+4. Generate or hand-author the first style-guide-compliant runtime sprite sheet.
+5. Expand target word catalog roles for shops, villagers, and menus.
+6. Add blocked-tile visual language to the style guide and tile set.

@@ -21,6 +21,7 @@ describe('target word catalog', () => {
       'exit-outside',
       'exit-farm',
       'ship-bin',
+      'seed-source',
       'plant-crop',
       'water-crop',
       'harvest-crop',
@@ -34,6 +35,7 @@ describe('target word catalog', () => {
     expect(primaryWordForTargetRole('approach-house')).toBe('house');
     expect(primaryWordForTargetRole('enter-house')).toBe('door');
     expect(primaryWordForTargetRole('ship-bin')).toBe('bin');
+    expect(primaryWordForTargetRole('seed-source')).toBe('seeds');
   });
 
   it('cycles role word families for repeated nearby actions', () => {

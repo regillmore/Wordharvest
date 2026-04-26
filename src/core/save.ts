@@ -1,9 +1,9 @@
 import { createFarmState, type CropId, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
 import type { WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 1;
+export const SAVE_SCHEMA_VERSION = 2;
 
-export interface SaveDataV1 {
+export interface SaveDataV2 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -14,7 +14,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV1 = {
+  const saveData: SaveDataV2 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -37,7 +37,11 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
-    return deserializeV1(parsed);
+    return deserializeV2(parsed);
+  }
+
+  if (parsed.schemaVersion === 1) {
+    return migrateV1(parsed);
   }
 
   if (parsed.schemaVersion === 0) {
@@ -51,6 +55,7 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
   return {
     ...state,
     pendingAction: null,
+    seeds: normalizeInventory(state.seeds),
     inventory: normalizeInventory(state.inventory),
     plots: state.plots.map((plot) => ({ ...plot, position: { ...plot.position } })),
     player: { ...state.player },
@@ -58,7 +63,7 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
   };
 }
 
-function deserializeV1(data: Record<string, unknown>): LoadSaveResult {
+function deserializeV2(data: Record<string, unknown>): LoadSaveResult {
   if (typeof data.savedAt !== 'string') {
     return { ok: false, error: 'Save data is missing a saved timestamp.' };
   }
@@ -69,6 +74,19 @@ function deserializeV1(data: Record<string, unknown>): LoadSaveResult {
   }
 
   return { ok: true, state, savedAt: data.savedAt, migrated: false };
+}
+
+function migrateV1(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state, createFarmState().seeds);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function migrateV0(data: Record<string, unknown>): LoadSaveResult {
@@ -82,6 +100,7 @@ function migrateV0(data: Record<string, unknown>): LoadSaveResult {
     player: parseWorldPoint(rawState.player) ?? base.player,
     location: parseLocation(rawState.location) ?? base.location,
     pendingAction: null,
+    seeds: normalizeInventory(isRecord(rawState.seeds) ? rawState.seeds : base.seeds),
     inventory: normalizeInventory(isRecord(rawState.inventory) ? rawState.inventory : {}),
     plots: parsePlots(rawState.plots) ?? base.plots,
     log: parseLog(rawState.log) ?? ['Loaded an older Wordharvest save.'],
@@ -91,7 +110,7 @@ function migrateV0(data: Record<string, unknown>): LoadSaveResult {
   return { ok: true, state: sanitizeStateForSave(partialState), savedAt, migrated: true };
 }
 
-function parseFarmState(value: unknown): FarmState | null {
+function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null): FarmState | null {
   if (!isRecord(value)) {
     return null;
   }
@@ -109,6 +128,11 @@ function parseFarmState(value: unknown): FarmState | null {
     return null;
   }
 
+  const seeds = isRecord(value.seeds) ? normalizeInventory(value.seeds) : fallbackSeeds;
+  if (!seeds) {
+    return null;
+  }
+
   return sanitizeStateForSave({
     day: value.day,
     coins: value.coins,
@@ -116,6 +140,7 @@ function parseFarmState(value: unknown): FarmState | null {
     player,
     location,
     pendingAction: null,
+    seeds,
     inventory: normalizeInventory(isRecord(value.inventory) ? value.inventory : {}),
     plots,
     log,

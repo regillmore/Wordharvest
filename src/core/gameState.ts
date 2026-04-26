@@ -32,6 +32,7 @@ export interface FarmState {
   player: WorldPoint;
   location: PlayerLocation;
   pendingAction: PendingWorldAction | null;
+  seeds: Inventory;
   inventory: Inventory;
   plots: CropPlot[];
   log: string[];
@@ -41,6 +42,8 @@ const startingPlots = 6;
 const maxLogEntries = 6;
 const walkSpeed = 3.2;
 const startingPlayerPosition: WorldPoint = { x: 0, y: 5 };
+const seedPacketCost = 6;
+const seedPacketQuantity = 3;
 
 export function createFarmState(): FarmState {
   return {
@@ -50,6 +53,9 @@ export function createFarmState(): FarmState {
     player: startingPlayerPosition,
     location: 'farm',
     pendingAction: null,
+    seeds: {
+      turnip: seedPacketQuantity,
+    },
     inventory: {
       turnip: 0,
     },
@@ -197,6 +203,10 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     return shipInventory(state);
   }
 
+  if (action.kind === 'buy-turnip-seeds') {
+    return buyTurnipSeeds(state);
+  }
+
   const plot = state.plots.find((candidate) => candidate.id === action.plotId);
   if (!plot) {
     return withLog(state, 'That target is no longer available.');
@@ -207,14 +217,21 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
       return withLog(state, 'That plot already has a crop.');
     }
 
-    if (state.coins < 5) {
-      return withLog(state, 'Seeds cost 5 coins.');
+    if (state.seeds.turnip <= 0) {
+      return withLog(state, 'No turnip seeds in your bag.');
     }
 
     return updatePlot(
       state,
       { ...plot, crop: 'turnip', stage: 'seed', wateredToday: false, growth: 0 },
-      { coins: state.coins - 5, stamina: Math.max(0, state.stamina - 1), player: plot.position },
+      {
+        seeds: {
+          ...state.seeds,
+          turnip: state.seeds.turnip - 1,
+        },
+        stamina: Math.max(0, state.stamina - 1),
+        player: plot.position,
+      },
       'Planted turnip seeds.',
     );
   }
@@ -312,7 +329,7 @@ function stageForGrowth(growth: number): CropStage {
 function updatePlot(
   state: FarmState,
   updatedPlot: CropPlot,
-  patch: Partial<Pick<FarmState, 'coins' | 'stamina' | 'player' | 'inventory'>>,
+  patch: Partial<Pick<FarmState, 'coins' | 'stamina' | 'player' | 'seeds' | 'inventory'>>,
   message: string,
 ): FarmState {
   return withLog(
@@ -322,6 +339,24 @@ function updatePlot(
       plots: state.plots.map((plot) => (plot.id === updatedPlot.id ? updatedPlot : plot)),
     },
     message,
+  );
+}
+
+function buyTurnipSeeds(state: FarmState): FarmState {
+  if (state.coins < seedPacketCost) {
+    return withLog(state, `Turnip seed packets cost ${seedPacketCost} coins.`);
+  }
+
+  return withLog(
+    {
+      ...state,
+      coins: state.coins - seedPacketCost,
+      seeds: {
+        ...state.seeds,
+        turnip: state.seeds.turnip + seedPacketQuantity,
+      },
+    },
+    `Bought ${seedPacketQuantity} turnip seeds for ${seedPacketCost} coins.`,
   );
 }
 

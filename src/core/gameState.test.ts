@@ -11,7 +11,8 @@ describe('farm state', () => {
     expect(state.coins).toBe(25);
 
     state = settleAction(state);
-    expect(state.coins).toBe(20);
+    expect(state.coins).toBe(25);
+    expect(state.seeds.turnip).toBe(2);
     expect(state.plots[4].stage).toBe('seed');
     expect(state.pendingAction).toBeNull();
     expect(state.player).toEqual(state.plots[4].position);
@@ -34,15 +35,43 @@ describe('farm state', () => {
 
     state = applyTypedWord(state, 'pick');
     state = settleAction(state);
-    expect(state.coins).toBe(20);
+    expect(state.coins).toBe(25);
     expect(state.inventory.turnip).toBe(1);
     expect(state.plots[4].stage).toBe('empty');
 
     state = applyTypedWord(state, 'bin');
     state = settleAction(state);
-    expect(state.coins).toBe(32);
+    expect(state.coins).toBe(37);
     expect(state.inventory.turnip).toBe(0);
     expect(state.log[0]).toBe('Shipped 1 turnip for 12 coins.');
+  });
+
+  it('buys turnip seeds from the visible seed source', () => {
+    let state: FarmState = {
+      ...createFarmState(),
+      seeds: { turnip: 0 },
+    };
+
+    state = applyTypedWord(state, 'seeds');
+    expect(state.pendingAction?.label).toBe('seeds');
+
+    state = settleAction(state);
+    expect(state.coins).toBe(19);
+    expect(state.seeds.turnip).toBe(3);
+    expect(state.log[0]).toBe('Bought 3 turnip seeds for 6 coins.');
+  });
+
+  it('does not plant when the seed bag is empty', () => {
+    let state: FarmState = {
+      ...createFarmState(),
+      seeds: { turnip: 0 },
+    };
+
+    state = settleAction(applyTypedWord(state, 'seed'));
+
+    expect(state.plots[4].stage).toBe('empty');
+    expect(state.seeds.turnip).toBe(0);
+    expect(state.log[0]).toBe('No turnip seeds in your bag.');
   });
 
   it('uses distant and near labels to approach and enter the farmhouse', () => {
@@ -108,7 +137,7 @@ describe('farm state', () => {
 function settleAction(state: FarmState): FarmState {
   let settled = state;
 
-  for (let step = 0; step < 10 && settled.pendingAction; step += 1) {
+  for (let step = 0; step < 30 && settled.pendingAction; step += 1) {
     settled = advanceFarmTime(settled, 0.25);
   }
 

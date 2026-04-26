@@ -20,6 +20,7 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.state.day).toBe(state.day);
       expect(result.state.coins).toBe(state.coins);
+      expect(result.state.seeds.turnip).toBe(state.seeds.turnip);
       expect(result.state.plots).toEqual(state.plots);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(false);
@@ -34,6 +35,29 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.state.pendingAction).toBeNull();
       expect(result.state.player).toEqual(createFarmState().player);
+    }
+  });
+
+  it('migrates a version 1 save by adding seed inventory', () => {
+    const olderState = createFarmState();
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 1,
+        savedAt: '2026-02-01T00:00:00.000Z',
+        state: {
+          ...olderState,
+          seeds: undefined,
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.savedAt).toBe('2026-02-01T00:00:00.000Z');
+      expect(result.state.seeds.turnip).toBe(3);
+      expect(result.state.pendingAction).toBeNull();
+      expect(result.migrated).toBe(true);
     }
   });
 
@@ -54,6 +78,7 @@ describe('save codec', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.savedAt).toBe('2026-01-01T00:00:00.000Z');
+      expect(result.state.seeds.turnip).toBe(3);
       expect(result.state.inventory.turnip).toBe(0);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(true);

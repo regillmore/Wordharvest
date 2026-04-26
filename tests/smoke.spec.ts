@@ -20,12 +20,13 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
 test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();
-  await expect(page.getByText('seed')).toBeVisible();
+  await expect(page.locator('#word-preview')).toContainText('seed');
 
   await page.keyboard.type('seed');
   await page.keyboard.press('Enter');
   await expect(page.getByText('Planted turnip seeds.')).toBeVisible();
-  await expect(page.locator('#coin-value')).toHaveText('20');
+  await expect(page.locator('#coin-value')).toHaveText('25');
+  await expect(page.locator('#seed-value')).toHaveText('2');
 
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Saved.')).toBeVisible();
@@ -35,7 +36,8 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Load' }).click();
   await expect(page.locator('#day-value')).toHaveText('1');
-  await expect(page.locator('#coin-value')).toHaveText('20');
+  await expect(page.locator('#coin-value')).toHaveText('25');
+  await expect(page.locator('#seed-value')).toHaveText('2');
 
   await page.getByRole('button', { name: 'Reset' }).click();
   await expect(page.locator('#coin-value')).toHaveText('25');

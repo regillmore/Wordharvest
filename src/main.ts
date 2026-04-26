@@ -17,6 +17,7 @@ import {
   housePosition,
   listWorldTargets,
   resolveWorldTarget,
+  seedSourcePosition,
   shippingBinPosition,
   type WorldPoint,
   type WorldTarget,
@@ -53,6 +54,7 @@ root.innerHTML = `
         <div><dt>Day</dt><dd id="day-value"></dd></div>
         <div><dt>Coins</dt><dd id="coin-value"></dd></div>
         <div><dt>Stamina</dt><dd id="stamina-value"></dd></div>
+        <div><dt>Seeds</dt><dd id="seed-value"></dd></div>
         <div><dt>Turnips</dt><dd id="turnip-value"></dd></div>
       </dl>
       <section class="word-panel" aria-live="polite">
@@ -99,6 +101,7 @@ const canvasHost = requireElement<HTMLDivElement>('#game-canvas');
 const dayValue = requireElement<HTMLElement>('#day-value');
 const coinValue = requireElement<HTMLElement>('#coin-value');
 const staminaValue = requireElement<HTMLElement>('#stamina-value');
+const seedValue = requireElement<HTMLElement>('#seed-value');
 const turnipValue = requireElement<HTMLElement>('#turnip-value');
 const typedWord = requireElement<HTMLElement>('#typed-word');
 const wordPreview = requireElement<HTMLElement>('#word-preview');
@@ -265,6 +268,7 @@ function redrawHud(): void {
   dayValue.textContent = String(farm.day);
   coinValue.textContent = String(farm.coins);
   staminaValue.textContent = String(farm.stamina);
+  seedValue.textContent = String(farm.seeds.turnip);
   turnipValue.textContent = String(farm.inventory.turnip);
   typedWord.textContent = typedBuffer || '...';
 
@@ -336,6 +340,7 @@ function createFarmExterior(state: FarmState, typedWord: string): Container {
   drawFarmTiles(scene, viewport);
   drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
   drawHouse(scene, viewport);
+  drawSeedSource(scene, viewport);
   drawShippingBin(scene, viewport);
 
   for (const plot of state.plots) {
@@ -521,6 +526,17 @@ function drawShippingBin(scene: Container, viewport: Viewport): void {
   scene.addChild(rect(bin.x - width / 2, bin.y - height / 2, width, height, 0x8b5a3c));
   scene.addChild(rect(bin.x - width * 0.58, bin.y - height * 0.66, width * 1.16, height * 0.18, 0x5c3a28));
   scene.addChild(rect(bin.x - width * 0.38, bin.y - height * 0.16, width * 0.76, height * 0.08, 0xe7d39f));
+}
+
+function drawSeedSource(scene: Container, viewport: Viewport): void {
+  const source = worldToScreen(viewport, seedSourcePosition);
+  const width = viewport.scale * 0.62;
+  const height = viewport.scale * 0.48;
+
+  scene.addChild(rect(source.x - width / 2, source.y - height / 2, width, height, 0xc98c42));
+  scene.addChild(rect(source.x - width * 0.42, source.y - height * 0.68, width * 0.84, height * 0.22, 0x7b4e2c));
+  scene.addChild(rect(source.x - width * 0.28, source.y - height * 0.12, width * 0.56, height * 0.12, 0xf4e3a3));
+  scene.addChild(rect(source.x - width * 0.12, source.y + height * 0.14, width * 0.24, height * 0.18, 0x2f7d32));
 }
 
 function drawPlayer(scene: Container, viewport: Viewport, position: WorldPoint): void {

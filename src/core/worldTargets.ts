@@ -16,6 +16,7 @@ export type WorldTargetAction =
   | { kind: 'enter-house' }
   | { kind: 'exit-house'; destination: WorldPoint }
   | { kind: 'ship-inventory' }
+  | { kind: 'buy-turnip-seeds' }
   | { kind: 'plant-plot'; plotId: number }
   | { kind: 'water-plot'; plotId: number }
   | { kind: 'harvest-plot'; plotId: number }
@@ -35,11 +36,13 @@ export const doorPosition: WorldPoint = { x: 0, y: 1 };
 export const houseApproachPosition: WorldPoint = { x: 0, y: 1.7 };
 export const houseExitPosition: WorldPoint = { x: 0, y: 1.9 };
 export const shippingBinPosition: WorldPoint = { x: 2, y: 4.4 };
+export const seedSourcePosition: WorldPoint = { x: -2, y: 2.4 };
 
 const houseSightRange = 7;
 const doorActionRange = 2;
 const cropActionRange = 2.15;
 const shippingBinRange = 3.2;
+const seedSourceRange = 4;
 
 export function listWorldTargets(state: FarmState): WorldTarget[] {
   if (state.pendingAction) {
@@ -71,6 +74,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
   const doorDistance = distanceBetween(state.player, doorPosition);
   const houseDistance = distanceBetween(state.player, housePosition);
   const shippingBinDistance = distanceBetween(state.player, shippingBinPosition);
+  const seedSourceDistance = distanceBetween(state.player, seedSourcePosition);
 
   if (doorDistance <= doorActionRange) {
     targets.push({
@@ -100,6 +104,17 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
       position: shippingBinPosition,
       distance: shippingBinDistance,
       action: { kind: 'ship-inventory' },
+    });
+  }
+
+  if (seedSourceDistance <= seedSourceRange) {
+    targets.push({
+      id: 'seed-source',
+      word: primaryWordForTargetRole('seed-source'),
+      label: primaryWordForTargetRole('seed-source'),
+      position: seedSourcePosition,
+      distance: seedSourceDistance,
+      action: { kind: 'buy-turnip-seeds' },
     });
   }
 

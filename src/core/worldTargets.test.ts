@@ -37,6 +37,10 @@ describe('world targets', () => {
     expect(listWorldTargets(createFarmState()).map((target) => target.word)).toContain('bin');
   });
 
+  it('shows a seed source target near the player', () => {
+    expect(listWorldTargets(createFarmState()).map((target) => target.word)).toContain('seeds');
+  });
+
   it('hides target labels while an action is already queued', () => {
     const state = applyTypedWord(createFarmState(), 'house');
 
