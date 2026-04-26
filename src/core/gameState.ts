@@ -25,6 +25,15 @@ import {
   recordObjectiveShipments,
   type ObjectiveProgress,
 } from '../content/objectives';
+import {
+  emptyWeekGoalProgress,
+  markWeekGoalComplete,
+  weekGoalDawnText,
+  weekGoalDefinition,
+  weekGoalDetailText,
+  type WeekGoalId,
+  type WeekGoalProgress,
+} from '../content/weekGoals';
 import { forecastForDay, weatherDefinition, weatherForDay, type WeatherId } from '../content/weather';
 import { findFarmPath } from '../world/pathfinding';
 import { normalizeTypedWord } from './typing';
@@ -72,6 +81,7 @@ export interface FarmState {
   inventory: Inventory;
   upgrades: UpgradeFlags;
   seasonObjective: ObjectiveProgress;
+  weekGoals: WeekGoalProgress;
   plots: CropPlot[];
   log: string[];
 }
@@ -96,6 +106,7 @@ export function createFarmState(): FarmState {
     inventory: emptyCropCounts(),
     upgrades: emptyUpgradeFlags(),
     seasonObjective: createObjectiveProgress(),
+    weekGoals: emptyWeekGoalProgress(),
     plots: Array.from({ length: startingPlots }, (_, index) => ({
       id: index + 1,
       position: {
@@ -282,7 +293,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
   }
 
   if (action.kind === 'visit-shop') {
-    return withLog(state, `The shop shelf is open: ${shopWordSummary(state)}.`);
+    return withActionLogs(state, [`The shop shelf is open: ${shopWordSummary(state)}.`], ['visitTownShop']);
   }
 
   if (action.kind === 'talk-villager') {
@@ -321,6 +332,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
         player: plot.position,
       },
       `Planted ${crop.seedName}.`,
+      ['plantFirstSeeds'],
     );
   }
 
@@ -338,6 +350,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
       { ...plot, wateredToday: true },
       { stamina: Math.max(0, state.stamina - wateringStaminaCost(state)), player: plot.position },
       'The watering can sings against the soil.',
+      ['waterFirstCrop'],
     );
   }
 
@@ -398,7 +411,7 @@ export function advanceDay(state: FarmState): FarmState {
       forecast,
       plots,
     },
-    describeDawn(nextDay, weather, forecast),
+    `${describeDawn(nextDay, weather, forecast)} ${weekGoalDawnText(nextDay)}`,
   );
 }
 
@@ -411,14 +424,16 @@ function updatePlot(
   updatedPlot: CropPlot,
   patch: Partial<Pick<FarmState, 'coins' | 'stamina' | 'player' | 'seeds' | 'inventory'>>,
   message: string,
+  completedGoals: readonly WeekGoalId[] = [],
 ): FarmState {
-  return withLog(
+  return withActionLogs(
     {
       ...state,
       ...patch,
       plots: state.plots.map((plot) => (plot.id === updatedPlot.id ? updatedPlot : plot)),
     },
-    message,
+    [message],
+    completedGoals,
   );
 }
 
@@ -429,7 +444,7 @@ function buySeeds(state: FarmState, cropId: CropId): FarmState {
     return withLog(state, `${capitalize(crop.seedName)} cost ${crop.seedPacketPrice} coins.`);
   }
 
-  return withLog(
+  return withActionLogs(
     {
       ...state,
       coins: state.coins - crop.seedPacketPrice,
@@ -438,7 +453,8 @@ function buySeeds(state: FarmState, cropId: CropId): FarmState {
         [crop.id]: state.seeds[crop.id] + crop.seedPacketQuantity,
       },
     },
-    `Bought ${crop.seedPacketQuantity} ${crop.seedName} for ${crop.seedPacketPrice} coins.`,
+    [`Bought ${crop.seedPacketQuantity} ${crop.seedName} for ${crop.seedPacketPrice} coins.`],
+    cropId === starterCropId ? [] : ['buySpringSeeds'],
   );
 }
 
@@ -453,7 +469,7 @@ function buyUpgrade(state: FarmState, upgradeId: UpgradeId): FarmState {
     return withLog(state, `${upgrade.name} costs ${upgrade.cost} coins.`);
   }
 
-  return withLog(
+  return withActionLogs(
     {
       ...state,
       coins: state.coins - upgrade.cost,
@@ -462,7 +478,8 @@ function buyUpgrade(state: FarmState, upgradeId: UpgradeId): FarmState {
         [upgrade.id]: true,
       },
     },
-    upgrade.purchasedLog,
+    [upgrade.purchasedLog],
+    upgradeId === 'wateringCan' ? ['buyTinCan'] : [],
   );
 }
 
@@ -495,8 +512,13 @@ function shipInventory(state: FarmState): FarmState {
   }
 
   const shipmentLog = `Shipped ${shipmentSummary(shipments)} for ${coinsEarned} coins.`;
+  const completedGoals: WeekGoalId[] = ['shipFirstCrop'];
 
-  return withLogs(
+  if (objectiveUpdate.progress.completed) {
+    completedGoals.push('completeSpringBasket');
+  }
+
+  return withActionLogs(
     {
       ...state,
       coins: state.coins + coinsEarned + objectiveReward,
@@ -506,6 +528,7 @@ function shipInventory(state: FarmState): FarmState {
     objectiveUpdate.newlyCompleted
       ? [objectiveDefinition(objectiveUpdate.progress.id).completedLog, shipmentLog]
       : [shipmentLog],
+    completedGoals,
   );
 }
 
@@ -517,7 +540,7 @@ function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options
     const forecast = weatherDefinition(state.forecast);
     const can = state.upgrades.wateringCan ? 'tin can' : 'basic can';
 
-    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}.`;
+    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}. ${weekGoalDetailText(state.day, state.weekGoals)}`;
   }
 
   if (menu === 'inventory') {
@@ -549,6 +572,29 @@ function pointsEqual(left: WorldPoint, right: WorldPoint): boolean {
 
 function withLog(state: FarmState, message: string): FarmState {
   return withLogs(state, [message]);
+}
+
+function withActionLogs(
+  state: FarmState,
+  messages: readonly string[],
+  completedGoals: readonly WeekGoalId[],
+): FarmState {
+  let nextState = state;
+  const goalMessages: string[] = [];
+
+  for (const goalId of completedGoals) {
+    const update = markWeekGoalComplete(nextState.weekGoals, goalId);
+    nextState = {
+      ...nextState,
+      weekGoals: update.progress,
+    };
+
+    if (update.newlyCompleted) {
+      goalMessages.push(weekGoalDefinition(goalId).completedLog);
+    }
+  }
+
+  return withLogs(nextState, [...messages, ...goalMessages]);
 }
 
 function withLogs(state: FarmState, messages: readonly string[]): FarmState {

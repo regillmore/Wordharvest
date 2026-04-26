@@ -13,6 +13,7 @@ import {
 import { deserializeSave, serializeSave } from './core/save';
 import { normalizeTypedWord } from './core/typing';
 import { objectiveProgressText } from './content/objectives';
+import { weekGoalProgressText } from './content/weekGoals';
 import { weatherDefinition, type WeatherId } from './content/weather';
 import {
   destinationForWorldTarget,
@@ -69,6 +70,8 @@ root.innerHTML = `
       <section class="word-panel" aria-live="polite">
         <p class="label">Spring goal</p>
         <p id="objective-progress" class="objective-progress"></p>
+        <p class="label">Week pace</p>
+        <p id="week-progress" class="objective-progress"></p>
         <p class="label">Typed word</p>
         <p id="typed-word" class="typed-word"></p>
         <p class="label">Nearby words</p>
@@ -119,6 +122,7 @@ const canValue = requireElement<HTMLElement>('#can-value');
 const seedValue = requireElement<HTMLElement>('#seed-value');
 const turnipValue = requireElement<HTMLElement>('#turnip-value');
 const objectiveProgress = requireElement<HTMLElement>('#objective-progress');
+const weekProgress = requireElement<HTMLElement>('#week-progress');
 const typedWord = requireElement<HTMLElement>('#typed-word');
 const wordPreview = requireElement<HTMLElement>('#word-preview');
 const farmLog = requireElement<HTMLOListElement>('#farm-log');
@@ -320,6 +324,7 @@ function redrawHud(): void {
   seedValue.textContent = String(farm.seeds.turnip);
   turnipValue.textContent = String(farm.inventory.turnip);
   objectiveProgress.textContent = objectiveProgressText(farm.seasonObjective);
+  weekProgress.textContent = weekGoalProgressText(farm.day, farm.weekGoals);
   typedWord.textContent = typedBuffer || '...';
 
   nextDay.disabled = Boolean(farm.pendingAction);

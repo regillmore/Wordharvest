@@ -15,11 +15,13 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#forecast-value')).toHaveText('Sunny');
   await expect(page.locator('#can-value')).toHaveText('Basic');
   await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: 0/3 crops shipped');
+  await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds open');
 
   await page.keyboard.type('seed');
   await page.keyboard.press('Enter');
 
   await expect(page.getByText('Planted turnip seeds.')).toBeVisible();
+  await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds done');
 
   await page.keyboard.type('house');
   await page.keyboard.press('Enter');
@@ -78,6 +80,7 @@ test('opens menu words from typed labels', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(page.getByText(/Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can\./)).toBeVisible();
   await expect(page.locator('#farm-log').getByText(/Spring Basket: 0\/3 crops shipped/)).toBeVisible();
+  await expect(page.locator('#farm-log').getByText(/First Week: 0\/7 goals done/)).toBeVisible();
 });
 
 test('saves, loads, and resets the local farm slot', async ({ page }) => {
@@ -90,6 +93,7 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.getByText('Planted turnip seeds.')).toBeVisible();
   await expect(page.locator('#coin-value')).toHaveText('25');
   await expect(page.locator('#seed-value')).toHaveText('2');
+  await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds done');
 
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Saved.')).toBeVisible();
@@ -98,6 +102,7 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await page.getByRole('button', { name: 'End Day' }).click();
   await expect(page.locator('#day-value')).toHaveText('2');
   await expect(page.locator('#forecast-value')).toHaveText('Rain');
+  await expect(page.locator('#week-progress')).toHaveText('Day 2: Water a growing crop open');
 
   await page.getByRole('button', { name: 'Load' }).click();
   await expect(page.locator('#day-value')).toHaveText('1');

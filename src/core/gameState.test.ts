@@ -10,6 +10,7 @@ describe('farm state', () => {
     expect(state.upgrades.wateringCan).toBe(false);
     expect(state.seasonObjective.id).toBe('springBasket');
     expect(state.seasonObjective.completed).toBe(false);
+    expect(state.weekGoals.plantFirstSeeds).toBe(false);
   });
 
   it('queues a visible typed target before completing it on arrival', () => {
@@ -24,6 +25,8 @@ describe('farm state', () => {
     expect(state.coins).toBe(25);
     expect(state.seeds.turnip).toBe(2);
     expect(state.plots[4].stage).toBe('seed');
+    expect(state.weekGoals.plantFirstSeeds).toBe(true);
+    expect(state.log[1]).toBe('Day 1 goal complete: first seeds planted.');
     expect(state.pendingAction).toBeNull();
     expect(state.player).toEqual(state.plots[4].position);
   });
@@ -57,6 +60,7 @@ describe('farm state', () => {
     expect(state.inventory.turnip).toBe(0);
     expect(state.seasonObjective.shipped.turnip).toBe(1);
     expect(state.seasonObjective.completed).toBe(false);
+    expect(state.weekGoals.shipFirstCrop).toBe(true);
     expect(state.log[0]).toBe('Shipped 1 turnip for 12 coins.');
   });
 
@@ -105,6 +109,7 @@ describe('farm state', () => {
     expect(state.plots[4].stage).toBe('seed');
     expect(state.seeds.carrot).toBe(0);
     expect(state.seeds.turnip).toBe(3);
+    expect(state.weekGoals.plantFirstSeeds).toBe(true);
     expect(state.log[0]).toBe('Planted carrot seeds.');
   });
 
@@ -146,6 +151,7 @@ describe('farm state', () => {
 
     state = settleAction(applyTypedWord(state, 'shop'));
     expect(state.location).toBe('town');
+    expect(state.weekGoals.visitTownShop).toBe(true);
     expect(state.log[0]).toMatch(/^The shop shelf is open:/);
     expect(state.log[0]).toContain('turnip');
     expect(state.log[0]).toContain('spinach');
@@ -165,6 +171,7 @@ describe('farm state', () => {
     expect(state.pendingAction).toBeNull();
     expect(state.coins).toBe(17);
     expect(state.seeds.radish).toBe(2);
+    expect(state.weekGoals.buySpringSeeds).toBe(true);
     expect(state.log[0]).toBe('Bought 2 radish seeds for 8 coins.');
 
     state = applyTypedWord(state, 'carrot');
@@ -188,6 +195,7 @@ describe('farm state', () => {
 
     expect(state.coins).toBe(13);
     expect(state.upgrades.wateringCan).toBe(true);
+    expect(state.weekGoals.buyTinCan).toBe(true);
     expect(state.log[0]).toBe('Bought the tin watering can for 12 coins.');
 
     state = applyTypedWord(state, 'can');
@@ -201,6 +209,7 @@ describe('farm state', () => {
 
     expect(state.stamina).toBe(9);
     expect(state.plots[4].wateredToday).toBe(true);
+    expect(state.weekGoals.waterFirstCrop).toBe(true);
   });
 
   it('opens menu targets without queuing a walk', () => {
@@ -208,7 +217,7 @@ describe('farm state', () => {
 
     expect(state.pendingAction).toBeNull();
     expect(state.log[0]).toBe(
-      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1).',
+      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1). First Week: 0/7 goals done. Today: Plant first seeds - Plant any seed in a farm plot.',
     );
   });
 
@@ -220,14 +229,18 @@ describe('farm state', () => {
     expect(state.weather).toBe('sunny');
     expect(state.forecast).toBe('rain');
     expect(state.plots[4].wateredToday).toBe(false);
-    expect(state.log[0]).toBe('Day 2 dawns sunny. Tomorrow: rain.');
+    expect(state.log[0]).toBe(
+      'Day 2 dawns sunny. Tomorrow: rain. Goal: Water a growing crop. Water any planted crop before ending the day.',
+    );
 
     state = advanceDay(state);
     expect(state.day).toBe(3);
     expect(state.weather).toBe('rain');
     expect(state.forecast).toBe('sunny');
     expect(state.plots[4].wateredToday).toBe(true);
-    expect(state.log[0]).toBe('Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny.');
+    expect(state.log[0]).toBe(
+      'Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny. Goal: Visit the town shop. Type shop in town to inspect the seed shelf.',
+    );
   });
 
   it('rejects words that are not visible from the player position', () => {
@@ -277,6 +290,7 @@ describe('farm state', () => {
     expect(state.inventory.radish).toBe(0);
     expect(state.inventory.pea).toBe(0);
     expect(state.seasonObjective.shipped.radish).toBe(2);
+    expect(state.weekGoals.shipFirstCrop).toBe(true);
     expect(state.log[0]).toBe('Shipped 2 radishes and 1 snap pea for 58 coins.');
   });
 
@@ -302,8 +316,11 @@ describe('farm state', () => {
     expect(state.inventory.radish).toBe(0);
     expect(state.inventory.carrot).toBe(0);
     expect(state.seasonObjective.completed).toBe(true);
+    expect(state.weekGoals.completeSpringBasket).toBe(true);
     expect(state.log[0]).toBe('Spring Basket complete! Mira added 25 coins for the market table.');
     expect(state.log[1]).toBe('Shipped 1 turnip and 1 radish and 1 carrot for 46 coins.');
+    expect(state.log[2]).toBe('Day 5 goal complete: the first crop shipment went out.');
+    expect(state.log[3]).toBe('Day 7 goal complete: Spring Basket is finished.');
   });
 
   it('rejects visible targets when no walkable tile path exists', () => {

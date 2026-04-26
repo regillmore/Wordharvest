@@ -77,6 +77,7 @@ Prefer typed registries over loose string lookups:
 - `AchievementDefinition`
 - `QuestDefinition`
 - `ObjectiveDefinition`
+- `WeekGoalDefinition`
 - `VillagerDefinition`
 - `WeatherDefinition`
 - `UpgradeDefinition`
