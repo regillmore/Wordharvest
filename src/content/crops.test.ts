@@ -4,6 +4,7 @@ import {
   cropCountsWith,
   cropDefinition,
   emptyCropCounts,
+  shopWordForCrop,
   stageForCropGrowth,
   starterCropId,
   validateCropCatalog,
@@ -33,6 +34,15 @@ describe('crop catalog', () => {
     expect(stageForCropGrowth('turnip', 3)).toBe('ripe');
     expect(stageForCropGrowth('radish', 3)).toBe('leaf');
     expect(stageForCropGrowth('radish', 4)).toBe('ripe');
+  });
+
+  it('provides primary shop words from crop tags', () => {
+    expect(cropCatalog.map((definition) => shopWordForCrop(definition.id))).toEqual([
+      'turnip',
+      'radish',
+      'pea',
+      'strawberry',
+    ]);
   });
 
   it('creates count records for every crop id', () => {

@@ -53,6 +53,7 @@ describe('audio settings', () => {
   it('maps farm log messages to authored cues', () => {
     expect(cueForLogMessage('Planted turnip seeds.')).toBe('plant');
     expect(cueForLogMessage('The watering can sings against the soil.')).toBe('water');
+    expect(cueForLogMessage('Bought 2 radish seeds for 8 coins.')).toBe('ship');
     expect(cueForLogMessage('No visible target named "door".')).toBe('error');
     expect(cueForLogMessage('A quiet morning begins.')).toBeNull();
   });

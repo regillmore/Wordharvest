@@ -112,11 +112,29 @@ describe('farm state', () => {
 
     state = settleAction(applyTypedWord(state, 'shop'));
     expect(state.location).toBe('town');
-    expect(state.log[0]).toBe('The town shop is preparing its spring seed shelf.');
+    expect(state.log[0]).toBe('The shop shelf is open: turnip, radish, pea, or strawberry.');
 
     state = settleAction(applyTypedWord(state, 'hello'));
     expect(state.location).toBe('town');
     expect(state.log[0]).toBe('Mira says hello and asks how the turnips are growing.');
+  });
+
+  it('buys catalog seed packets from town shop crop words', () => {
+    let state = settleAction(applyTypedWord(createFarmState(), 'town'));
+
+    state = settleAction(applyTypedWord(state, 'shop'));
+    state = applyTypedWord(state, 'radish');
+
+    expect(state.pendingAction).toBeNull();
+    expect(state.coins).toBe(17);
+    expect(state.seeds.radish).toBe(2);
+    expect(state.log[0]).toBe('Bought 2 radish seeds for 8 coins.');
+
+    state = applyTypedWord({ ...state, coins: 0 }, 'strawberry');
+
+    expect(state.coins).toBe(0);
+    expect(state.seeds.strawberry).toBe(0);
+    expect(state.log[0]).toBe('Strawberry starts cost 16 coins.');
   });
 
   it('opens menu targets without queuing a walk', () => {

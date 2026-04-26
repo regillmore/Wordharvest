@@ -1,9 +1,5 @@
-import {
-  nextWordForTargetRole,
-  primaryWordForTargetRole,
-  type TargetWordRole,
-} from '../content/targetWords';
-import { starterCropId, type CropId } from '../content/crops';
+import { nextWordForTargetRole, primaryWordForTargetRole, type TargetWordRole } from '../content/targetWords';
+import { cropCatalog, shopWordForCrop, starterCropId, type CropId } from '../content/crops';
 import type { CropPlot, FarmState } from './gameState';
 import { normalizeTypedWord } from './typing';
 
@@ -24,7 +20,7 @@ export type WorldTargetAction =
   | { kind: 'talk-villager' }
   | { kind: 'open-menu'; menu: MenuId; destination: WorldPoint }
   | { kind: 'ship-inventory' }
-  | { kind: 'buy-seeds'; crop: CropId }
+  | { kind: 'buy-seeds'; crop: CropId; destination: WorldPoint }
   | { kind: 'plant-plot'; plotId: number; crop: CropId }
   | { kind: 'water-plot'; plotId: number }
   | { kind: 'harvest-plot'; plotId: number }
@@ -57,6 +53,14 @@ const cropActionRange = 2.15;
 const shippingBinRange = 3.2;
 const seedSourceRange = 4;
 const townGateRange = 2.4;
+const shopShelfRange = 1.2;
+
+const shopSeedLabelOffsets: readonly WorldPoint[] = [
+  { x: -0.68, y: -0.72 },
+  { x: -0.18, y: -0.98 },
+  { x: 0.34, y: -0.72 },
+  { x: 0.84, y: -0.98 },
+];
 
 export function listWorldTargets(state: FarmState): WorldTarget[] {
   if (state.pendingAction) {
@@ -85,7 +89,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
   }
 
   if (state.location === 'town') {
-    return withMenuTargets(state, [
+    const townTargets: WorldTarget[] = [
       {
         id: 'town-farm-return',
         word: primaryWordForTargetRole('exit-farm'),
@@ -110,7 +114,13 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
         distance: distanceBetween(state.player, townVillagerPosition),
         action: { kind: 'talk-villager' },
       },
-    ]);
+    ];
+
+    if (distanceBetween(state.player, townShopPosition) <= shopShelfRange) {
+      townTargets.push(...shopSeedTargets(state.player));
+    }
+
+    return withMenuTargets(state, townTargets);
   }
 
   const targets: WorldTarget[] = [];
@@ -158,7 +168,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
       label: primaryWordForTargetRole('seed-source'),
       position: seedSourcePosition,
       distance: seedSourceDistance,
-      action: { kind: 'buy-seeds', crop: starterCropId },
+      action: { kind: 'buy-seeds', crop: starterCropId, destination: seedSourcePosition },
     });
   }
 
@@ -210,7 +220,8 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
     target.action.kind === 'exit-house' ||
     target.action.kind === 'enter-town' ||
     target.action.kind === 'return-farm' ||
-    target.action.kind === 'open-menu'
+    target.action.kind === 'open-menu' ||
+    target.action.kind === 'buy-seeds'
   ) {
     return target.action.destination;
   }
@@ -248,6 +259,26 @@ function menuTarget(
     distance: 0,
     action: { kind: 'open-menu', menu, destination: { ...player } },
   };
+}
+
+function shopSeedTargets(player: WorldPoint): WorldTarget[] {
+  return cropCatalog.map((crop, index) => {
+    const offset = shopSeedLabelOffsets[index % shopSeedLabelOffsets.length] ?? { x: 0, y: 0 };
+    const position = {
+      x: townShopPosition.x + offset.x,
+      y: townShopPosition.y + offset.y,
+    };
+    const word = shopWordForCrop(crop.id);
+
+    return {
+      id: `town-shop-seeds-${crop.id}`,
+      word,
+      label: word,
+      position,
+      distance: distanceBetween(player, townShopPosition),
+      action: { kind: 'buy-seeds', crop: crop.id, destination: townShopPosition },
+    };
+  });
 }
 
 function targetForPlot(

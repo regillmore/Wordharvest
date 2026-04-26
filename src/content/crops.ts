@@ -102,7 +102,7 @@ export const cropCatalog = [
     growthDays: 6,
     sellPrice: 30,
     seedPacketPrice: 16,
-    seedPacketQuantity: 1,
+    seedPacketQuantity: 2,
     wordTags: ['strawberry', 'berry', 'sweet', 'late'],
     stageThresholds: [
       { stage: 'seed', minGrowth: 0 },
@@ -124,6 +124,10 @@ export function cropDefinition(cropId: CropId): CropDefinition {
   }
 
   return definition;
+}
+
+export function shopWordForCrop(cropId: CropId): string {
+  return cropDefinition(cropId).wordTags[0] ?? cropId;
 }
 
 export function isCropId(value: unknown): value is CropId {
@@ -150,6 +154,7 @@ export function stageForCropGrowth(cropId: CropId, growth: number): CropGrowthSt
 export function validateCropCatalog(): CropCatalogValidationResult {
   const errors: string[] = [];
   const seenIds = new Set<CropId>();
+  const seenShopWords = new Map<string, CropId>();
 
   for (const crop of cropCatalog) {
     const definition: CropDefinition = crop;
@@ -184,6 +189,7 @@ export function validateCropCatalog(): CropCatalogValidationResult {
     }
 
     validateWordTags(definition, errors);
+    validateShopWord(definition, seenShopWords, errors);
     validateStageThresholds(definition, errors);
   }
 
@@ -221,6 +227,21 @@ function validateWordTags(definition: CropDefinition, errors: string[]): void {
     }
     seenTags.add(normalizedTag);
   }
+}
+
+function validateShopWord(
+  definition: CropDefinition,
+  seenShopWords: Map<string, CropId>,
+  errors: string[],
+): void {
+  const shopWord = shopWordForCrop(definition.id);
+  const firstCrop = seenShopWords.get(shopWord);
+
+  if (firstCrop) {
+    errors.push(`Duplicate shop crop word "${shopWord}" in ${firstCrop} and ${definition.id}.`);
+  }
+
+  seenShopWords.set(shopWord, definition.id);
 }
 
 function validateStageThresholds(definition: CropDefinition, errors: string[]): void {

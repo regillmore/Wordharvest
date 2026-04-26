@@ -1,7 +1,9 @@
 import {
+  cropCatalog,
   cropCountsWith,
   cropDefinition,
   emptyCropCounts,
+  shopWordForCrop,
   stageForCropGrowth,
   starterCropId,
   type CropCounts,
@@ -251,7 +253,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
   }
 
   if (action.kind === 'visit-shop') {
-    return withLog(state, 'The town shop is preparing its spring seed shelf.');
+    return withLog(state, `The shop shelf is open: ${shopWordSummary()}.`);
   }
 
   if (action.kind === 'talk-villager') {
@@ -489,6 +491,16 @@ function shipmentSummary(shipments: Array<{ crop: ReturnType<typeof cropDefiniti
   return shipments
     .map((shipment) => `${shipment.count} ${shipment.count === 1 ? shipment.crop.name : shipment.crop.pluralName}`)
     .join(' and ');
+}
+
+function shopWordSummary(): string {
+  const words = cropCatalog.map((crop) => shopWordForCrop(crop.id));
+
+  if (words.length <= 1) {
+    return words.join('');
+  }
+
+  return `${words.slice(0, -1).join(', ')}, or ${words[words.length - 1]}`;
 }
 
 function capitalize(value: string): string {

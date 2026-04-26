@@ -35,7 +35,13 @@ test('travels between the farm and town edge through typed labels', async ({ pag
 
   await page.keyboard.type('shop');
   await page.keyboard.press('Enter');
-  await expect(page.getByText('The town shop is preparing its spring seed shelf.')).toBeVisible();
+  await expect(page.getByText('The shop shelf is open: turnip, radish, pea, or strawberry.')).toBeVisible();
+  await expect(page.locator('#word-preview')).toContainText('radish');
+
+  await page.keyboard.type('radish');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Bought 2 radish seeds for 8 coins.')).toBeVisible();
+  await expect(page.locator('#coin-value')).toHaveText('17');
 
   await page.keyboard.type('hello');
   await page.keyboard.press('Enter');

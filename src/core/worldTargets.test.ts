@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { applyTypedWord, createFarmState, type FarmState } from './gameState';
-import { listWorldTargets } from './worldTargets';
+import { listWorldTargets, townShopPosition } from './worldTargets';
 
 describe('world targets', () => {
   it('shows house from range and door only when near the farmhouse', () => {
@@ -60,6 +60,24 @@ describe('world targets', () => {
       'pack',
       'options',
     ]);
+  });
+
+  it('shows crop purchase words when the player is at the town shop shelf', () => {
+    const shopState: FarmState = {
+      ...createFarmState(),
+      location: 'town',
+      player: townShopPosition,
+    };
+    const targets = listWorldTargets(shopState);
+    const words = targets.map((target) => target.word);
+    const radishTarget = targets.find((target) => target.word === 'radish');
+
+    expect(words).toEqual(expect.arrayContaining(['turnip', 'radish', 'pea', 'strawberry']));
+    expect(radishTarget?.action).toEqual({
+      kind: 'buy-seeds',
+      crop: 'radish',
+      destination: townShopPosition,
+    });
   });
 
   it('hides target labels while an action is already queued', () => {
