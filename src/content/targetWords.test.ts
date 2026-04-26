@@ -21,6 +21,11 @@ describe('target word catalog', () => {
       'exit-outside',
       'exit-farm',
       'enter-town',
+      'town-shop',
+      'talk-villager',
+      'open-journal',
+      'open-inventory',
+      'open-options',
       'ship-bin',
       'seed-source',
       'plant-crop',
@@ -36,6 +41,9 @@ describe('target word catalog', () => {
     expect(primaryWordForTargetRole('approach-house')).toBe('house');
     expect(primaryWordForTargetRole('enter-house')).toBe('door');
     expect(primaryWordForTargetRole('enter-town')).toBe('town');
+    expect(primaryWordForTargetRole('town-shop')).toBe('shop');
+    expect(primaryWordForTargetRole('talk-villager')).toBe('hello');
+    expect(primaryWordForTargetRole('open-journal')).toBe('journal');
     expect(primaryWordForTargetRole('ship-bin')).toBe('bin');
     expect(primaryWordForTargetRole('seed-source')).toBe('seeds');
   });

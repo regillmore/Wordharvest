@@ -106,6 +106,17 @@ export function applyTypedWord(state: FarmState, word: string): FarmState {
     return withLog(state, `No clear path to ${target.label}.`);
   }
 
+  if (pathResult.path.length === 0) {
+    return completeWorldAction(
+      {
+        ...state,
+        player: destination,
+        pendingAction: null,
+      },
+      action,
+    );
+  }
+
   return withLog(
     {
       ...state,
@@ -234,6 +245,18 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
 
   if (action.kind === 'buy-turnip-seeds') {
     return buyTurnipSeeds(state);
+  }
+
+  if (action.kind === 'visit-shop') {
+    return withLog(state, 'The town shop is preparing its spring seed shelf.');
+  }
+
+  if (action.kind === 'talk-villager') {
+    return withLog(state, 'Mira says hello and asks how the turnips are growing.');
+  }
+
+  if (action.kind === 'open-menu') {
+    return withLog(state, describeMenu(state, action.menu));
   }
 
   const plot = state.plots.find((candidate) => candidate.id === action.plotId);
@@ -410,6 +433,18 @@ function shipInventory(state: FarmState): FarmState {
     },
     `Shipped ${turnips} ${cropName} for ${coinsEarned} coins.`,
   );
+}
+
+function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options'): string {
+  if (menu === 'journal') {
+    return `Journal: Day ${state.day}, ${state.coins} coins, ${state.seeds.turnip} turnip seeds.`;
+  }
+
+  if (menu === 'inventory') {
+    return `Pack: ${state.inventory.turnip} turnips, ${state.seeds.turnip} turnip seeds.`;
+  }
+
+  return 'Options: audio, save, load, and reset controls are on the HUD.';
 }
 
 function moveToward(origin: WorldPoint, destination: WorldPoint, distance: number): WorldPoint {

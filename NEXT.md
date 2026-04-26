@@ -35,6 +35,7 @@ Complete when:
 - [x] Crops visibly progress through stages over days.
 - [x] Planting consumes seed inventory and seeds come from a visible farm source.
 - [x] The player renders from a style-guide-compliant runtime sprite sheet.
+- [x] Target word roles cover shop, villager, and menu interactions.
 - [x] Actions produce HUD feedback and authored prototype audio cues.
 - [x] A local save can be created, loaded, and reset.
 - [x] Save/load feedback includes a visible restored save timestamp.
@@ -73,5 +74,4 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Expand target word catalog roles for shops, villagers, and menus.
-2. Add blocked-tile visual language to the style guide and tile set.
+1. Add blocked-tile visual language to the style guide and tile set.

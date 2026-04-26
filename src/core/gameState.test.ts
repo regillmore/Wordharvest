@@ -107,6 +107,25 @@ describe('farm state', () => {
     expect(state.log[0]).toBe('Walked back up the lane to the farm.');
   });
 
+  it('supports town shop and villager targets', () => {
+    let state = settleAction(applyTypedWord(createFarmState(), 'town'));
+
+    state = settleAction(applyTypedWord(state, 'shop'));
+    expect(state.location).toBe('town');
+    expect(state.log[0]).toBe('The town shop is preparing its spring seed shelf.');
+
+    state = settleAction(applyTypedWord(state, 'hello'));
+    expect(state.location).toBe('town');
+    expect(state.log[0]).toBe('Mira says hello and asks how the turnips are growing.');
+  });
+
+  it('opens menu targets without queuing a walk', () => {
+    const state = applyTypedWord(createFarmState(), 'journal');
+
+    expect(state.pendingAction).toBeNull();
+    expect(state.log[0]).toBe('Journal: Day 1, 25 coins, 3 turnip seeds.');
+  });
+
   it('rejects words that are not visible from the player position', () => {
     const state = applyTypedWord(createFarmState(), 'door');
 

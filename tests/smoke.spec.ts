@@ -29,12 +29,31 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await page.keyboard.type('town');
   await page.keyboard.press('Enter');
   await expect(page.getByText('Followed the south path toward town.')).toBeVisible();
-  await expect(page.locator('#word-preview')).toHaveText('farm');
+  await expect(page.locator('#word-preview')).toContainText('farm');
+  await expect(page.locator('#word-preview')).toContainText('shop');
+  await expect(page.locator('#word-preview')).toContainText('hello');
+
+  await page.keyboard.type('shop');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('The town shop is preparing its spring seed shelf.')).toBeVisible();
+
+  await page.keyboard.type('hello');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Mira says hello and asks how the turnips are growing.')).toBeVisible();
 
   await page.keyboard.type('farm');
   await page.keyboard.press('Enter');
   await expect(page.getByText('Walked back up the lane to the farm.')).toBeVisible();
   await expect(page.locator('#word-preview')).toContainText('town');
+});
+
+test('opens menu words from typed labels', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#word-preview')).toContainText('journal');
+
+  await page.keyboard.type('journal');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Journal: Day 1, 25 coins, 3 turnip seeds.')).toBeVisible();
 });
 
 test('saves, loads, and resets the local farm slot', async ({ page }) => {

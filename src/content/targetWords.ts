@@ -6,6 +6,11 @@ export type TargetWordRole =
   | 'exit-outside'
   | 'exit-farm'
   | 'enter-town'
+  | 'town-shop'
+  | 'talk-villager'
+  | 'open-journal'
+  | 'open-inventory'
+  | 'open-options'
   | 'ship-bin'
   | 'seed-source'
   | 'plant-crop'
@@ -13,7 +18,7 @@ export type TargetWordRole =
   | 'harvest-crop'
   | 'inspect-crop';
 
-export type TargetWordCategory = 'place' | 'object' | 'crop-action';
+export type TargetWordCategory = 'place' | 'object' | 'person' | 'menu' | 'crop-action';
 
 export interface TargetWordDefinition {
   role: TargetWordRole;
@@ -59,6 +64,36 @@ export const targetWordCatalog = [
     description: 'Farm boundary label that follows the south path toward the town edge.',
   },
   {
+    role: 'town-shop',
+    category: 'place',
+    words: ['shop', 'store', 'market'],
+    description: 'Town shop label for entering or inspecting shop services.',
+  },
+  {
+    role: 'talk-villager',
+    category: 'person',
+    words: ['hello', 'chat', 'greet', 'neighbor'],
+    description: 'Villager label for starting a nearby conversation.',
+  },
+  {
+    role: 'open-journal',
+    category: 'menu',
+    words: ['journal', 'notes', 'quests'],
+    description: 'Menu label for checking farm progress and current goals.',
+  },
+  {
+    role: 'open-inventory',
+    category: 'menu',
+    words: ['pack', 'inventory', 'items'],
+    description: 'Menu label for checking carried seeds and harvested crops.',
+  },
+  {
+    role: 'open-options',
+    category: 'menu',
+    words: ['options', 'settings', 'audio'],
+    description: 'Menu label for checking available settings controls.',
+  },
+  {
     role: 'ship-bin',
     category: 'object',
     words: ['bin'],
@@ -67,7 +102,7 @@ export const targetWordCatalog = [
   {
     role: 'seed-source',
     category: 'object',
-    words: ['seeds', 'packet', 'crate', 'shop'],
+    words: ['seeds', 'packet', 'crate', 'sack'],
     description: 'Seed source label that buys a small packet of turnip seeds.',
   },
   {
@@ -184,6 +219,11 @@ const requiredTargetWordRoles: readonly TargetWordRole[] = [
   'exit-outside',
   'exit-farm',
   'enter-town',
+  'town-shop',
+  'talk-villager',
+  'open-journal',
+  'open-inventory',
+  'open-options',
   'ship-bin',
   'seed-source',
   'plant-crop',

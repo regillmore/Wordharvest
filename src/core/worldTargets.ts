@@ -11,12 +11,17 @@ export interface WorldPoint {
   y: number;
 }
 
+export type MenuId = 'journal' | 'inventory' | 'options';
+
 export type WorldTargetAction =
   | { kind: 'approach-house'; destination: WorldPoint }
   | { kind: 'enter-house' }
   | { kind: 'exit-house'; destination: WorldPoint }
   | { kind: 'enter-town'; destination: WorldPoint }
   | { kind: 'return-farm'; destination: WorldPoint }
+  | { kind: 'visit-shop' }
+  | { kind: 'talk-villager' }
+  | { kind: 'open-menu'; menu: MenuId; destination: WorldPoint }
   | { kind: 'ship-inventory' }
   | { kind: 'buy-turnip-seeds' }
   | { kind: 'plant-plot'; plotId: number }
@@ -42,6 +47,8 @@ export const seedSourcePosition: WorldPoint = { x: -2, y: 2.4 };
 export const townGatePosition: WorldPoint = { x: 0, y: 6 };
 export const townArrivalPosition: WorldPoint = { x: 0, y: 5.6 };
 export const farmReturnPosition: WorldPoint = { x: 0, y: 5.7 };
+export const townShopPosition: WorldPoint = { x: -2, y: 5.1 };
+export const townVillagerPosition: WorldPoint = { x: 2, y: 5.15 };
 
 const houseSightRange = 7;
 const doorActionRange = 2;
@@ -56,7 +63,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
   }
 
   if (state.location === 'house') {
-    return [
+    return withMenuTargets(state, [
       {
         id: 'house-exit',
         word: primaryWordForTargetRole('exit-outside'),
@@ -73,11 +80,11 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
         distance: 0,
         action: { kind: 'exit-house', destination: houseExitPosition },
       },
-    ];
+    ]);
   }
 
   if (state.location === 'town') {
-    return [
+    return withMenuTargets(state, [
       {
         id: 'town-farm-return',
         word: primaryWordForTargetRole('exit-farm'),
@@ -86,7 +93,23 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
         distance: distanceBetween(state.player, farmReturnPosition),
         action: { kind: 'return-farm', destination: farmReturnPosition },
       },
-    ];
+      {
+        id: 'town-shop',
+        word: primaryWordForTargetRole('town-shop'),
+        label: primaryWordForTargetRole('town-shop'),
+        position: townShopPosition,
+        distance: distanceBetween(state.player, townShopPosition),
+        action: { kind: 'visit-shop' },
+      },
+      {
+        id: 'town-villager',
+        word: primaryWordForTargetRole('talk-villager'),
+        label: primaryWordForTargetRole('talk-villager'),
+        position: townVillagerPosition,
+        distance: distanceBetween(state.player, townVillagerPosition),
+        action: { kind: 'talk-villager' },
+      },
+    ]);
   }
 
   const targets: WorldTarget[] = [];
@@ -167,7 +190,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
     }
   }
 
-  return targets;
+  return withMenuTargets(state, targets);
 }
 
 export function resolveWorldTarget(state: FarmState, typedWord: string): WorldTarget | undefined {
@@ -185,7 +208,8 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
     target.action.kind === 'approach-house' ||
     target.action.kind === 'exit-house' ||
     target.action.kind === 'enter-town' ||
-    target.action.kind === 'return-farm'
+    target.action.kind === 'return-farm' ||
+    target.action.kind === 'open-menu'
   ) {
     return target.action.destination;
   }
@@ -195,6 +219,34 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
 
 export function distanceBetween(left: WorldPoint, right: WorldPoint): number {
   return Math.hypot(left.x - right.x, left.y - right.y);
+}
+
+function withMenuTargets(state: FarmState, targets: WorldTarget[]): WorldTarget[] {
+  const menuTargets = [
+    menuTarget(state.player, 'open-journal', 'journal', -0.88),
+    menuTarget(state.player, 'open-inventory', 'inventory', 0),
+    menuTarget(state.player, 'open-options', 'options', 0.88),
+  ];
+
+  return [...targets, ...menuTargets];
+}
+
+function menuTarget(
+  player: WorldPoint,
+  role: Extract<TargetWordRole, 'open-journal' | 'open-inventory' | 'open-options'>,
+  menu: MenuId,
+  offsetX: number,
+): WorldTarget {
+  const position = { x: player.x + offsetX, y: player.y - 0.72 };
+
+  return {
+    id: `menu-${menu}`,
+    word: primaryWordForTargetRole(role),
+    label: primaryWordForTargetRole(role),
+    position,
+    distance: 0,
+    action: { kind: 'open-menu', menu, destination: { ...player } },
+  };
 }
 
 function targetForPlot(
