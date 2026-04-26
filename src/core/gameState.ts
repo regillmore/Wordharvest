@@ -3,11 +3,14 @@ import { resolveWorldTarget, type WorldPoint, type WorldTargetAction } from './w
 
 export type CropStage = 'empty' | 'seed' | 'sprout' | 'leaf' | 'ripe';
 export type PlayerLocation = 'farm' | 'house';
+export type CropId = 'turnip';
+
+export type Inventory = Record<CropId, number>;
 
 export interface CropPlot {
   id: number;
   position: WorldPoint;
-  crop: 'turnip' | null;
+  crop: CropId | null;
   stage: CropStage;
   wateredToday: boolean;
   growth: number;
@@ -27,6 +30,7 @@ export interface FarmState {
   player: WorldPoint;
   location: PlayerLocation;
   pendingAction: PendingWorldAction | null;
+  inventory: Inventory;
   plots: CropPlot[];
   log: string[];
 }
@@ -44,6 +48,9 @@ export function createFarmState(): FarmState {
     player: startingPlayerPosition,
     location: 'farm',
     pendingAction: null,
+    inventory: {
+      turnip: 0,
+    },
     plots: Array.from({ length: startingPlots }, (_, index) => ({
       id: index + 1,
       position: {
@@ -162,6 +169,10 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     );
   }
 
+  if (action.kind === 'ship-inventory') {
+    return shipInventory(state);
+  }
+
   const plot = state.plots.find((candidate) => candidate.id === action.plotId);
   if (!plot) {
     return withLog(state, 'That target is no longer available.');
@@ -209,8 +220,14 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     return updatePlot(
       state,
       { ...plot, crop: null, stage: 'empty', wateredToday: false, growth: 0 },
-      { coins: state.coins + 12, player: plot.position },
-      'Harvested a crisp turnip for 12 coins.',
+      {
+        inventory: {
+          ...state.inventory,
+          turnip: state.inventory.turnip + 1,
+        },
+        player: plot.position,
+      },
+      'Harvested a crisp turnip.',
     );
   }
 
@@ -267,7 +284,7 @@ function stageForGrowth(growth: number): CropStage {
 function updatePlot(
   state: FarmState,
   updatedPlot: CropPlot,
-  patch: Partial<Pick<FarmState, 'coins' | 'stamina' | 'player'>>,
+  patch: Partial<Pick<FarmState, 'coins' | 'stamina' | 'player' | 'inventory'>>,
   message: string,
 ): FarmState {
   return withLog(
@@ -277,6 +294,29 @@ function updatePlot(
       plots: state.plots.map((plot) => (plot.id === updatedPlot.id ? updatedPlot : plot)),
     },
     message,
+  );
+}
+
+function shipInventory(state: FarmState): FarmState {
+  const turnips = state.inventory.turnip;
+
+  if (turnips === 0) {
+    return withLog(state, 'The shipping bin is empty.');
+  }
+
+  const coinsEarned = turnips * 12;
+  const cropName = turnips === 1 ? 'turnip' : 'turnips';
+
+  return withLog(
+    {
+      ...state,
+      coins: state.coins + coinsEarned,
+      inventory: {
+        ...state.inventory,
+        turnip: 0,
+      },
+    },
+    `Shipped ${turnips} ${cropName} for ${coinsEarned} coins.`,
   );
 }
 

@@ -27,11 +27,11 @@ Complete when:
 - [x] Distant and near targets can expose different words, such as `house` and `door`.
 - [x] Similar nearby crop actions can use synonyms such as `water` and `sprinkle`.
 - [x] Typed labels queue walking to the target before the action completes.
-- [ ] The player can type visible labels to plant, water, harvest, enter the house, and use the shipping bin.
-- [ ] Crops visibly progress through stages over days.
+- [x] The player can type visible labels to plant, water, harvest, enter the house, and use the shipping bin.
+- [x] Crops visibly progress through stages over days.
 - [ ] Actions produce HUD feedback and audio placeholders.
 - [ ] A local save can be created, loaded, and reset.
-- [ ] Unit tests cover the action sequence from seed to sale.
+- [x] Unit tests cover the action sequence from seed to sale.
 
 ## Milestone 2 - First Spring Slice
 
@@ -66,10 +66,10 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add a shipping bin target and crop inventory before coin conversion.
-2. Add local save/load with schema versioning.
+1. Add local save/load with schema versioning.
+2. Add the first audio channel wrapper and mute/options state.
 3. Replace the placeholder scene with a tile-based farm view.
-4. Add the first audio channel wrapper and mute/options state.
-5. Create a visual style guide before generating or importing sprite sheets.
-6. Promote target labels into typed content definitions with validation tests.
-7. Add tile-aware path previews and blocked-path feedback.
+4. Create a visual style guide before generating or importing sprite sheets.
+5. Promote target labels into typed content definitions with validation tests.
+6. Add tile-aware path previews and blocked-path feedback.
+7. Add a shop or seed source so planting no longer spends coins directly.

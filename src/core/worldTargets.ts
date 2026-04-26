@@ -10,6 +10,7 @@ export type WorldTargetAction =
   | { kind: 'approach-house'; destination: WorldPoint }
   | { kind: 'enter-house' }
   | { kind: 'exit-house'; destination: WorldPoint }
+  | { kind: 'ship-inventory' }
   | { kind: 'plant-plot'; plotId: number }
   | { kind: 'water-plot'; plotId: number }
   | { kind: 'harvest-plot'; plotId: number }
@@ -28,10 +29,12 @@ export const housePosition: WorldPoint = { x: 0, y: 0 };
 export const doorPosition: WorldPoint = { x: 0, y: 1 };
 export const houseApproachPosition: WorldPoint = { x: 0, y: 1.7 };
 export const houseExitPosition: WorldPoint = { x: 0, y: 1.9 };
+export const shippingBinPosition: WorldPoint = { x: 2, y: 4.4 };
 
 const houseSightRange = 7;
 const doorActionRange = 2;
 const cropActionRange = 2.15;
+const shippingBinRange = 3.2;
 
 const plantWords = ['seed', 'plant', 'sow', 'crop', 'turnip'];
 const waterWords = ['water', 'sprinkle', 'splash', 'drench', 'douse', 'soak'];
@@ -67,6 +70,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
   const targets: WorldTarget[] = [];
   const doorDistance = distanceBetween(state.player, doorPosition);
   const houseDistance = distanceBetween(state.player, housePosition);
+  const shippingBinDistance = distanceBetween(state.player, shippingBinPosition);
 
   if (doorDistance <= doorActionRange) {
     targets.push({
@@ -85,6 +89,17 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
       position: housePosition,
       distance: houseDistance,
       action: { kind: 'approach-house', destination: houseApproachPosition },
+    });
+  }
+
+  if (shippingBinDistance <= shippingBinRange) {
+    targets.push({
+      id: 'shipping-bin',
+      word: 'bin',
+      label: 'bin',
+      position: shippingBinPosition,
+      distance: shippingBinDistance,
+      action: { kind: 'ship-inventory' },
     });
   }
 

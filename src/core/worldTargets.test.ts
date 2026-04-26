@@ -33,6 +33,10 @@ describe('world targets', () => {
     expect(words).toContain('sprinkle');
   });
 
+  it('shows a shipping bin target near the player', () => {
+    expect(listWorldTargets(createFarmState()).map((target) => target.word)).toContain('bin');
+  });
+
   it('hides target labels while an action is already queued', () => {
     const state = applyTypedWord(createFarmState(), 'house');
 

@@ -16,7 +16,7 @@ describe('farm state', () => {
     expect(state.player).toEqual(state.plots[4].position);
   });
 
-  it('plants, waters, grows, and harvests a visible crop target', () => {
+  it('plants, waters, grows, harvests into inventory, and ships crops for coins', () => {
     let state = settleAction(applyTypedWord(createFarmState(), 'seed'));
 
     state = applyTypedWord(state, 'water');
@@ -33,8 +33,15 @@ describe('farm state', () => {
 
     state = applyTypedWord(state, 'pick');
     state = settleAction(state);
-    expect(state.coins).toBe(32);
+    expect(state.coins).toBe(20);
+    expect(state.inventory.turnip).toBe(1);
     expect(state.plots[4].stage).toBe('empty');
+
+    state = applyTypedWord(state, 'bin');
+    state = settleAction(state);
+    expect(state.coins).toBe(32);
+    expect(state.inventory.turnip).toBe(0);
+    expect(state.log[0]).toBe('Shipped 1 turnip for 12 coins.');
   });
 
   it('uses distant and near labels to approach and enter the farmhouse', () => {
@@ -71,6 +78,16 @@ describe('farm state', () => {
     state = advanceDay(state);
     expect(state.day).toBe(1);
     expect(state.log[0]).toBe('Finish walking to house before ending the day.');
+  });
+
+  it('keeps coins unchanged when the shipping bin is empty', () => {
+    let state = applyTypedWord(createFarmState(), 'bin');
+
+    expect(state.pendingAction?.label).toBe('bin');
+
+    state = settleAction(state);
+    expect(state.coins).toBe(25);
+    expect(state.log[0]).toBe('The shipping bin is empty.');
   });
 });
 

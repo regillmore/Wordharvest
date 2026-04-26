@@ -2,7 +2,14 @@ import { Howler } from 'howler';
 import { Application, Container, Graphics, Text } from 'pixi.js';
 import { advanceDay, advanceFarmTime, applyTypedWord, createFarmState, type CropStage, type FarmState } from './core/gameState';
 import { normalizeTypedWord } from './core/typing';
-import { doorPosition, housePosition, listWorldTargets, type WorldPoint, type WorldTarget } from './core/worldTargets';
+import {
+  doorPosition,
+  housePosition,
+  listWorldTargets,
+  shippingBinPosition,
+  type WorldPoint,
+  type WorldTarget,
+} from './core/worldTargets';
 import './style.css';
 
 const root = document.querySelector<HTMLDivElement>('#app');
@@ -28,6 +35,7 @@ root.innerHTML = `
         <div><dt>Day</dt><dd id="day-value"></dd></div>
         <div><dt>Coins</dt><dd id="coin-value"></dd></div>
         <div><dt>Stamina</dt><dd id="stamina-value"></dd></div>
+        <div><dt>Turnips</dt><dd id="turnip-value"></dd></div>
       </dl>
       <section class="word-panel" aria-live="polite">
         <p class="label">Typed word</p>
@@ -50,6 +58,7 @@ const canvasHost = requireElement<HTMLDivElement>('#game-canvas');
 const dayValue = requireElement<HTMLElement>('#day-value');
 const coinValue = requireElement<HTMLElement>('#coin-value');
 const staminaValue = requireElement<HTMLElement>('#stamina-value');
+const turnipValue = requireElement<HTMLElement>('#turnip-value');
 const typedWord = requireElement<HTMLElement>('#typed-word');
 const wordPreview = requireElement<HTMLElement>('#word-preview');
 const farmLog = requireElement<HTMLOListElement>('#farm-log');
@@ -134,6 +143,7 @@ function redrawHud(): void {
   dayValue.textContent = String(farm.day);
   coinValue.textContent = String(farm.coins);
   staminaValue.textContent = String(farm.stamina);
+  turnipValue.textContent = String(farm.inventory.turnip);
   typedWord.textContent = typedBuffer || '...';
 
   nextDay.disabled = Boolean(farm.pendingAction);
@@ -173,6 +183,7 @@ function createFarmExterior(state: FarmState): Container {
 
   drawPath(scene, viewport);
   drawHouse(scene, viewport);
+  drawShippingBin(scene, viewport);
 
   for (const plot of state.plots) {
     const point = worldToScreen(viewport, plot.position);
@@ -239,6 +250,16 @@ function drawHouse(scene: Container, viewport: Viewport): void {
   scene.addChild(rect(door.x - viewport.scale * 0.18, door.y - viewport.scale * 0.2, viewport.scale * 0.36, viewport.scale * 0.55, 0x4f3328));
   scene.addChild(rect(house.x - viewport.scale * 0.68, house.y + viewport.scale * 0.42, viewport.scale * 0.32, viewport.scale * 0.26, 0xf4e3a3));
   scene.addChild(rect(house.x + viewport.scale * 0.36, house.y + viewport.scale * 0.42, viewport.scale * 0.32, viewport.scale * 0.26, 0xf4e3a3));
+}
+
+function drawShippingBin(scene: Container, viewport: Viewport): void {
+  const bin = worldToScreen(viewport, shippingBinPosition);
+  const width = viewport.scale * 0.52;
+  const height = viewport.scale * 0.48;
+
+  scene.addChild(rect(bin.x - width / 2, bin.y - height / 2, width, height, 0x8b5a3c));
+  scene.addChild(rect(bin.x - width * 0.58, bin.y - height * 0.66, width * 1.16, height * 0.18, 0x5c3a28));
+  scene.addChild(rect(bin.x - width * 0.38, bin.y - height * 0.16, width * 0.76, height * 0.08, 0xe7d39f));
 }
 
 function drawPlayer(scene: Container, viewport: Viewport, position: WorldPoint): void {
