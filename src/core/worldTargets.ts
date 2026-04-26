@@ -1,5 +1,6 @@
 import { nextWordForTargetRole, primaryWordForTargetRole, type TargetWordRole } from '../content/targetWords';
 import { cropCatalog, shopWordForCrop, starterCropId, type CropId } from '../content/crops';
+import { shopWordForUpgrade, upgradeCatalog, type UpgradeId } from '../content/upgrades';
 import type { CropPlot, FarmState } from './gameState';
 import { normalizeTypedWord } from './typing';
 
@@ -21,6 +22,7 @@ export type WorldTargetAction =
   | { kind: 'open-menu'; menu: MenuId; destination: WorldPoint }
   | { kind: 'ship-inventory' }
   | { kind: 'buy-seeds'; crop: CropId; destination: WorldPoint }
+  | { kind: 'buy-upgrade'; upgrade: UpgradeId; destination: WorldPoint }
   | { kind: 'plant-plot'; plotId: number; crop: CropId }
   | { kind: 'water-plot'; plotId: number }
   | { kind: 'harvest-plot'; plotId: number }
@@ -61,6 +63,8 @@ const shopSeedLabelOffsets: readonly WorldPoint[] = [
   { x: 0.34, y: -0.72 },
   { x: 0.84, y: -0.98 },
 ];
+
+const shopUpgradeLabelOffsets: readonly WorldPoint[] = [{ x: 1.08, y: -0.56 }];
 
 export function listWorldTargets(state: FarmState): WorldTarget[] {
   if (state.pendingAction) {
@@ -118,6 +122,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
 
     if (distanceBetween(state.player, townShopPosition) <= shopShelfRange) {
       townTargets.push(...shopSeedTargets(state.player));
+      townTargets.push(...shopUpgradeTargets(state.player));
     }
 
     return withMenuTargets(state, townTargets);
@@ -221,7 +226,8 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
     target.action.kind === 'enter-town' ||
     target.action.kind === 'return-farm' ||
     target.action.kind === 'open-menu' ||
-    target.action.kind === 'buy-seeds'
+    target.action.kind === 'buy-seeds' ||
+    target.action.kind === 'buy-upgrade'
   ) {
     return target.action.destination;
   }
@@ -277,6 +283,26 @@ function shopSeedTargets(player: WorldPoint): WorldTarget[] {
       position,
       distance: distanceBetween(player, townShopPosition),
       action: { kind: 'buy-seeds', crop: crop.id, destination: townShopPosition },
+    };
+  });
+}
+
+function shopUpgradeTargets(player: WorldPoint): WorldTarget[] {
+  return upgradeCatalog.map((upgrade, index) => {
+    const offset = shopUpgradeLabelOffsets[index % shopUpgradeLabelOffsets.length] ?? { x: 0, y: 0 };
+    const position = {
+      x: townShopPosition.x + offset.x,
+      y: townShopPosition.y + offset.y,
+    };
+    const word = shopWordForUpgrade(upgrade.id);
+
+    return {
+      id: `town-shop-upgrade-${upgrade.id}`,
+      word,
+      label: word,
+      position,
+      distance: distanceBetween(player, townShopPosition),
+      action: { kind: 'buy-upgrade', upgrade: upgrade.id, destination: townShopPosition },
     };
   });
 }

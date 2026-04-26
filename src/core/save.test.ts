@@ -7,6 +7,7 @@ describe('save codec', () => {
     let state = createFarmState();
     state = applyTypedWord(state, 'seed');
     state = advanceFarmTime(state, 2);
+    state = { ...state, upgrades: { ...state.upgrades, wateringCan: true } };
 
     const rawSave = serializeSave(state, '2026-04-25T00:00:00.000Z');
     const parsed = JSON.parse(rawSave) as { schemaVersion: number; savedAt: string };
@@ -24,6 +25,7 @@ describe('save codec', () => {
       expect(result.state.seeds.radish).toBe(0);
       expect(result.state.weather).toBe(state.weather);
       expect(result.state.forecast).toBe(state.forecast);
+      expect(result.state.upgrades.wateringCan).toBe(state.upgrades.wateringCan);
       expect(result.state.plots).toEqual(state.plots);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(false);
@@ -56,6 +58,27 @@ describe('save codec', () => {
     }
   });
 
+  it('migrates a version 3 save by adding upgrade flags', () => {
+    const olderState = createFarmState();
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 3,
+        savedAt: '2026-03-15T00:00:00.000Z',
+        state: {
+          ...olderState,
+          upgrades: undefined,
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.upgrades.wateringCan).toBe(false);
+      expect(result.migrated).toBe(true);
+    }
+  });
+
   it('migrates a version 2 save by adding weather and normalizing crop counts', () => {
     const olderState = createFarmState();
     const result = deserializeSave(
@@ -81,6 +104,7 @@ describe('save codec', () => {
       expect(result.state.inventory.pea).toBe(0);
       expect(result.state.weather).toBe('sunny');
       expect(result.state.forecast).toBe('sunny');
+      expect(result.state.upgrades.wateringCan).toBe(false);
       expect(result.migrated).toBe(true);
     }
   });
@@ -105,6 +129,7 @@ describe('save codec', () => {
       expect(result.state.seeds.turnip).toBe(3);
       expect(result.state.weather).toBe('sunny');
       expect(result.state.forecast).toBe('sunny');
+      expect(result.state.upgrades.wateringCan).toBe(false);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(true);
     }
@@ -131,6 +156,7 @@ describe('save codec', () => {
       expect(result.state.inventory.turnip).toBe(0);
       expect(result.state.weather).toBe('sunny');
       expect(result.state.forecast).toBe('sunny');
+      expect(result.state.upgrades.wateringCan).toBe(false);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(true);
     }

@@ -71,11 +71,17 @@ describe('world targets', () => {
     const targets = listWorldTargets(shopState);
     const words = targets.map((target) => target.word);
     const radishTarget = targets.find((target) => target.word === 'radish');
+    const canTarget = targets.find((target) => target.word === 'can');
 
-    expect(words).toEqual(expect.arrayContaining(['turnip', 'radish', 'pea', 'strawberry']));
+    expect(words).toEqual(expect.arrayContaining(['turnip', 'radish', 'pea', 'strawberry', 'can']));
     expect(radishTarget?.action).toEqual({
       kind: 'buy-seeds',
       crop: 'radish',
+      destination: townShopPosition,
+    });
+    expect(canTarget?.action).toEqual({
+      kind: 'buy-upgrade',
+      upgrade: 'wateringCan',
       destination: townShopPosition,
     });
   });

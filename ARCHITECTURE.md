@@ -78,6 +78,7 @@ Prefer typed registries over loose string lookups:
 - `QuestDefinition`
 - `VillagerDefinition`
 - `WeatherDefinition`
+- `UpgradeDefinition`
 - `AudioCueDefinition`
 
 Each registry needs validation tests before it becomes large.

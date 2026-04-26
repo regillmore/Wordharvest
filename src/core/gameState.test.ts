@@ -7,6 +7,7 @@ describe('farm state', () => {
 
     expect(state.weather).toBe('sunny');
     expect(state.forecast).toBe('sunny');
+    expect(state.upgrades.wateringCan).toBe(false);
   });
 
   it('queues a visible typed target before completing it on arrival', () => {
@@ -121,7 +122,7 @@ describe('farm state', () => {
 
     state = settleAction(applyTypedWord(state, 'shop'));
     expect(state.location).toBe('town');
-    expect(state.log[0]).toBe('The shop shelf is open: turnip, radish, pea, or strawberry.');
+    expect(state.log[0]).toBe('The shop shelf is open: turnip, radish, pea, strawberry, or can.');
 
     state = settleAction(applyTypedWord(state, 'hello'));
     expect(state.location).toBe('town');
@@ -146,11 +147,34 @@ describe('farm state', () => {
     expect(state.log[0]).toBe('Strawberry starts cost 16 coins.');
   });
 
+  it('buys the watering can upgrade and removes watering stamina cost', () => {
+    let state = settleAction(applyTypedWord(createFarmState(), 'town'));
+
+    state = settleAction(applyTypedWord(state, 'shop'));
+    state = applyTypedWord(state, 'can');
+
+    expect(state.coins).toBe(13);
+    expect(state.upgrades.wateringCan).toBe(true);
+    expect(state.log[0]).toBe('Bought the tin watering can for 12 coins.');
+
+    state = applyTypedWord(state, 'can');
+
+    expect(state.coins).toBe(13);
+    expect(state.log[0]).toBe('The tin watering can is already yours.');
+
+    state = settleAction(applyTypedWord(state, 'farm'));
+    state = settleAction(applyTypedWord(state, 'seed'));
+    state = settleAction(applyTypedWord(state, 'water'));
+
+    expect(state.stamina).toBe(9);
+    expect(state.plots[4].wateredToday).toBe(true);
+  });
+
   it('opens menu targets without queuing a walk', () => {
     const state = applyTypedWord(createFarmState(), 'journal');
 
     expect(state.pendingAction).toBeNull();
-    expect(state.log[0]).toBe('Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds.');
+    expect(state.log[0]).toBe('Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can.');
   });
 
   it('advances weather and lets rain water planted crops at dawn', () => {

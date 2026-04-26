@@ -1,11 +1,12 @@
 import { cropCatalog, emptyCropCounts, isCropId, type CropId } from '../content/crops';
+import { emptyUpgradeFlags, upgradeCatalog, type UpgradeFlags } from '../content/upgrades';
 import { forecastForDay, isWeatherId, weatherForDay, type WeatherId } from '../content/weather';
 import { createFarmState, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
 import type { WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 3;
+export const SAVE_SCHEMA_VERSION = 4;
 
-export interface SaveDataV3 {
+export interface SaveDataV4 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -16,7 +17,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV3 = {
+  const saveData: SaveDataV4 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -39,7 +40,11 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
-    return deserializeV3(parsed);
+    return deserializeV4(parsed);
+  }
+
+  if (parsed.schemaVersion === 3) {
+    return migrateV3(parsed);
   }
 
   if (parsed.schemaVersion === 2) {
@@ -63,13 +68,14 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
     pendingAction: null,
     seeds: normalizeInventory(state.seeds),
     inventory: normalizeInventory(state.inventory),
+    upgrades: normalizeUpgrades(state.upgrades),
     plots: state.plots.map((plot) => ({ ...plot, position: { ...plot.position } })),
     player: { ...state.player },
     log: state.log.slice(0, 6),
   };
 }
 
-function deserializeV3(data: Record<string, unknown>): LoadSaveResult {
+function deserializeV4(data: Record<string, unknown>): LoadSaveResult {
   if (typeof data.savedAt !== 'string') {
     return { ok: false, error: 'Save data is missing a saved timestamp.' };
   }
@@ -80,6 +86,19 @@ function deserializeV3(data: Record<string, unknown>): LoadSaveResult {
   }
 
   return { ok: true, state, savedAt: data.savedAt, migrated: false };
+}
+
+function migrateV3(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function migrateV2(data: Record<string, unknown>): LoadSaveResult {
@@ -124,6 +143,7 @@ function migrateV0(data: Record<string, unknown>): LoadSaveResult {
     pendingAction: null,
     seeds: normalizeInventory(isRecord(rawState.seeds) ? rawState.seeds : base.seeds),
     inventory: normalizeInventory(isRecord(rawState.inventory) ? rawState.inventory : {}),
+    upgrades: normalizeUpgrades(isRecord(rawState.upgrades) ? rawState.upgrades : base.upgrades),
     plots: parsePlots(rawState.plots) ?? base.plots,
     log: parseLog(rawState.log) ?? ['Loaded an older Wordharvest save.'],
   };
@@ -168,6 +188,7 @@ function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null):
     pendingAction: null,
     seeds,
     inventory: normalizeInventory(isRecord(value.inventory) ? value.inventory : {}),
+    upgrades: normalizeUpgrades(isRecord(value.upgrades) ? value.upgrades : {}),
     plots,
     log,
   });
@@ -252,6 +273,16 @@ function normalizeInventory(value: Record<string, unknown> | Inventory): Invento
   }
 
   return inventory;
+}
+
+function normalizeUpgrades(value: Record<string, unknown> | UpgradeFlags): UpgradeFlags {
+  const upgrades = emptyUpgradeFlags();
+
+  for (const definition of upgradeCatalog) {
+    upgrades[definition.id] = value[definition.id] === true;
+  }
+
+  return upgrades;
 }
 
 function parseLog(value: unknown): string[] | null {

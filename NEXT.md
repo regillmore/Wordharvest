@@ -50,7 +50,7 @@ Complete when:
 - [x] Spring crop catalog schema exists with the first four crop definitions and validation coverage.
 - [x] The town shop sells crop seed packets through typed crop labels.
 - [x] Weather changes crop planning through visible forecasts and rainy dawn watering.
-- [ ] A shop sells seeds and at least one upgrade.
+- [x] A shop sells seeds and at least one upgrade.
 - [ ] The player has a first-season objective with progress tracking.
 - [ ] The game supports at least seven in-game days of meaningful play.
 
@@ -77,6 +77,6 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add the first shop upgrade purchase.
-2. Expand the Spring crop roster toward 10-15 balanced crop definitions.
-3. Add a first-season objective with progress tracking.
+1. Expand the Spring crop roster toward 10-15 balanced crop definitions.
+2. Add a first-season objective with progress tracking.
+3. Add seven-day play pacing with enough goals to make each day meaningful.

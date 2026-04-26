@@ -10,6 +10,14 @@ import {
   type CropGrowthStage,
   type CropId,
 } from '../content/crops';
+import {
+  emptyUpgradeFlags,
+  shopWordForUpgrade,
+  upgradeCatalog,
+  upgradeDefinition,
+  type UpgradeFlags,
+  type UpgradeId,
+} from '../content/upgrades';
 import { forecastForDay, weatherDefinition, weatherForDay, type WeatherId } from '../content/weather';
 import { findFarmPath } from '../world/pathfinding';
 import { normalizeTypedWord } from './typing';
@@ -55,6 +63,7 @@ export interface FarmState {
   pendingAction: PendingWorldAction | null;
   seeds: Inventory;
   inventory: Inventory;
+  upgrades: UpgradeFlags;
   plots: CropPlot[];
   log: string[];
 }
@@ -77,6 +86,7 @@ export function createFarmState(): FarmState {
     pendingAction: null,
     seeds: cropCountsWith(starterCropId, cropDefinition(starterCropId).seedPacketQuantity),
     inventory: emptyCropCounts(),
+    upgrades: emptyUpgradeFlags(),
     plots: Array.from({ length: startingPlots }, (_, index) => ({
       id: index + 1,
       position: {
@@ -258,8 +268,12 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     return buySeeds(state, action.crop);
   }
 
+  if (action.kind === 'buy-upgrade') {
+    return buyUpgrade(state, action.upgrade);
+  }
+
   if (action.kind === 'visit-shop') {
-    return withLog(state, `The shop shelf is open: ${shopWordSummary()}.`);
+    return withLog(state, `The shop shelf is open: ${shopWordSummary(state)}.`);
   }
 
   if (action.kind === 'talk-villager') {
@@ -313,7 +327,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     return updatePlot(
       state,
       { ...plot, wateredToday: true },
-      { stamina: Math.max(0, state.stamina - 1), player: plot.position },
+      { stamina: Math.max(0, state.stamina - wateringStaminaCost(state)), player: plot.position },
       'The watering can sings against the soil.',
     );
   }
@@ -419,6 +433,30 @@ function buySeeds(state: FarmState, cropId: CropId): FarmState {
   );
 }
 
+function buyUpgrade(state: FarmState, upgradeId: UpgradeId): FarmState {
+  const upgrade = upgradeDefinition(upgradeId);
+
+  if (state.upgrades[upgrade.id]) {
+    return withLog(state, upgrade.ownedLog);
+  }
+
+  if (state.coins < upgrade.cost) {
+    return withLog(state, `${upgrade.name} costs ${upgrade.cost} coins.`);
+  }
+
+  return withLog(
+    {
+      ...state,
+      coins: state.coins - upgrade.cost,
+      upgrades: {
+        ...state.upgrades,
+        [upgrade.id]: true,
+      },
+    },
+    upgrade.purchasedLog,
+  );
+}
+
 function shipInventory(state: FarmState): FarmState {
   const shipments = Object.entries(state.inventory)
     .map(([cropId, count]) => ({
@@ -456,8 +494,9 @@ function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options
   if (menu === 'journal') {
     const weather = weatherDefinition(state.weather);
     const forecast = weatherDefinition(state.forecast);
+    const can = state.upgrades.wateringCan ? 'tin can' : 'basic can';
 
-    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}.`;
+    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}.`;
   }
 
   if (menu === 'inventory') {
@@ -508,14 +547,22 @@ function shipmentSummary(shipments: Array<{ crop: ReturnType<typeof cropDefiniti
     .join(' and ');
 }
 
-function shopWordSummary(): string {
+function shopWordSummary(state: FarmState): string {
   const words = cropCatalog.map((crop) => shopWordForCrop(crop.id));
+  const upgradeWords = upgradeCatalog
+    .filter((upgrade) => !state.upgrades[upgrade.id])
+    .map((upgrade) => shopWordForUpgrade(upgrade.id));
+  const shopWords = [...words, ...upgradeWords];
 
-  if (words.length <= 1) {
-    return words.join('');
+  if (shopWords.length <= 1) {
+    return shopWords.join('');
   }
 
-  return `${words.slice(0, -1).join(', ')}, or ${words[words.length - 1]}`;
+  return `${shopWords.slice(0, -1).join(', ')}, or ${shopWords[shopWords.length - 1]}`;
+}
+
+function wateringStaminaCost(state: FarmState): number {
+  return state.upgrades.wateringCan ? 0 : 1;
 }
 
 function applyDawnWeather(plots: CropPlot[], weather: WeatherId): CropPlot[] {

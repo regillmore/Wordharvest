@@ -61,6 +61,7 @@ root.innerHTML = `
         <div><dt>Stamina</dt><dd id="stamina-value"></dd></div>
         <div><dt>Weather</dt><dd id="weather-value"></dd></div>
         <div><dt>Tomorrow</dt><dd id="forecast-value"></dd></div>
+        <div><dt>Can</dt><dd id="can-value"></dd></div>
         <div><dt>Seeds</dt><dd id="seed-value"></dd></div>
         <div><dt>Turnips</dt><dd id="turnip-value"></dd></div>
       </dl>
@@ -111,6 +112,7 @@ const coinValue = requireElement<HTMLElement>('#coin-value');
 const staminaValue = requireElement<HTMLElement>('#stamina-value');
 const weatherValue = requireElement<HTMLElement>('#weather-value');
 const forecastValue = requireElement<HTMLElement>('#forecast-value');
+const canValue = requireElement<HTMLElement>('#can-value');
 const seedValue = requireElement<HTMLElement>('#seed-value');
 const turnipValue = requireElement<HTMLElement>('#turnip-value');
 const typedWord = requireElement<HTMLElement>('#typed-word');
@@ -310,6 +312,7 @@ function redrawHud(): void {
   staminaValue.textContent = String(farm.stamina);
   weatherValue.textContent = weatherDefinition(farm.weather).name;
   forecastValue.textContent = weatherDefinition(farm.forecast).name;
+  canValue.textContent = farm.upgrades.wateringCan ? 'Tin' : 'Basic';
   seedValue.textContent = String(farm.seeds.turnip);
   turnipValue.textContent = String(farm.inventory.turnip);
   typedWord.textContent = typedBuffer || '...';
