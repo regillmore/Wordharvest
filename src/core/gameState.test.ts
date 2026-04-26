@@ -2,6 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { advanceDay, advanceFarmTime, applyTypedWord, createFarmState, type FarmState } from './gameState';
 
 describe('farm state', () => {
+  it('starts with current weather and a next-day forecast', () => {
+    const state = createFarmState();
+
+    expect(state.weather).toBe('sunny');
+    expect(state.forecast).toBe('sunny');
+  });
+
   it('queues a visible typed target before completing it on arrival', () => {
     let state = createFarmState();
 
@@ -27,8 +34,10 @@ describe('farm state', () => {
     state = applyTypedWord(state, 'water');
     state = settleAction(state);
     state = advanceDay(state);
-    state = applyTypedWord(state, 'water');
-    state = settleAction(state);
+
+    expect(state.weather).toBe('rain');
+    expect(state.plots[4].wateredToday).toBe(true);
+
     state = advanceDay(state);
 
     expect(state.plots[4].stage).toBe('ripe');
@@ -141,7 +150,25 @@ describe('farm state', () => {
     const state = applyTypedWord(createFarmState(), 'journal');
 
     expect(state.pendingAction).toBeNull();
-    expect(state.log[0]).toBe('Journal: Day 1, 25 coins, 3 turnip seeds.');
+    expect(state.log[0]).toBe('Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds.');
+  });
+
+  it('advances weather and lets rain water planted crops at dawn', () => {
+    let state = settleAction(applyTypedWord(createFarmState(), 'seed'));
+
+    state = advanceDay(state);
+    expect(state.day).toBe(2);
+    expect(state.weather).toBe('sunny');
+    expect(state.forecast).toBe('rain');
+    expect(state.plots[4].wateredToday).toBe(false);
+    expect(state.log[0]).toBe('Day 2 dawns sunny. Tomorrow: rain.');
+
+    state = advanceDay(state);
+    expect(state.day).toBe(3);
+    expect(state.weather).toBe('rain');
+    expect(state.forecast).toBe('sunny');
+    expect(state.plots[4].wateredToday).toBe(true);
+    expect(state.log[0]).toBe('Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny.');
   });
 
   it('rejects words that are not visible from the player position', () => {

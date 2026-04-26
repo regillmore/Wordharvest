@@ -11,6 +11,8 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();
   await expect(page.locator('canvas')).toBeVisible();
   await expect(page.getByText('house')).toBeVisible();
+  await expect(page.locator('#weather-value')).toHaveText('Sunny');
+  await expect(page.locator('#forecast-value')).toHaveText('Sunny');
 
   await page.keyboard.type('seed');
   await page.keyboard.press('Enter');
@@ -59,7 +61,7 @@ test('opens menu words from typed labels', async ({ page }) => {
 
   await page.keyboard.type('journal');
   await page.keyboard.press('Enter');
-  await expect(page.getByText('Journal: Day 1, 25 coins, 3 turnip seeds.')).toBeVisible();
+  await expect(page.getByText('Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds.')).toBeVisible();
 });
 
 test('saves, loads, and resets the local farm slot', async ({ page }) => {
@@ -79,9 +81,11 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
 
   await page.getByRole('button', { name: 'End Day' }).click();
   await expect(page.locator('#day-value')).toHaveText('2');
+  await expect(page.locator('#forecast-value')).toHaveText('Rain');
 
   await page.getByRole('button', { name: 'Load' }).click();
   await expect(page.locator('#day-value')).toHaveText('1');
+  await expect(page.locator('#forecast-value')).toHaveText('Sunny');
   await expect(page.locator('#coin-value')).toHaveText('25');
   await expect(page.locator('#seed-value')).toHaveText('2');
   await expect(page.locator('#save-timestamp')).toContainText(/^Restored save: \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);

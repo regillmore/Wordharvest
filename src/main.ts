@@ -12,6 +12,7 @@ import {
 } from './core/gameState';
 import { deserializeSave, serializeSave } from './core/save';
 import { normalizeTypedWord } from './core/typing';
+import { weatherDefinition, type WeatherId } from './content/weather';
 import {
   destinationForWorldTarget,
   doorPosition,
@@ -58,6 +59,8 @@ root.innerHTML = `
         <div><dt>Day</dt><dd id="day-value"></dd></div>
         <div><dt>Coins</dt><dd id="coin-value"></dd></div>
         <div><dt>Stamina</dt><dd id="stamina-value"></dd></div>
+        <div><dt>Weather</dt><dd id="weather-value"></dd></div>
+        <div><dt>Tomorrow</dt><dd id="forecast-value"></dd></div>
         <div><dt>Seeds</dt><dd id="seed-value"></dd></div>
         <div><dt>Turnips</dt><dd id="turnip-value"></dd></div>
       </dl>
@@ -106,6 +109,8 @@ const canvasHost = requireElement<HTMLDivElement>('#game-canvas');
 const dayValue = requireElement<HTMLElement>('#day-value');
 const coinValue = requireElement<HTMLElement>('#coin-value');
 const staminaValue = requireElement<HTMLElement>('#stamina-value');
+const weatherValue = requireElement<HTMLElement>('#weather-value');
+const forecastValue = requireElement<HTMLElement>('#forecast-value');
 const seedValue = requireElement<HTMLElement>('#seed-value');
 const turnipValue = requireElement<HTMLElement>('#turnip-value');
 const typedWord = requireElement<HTMLElement>('#typed-word');
@@ -303,6 +308,8 @@ function redrawHud(): void {
   dayValue.textContent = String(farm.day);
   coinValue.textContent = String(farm.coins);
   staminaValue.textContent = String(farm.stamina);
+  weatherValue.textContent = weatherDefinition(farm.weather).name;
+  forecastValue.textContent = weatherDefinition(farm.forecast).name;
   seedValue.textContent = String(farm.seeds.turnip);
   turnipValue.textContent = String(farm.inventory.turnip);
   typedWord.textContent = typedBuffer || '...';
@@ -397,7 +404,7 @@ function createFarmExterior(state: FarmState, typedWord: string): Container {
   const height = app.renderer.height;
   const viewport = createViewport(width, height);
 
-  scene.addChild(rect(0, 0, width, height, 0x8dccd8));
+  scene.addChild(rect(0, 0, width, height, skyColorForWeather(state.weather)));
 
   drawFarmTiles(scene, viewport);
   drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
@@ -425,7 +432,7 @@ function createTownEdge(state: FarmState, typedWord: string): Container {
   const height = app.renderer.height;
   const viewport = createViewport(width, height);
 
-  scene.addChild(rect(0, 0, width, height, 0xa9d6d0));
+  scene.addChild(rect(0, 0, width, height, skyColorForWeather(state.weather)));
   scene.addChild(rect(0, height * 0.54, width, height * 0.46, 0x82b66f));
 
   const laneCenter = worldToScreen(viewport, { x: 0, y: 5.7 });
@@ -489,6 +496,10 @@ function worldToScreen(viewport: Viewport, point: WorldPoint): WorldPoint {
     x: viewport.originX + point.x * viewport.scale,
     y: viewport.originY + point.y * viewport.scale,
   };
+}
+
+function skyColorForWeather(weather: WeatherId): number {
+  return weather === 'rain' ? 0x7fb6bf : 0x8dccd8;
 }
 
 function drawFarmTiles(scene: Container, viewport: Viewport): void {

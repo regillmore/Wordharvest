@@ -1,10 +1,11 @@
 import { cropCatalog, emptyCropCounts, isCropId, type CropId } from '../content/crops';
+import { forecastForDay, isWeatherId, weatherForDay, type WeatherId } from '../content/weather';
 import { createFarmState, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
 import type { WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 2;
+export const SAVE_SCHEMA_VERSION = 3;
 
-export interface SaveDataV2 {
+export interface SaveDataV3 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -15,7 +16,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV2 = {
+  const saveData: SaveDataV3 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -38,7 +39,11 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
-    return deserializeV2(parsed);
+    return deserializeV3(parsed);
+  }
+
+  if (parsed.schemaVersion === 2) {
+    return migrateV2(parsed);
   }
 
   if (parsed.schemaVersion === 1) {
@@ -64,7 +69,7 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
   };
 }
 
-function deserializeV2(data: Record<string, unknown>): LoadSaveResult {
+function deserializeV3(data: Record<string, unknown>): LoadSaveResult {
   if (typeof data.savedAt !== 'string') {
     return { ok: false, error: 'Save data is missing a saved timestamp.' };
   }
@@ -75,6 +80,19 @@ function deserializeV2(data: Record<string, unknown>): LoadSaveResult {
   }
 
   return { ok: true, state, savedAt: data.savedAt, migrated: false };
+}
+
+function migrateV2(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function migrateV1(data: Record<string, unknown>): LoadSaveResult {
@@ -93,13 +111,16 @@ function migrateV1(data: Record<string, unknown>): LoadSaveResult {
 function migrateV0(data: Record<string, unknown>): LoadSaveResult {
   const base = createFarmState();
   const rawState = isRecord(data.state) ? data.state : data;
+  const day = readNumber(rawState.day, base.day);
   const partialState: FarmState = {
     ...base,
-    day: readNumber(rawState.day, base.day),
+    day,
     coins: readNumber(rawState.coins, base.coins),
     stamina: readNumber(rawState.stamina, base.stamina),
     player: parseWorldPoint(rawState.player) ?? base.player,
     location: parseLocation(rawState.location) ?? base.location,
+    weather: parseWeatherId(rawState.weather) ?? weatherForDay(day),
+    forecast: parseWeatherId(rawState.forecast) ?? forecastForDay(day),
     pendingAction: null,
     seeds: normalizeInventory(isRecord(rawState.seeds) ? rawState.seeds : base.seeds),
     inventory: normalizeInventory(isRecord(rawState.inventory) ? rawState.inventory : {}),
@@ -134,12 +155,16 @@ function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null):
     return null;
   }
 
+  const day = value.day;
+
   return sanitizeStateForSave({
-    day: value.day,
+    day,
     coins: value.coins,
     stamina: value.stamina,
     player,
     location,
+    weather: parseWeatherId(value.weather) ?? weatherForDay(day),
+    forecast: parseWeatherId(value.forecast) ?? forecastForDay(day),
     pendingAction: null,
     seeds,
     inventory: normalizeInventory(isRecord(value.inventory) ? value.inventory : {}),
@@ -195,6 +220,10 @@ function parseWorldPoint(value: unknown): WorldPoint | null {
 
 function parseLocation(value: unknown): PlayerLocation | null {
   return value === 'farm' || value === 'house' || value === 'town' ? value : null;
+}
+
+function parseWeatherId(value: unknown): WeatherId | null {
+  return isWeatherId(value) ? value : null;
 }
 
 function parseCropId(value: unknown): CropId | null | undefined {

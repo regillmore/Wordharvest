@@ -22,6 +22,8 @@ describe('save codec', () => {
       expect(result.state.coins).toBe(state.coins);
       expect(result.state.seeds.turnip).toBe(state.seeds.turnip);
       expect(result.state.seeds.radish).toBe(0);
+      expect(result.state.weather).toBe(state.weather);
+      expect(result.state.forecast).toBe(state.forecast);
       expect(result.state.plots).toEqual(state.plots);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(false);
@@ -54,14 +56,16 @@ describe('save codec', () => {
     }
   });
 
-  it('normalizes missing catalog crop counts from saved inventory records', () => {
+  it('migrates a version 2 save by adding weather and normalizing crop counts', () => {
     const olderState = createFarmState();
     const result = deserializeSave(
       JSON.stringify({
-        schemaVersion: SAVE_SCHEMA_VERSION,
+        schemaVersion: 2,
         savedAt: '2026-03-01T00:00:00.000Z',
         state: {
           ...olderState,
+          weather: undefined,
+          forecast: undefined,
           seeds: { turnip: 1 },
           inventory: { turnip: 2 },
           pendingAction: undefined,
@@ -75,6 +79,9 @@ describe('save codec', () => {
       expect(result.state.seeds.radish).toBe(0);
       expect(result.state.inventory.turnip).toBe(2);
       expect(result.state.inventory.pea).toBe(0);
+      expect(result.state.weather).toBe('sunny');
+      expect(result.state.forecast).toBe('sunny');
+      expect(result.migrated).toBe(true);
     }
   });
 
@@ -96,6 +103,8 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.savedAt).toBe('2026-02-01T00:00:00.000Z');
       expect(result.state.seeds.turnip).toBe(3);
+      expect(result.state.weather).toBe('sunny');
+      expect(result.state.forecast).toBe('sunny');
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(true);
     }
@@ -120,6 +129,8 @@ describe('save codec', () => {
       expect(result.savedAt).toBe('2026-01-01T00:00:00.000Z');
       expect(result.state.seeds.turnip).toBe(3);
       expect(result.state.inventory.turnip).toBe(0);
+      expect(result.state.weather).toBe('sunny');
+      expect(result.state.forecast).toBe('sunny');
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(true);
     }

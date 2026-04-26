@@ -10,6 +10,7 @@ import {
   type CropGrowthStage,
   type CropId,
 } from '../content/crops';
+import { forecastForDay, weatherDefinition, weatherForDay, type WeatherId } from '../content/weather';
 import { findFarmPath } from '../world/pathfinding';
 import { normalizeTypedWord } from './typing';
 import {
@@ -49,6 +50,8 @@ export interface FarmState {
   stamina: number;
   player: WorldPoint;
   location: PlayerLocation;
+  weather: WeatherId;
+  forecast: WeatherId;
   pendingAction: PendingWorldAction | null;
   seeds: Inventory;
   inventory: Inventory;
@@ -60,14 +63,17 @@ const startingPlots = 6;
 const maxLogEntries = 6;
 const walkSpeed = 3.2;
 const startingPlayerPosition: WorldPoint = { x: 0, y: 5 };
+const startingDay = 1;
 
 export function createFarmState(): FarmState {
   return {
-    day: 1,
+    day: startingDay,
     coins: 25,
     stamina: 10,
     player: startingPlayerPosition,
     location: 'farm',
+    weather: weatherForDay(startingDay),
+    forecast: forecastForDay(startingDay),
     pendingAction: null,
     seeds: cropCountsWith(starterCropId, cropDefinition(starterCropId).seedPacketQuantity),
     inventory: emptyCropCounts(),
@@ -341,7 +347,10 @@ export function advanceDay(state: FarmState): FarmState {
     return withLog(state, `Finish walking to ${state.pendingAction.label} before ending the day.`);
   }
 
-  const plots = state.plots.map((plot) => {
+  const nextDay = state.day + 1;
+  const weather = state.forecast;
+  const forecast = forecastForDay(nextDay);
+  const grownPlots = state.plots.map((plot) => {
     if (!plot.crop) {
       return { ...plot, wateredToday: false };
     }
@@ -354,16 +363,19 @@ export function advanceDay(state: FarmState): FarmState {
       stage: stageForCropGrowth(plot.crop, growth),
     };
   });
+  const plots = applyDawnWeather(grownPlots, weather);
 
   return withLog(
     {
       ...state,
-      day: state.day + 1,
+      day: nextDay,
       stamina: 10,
       location: 'farm',
+      weather,
+      forecast,
       plots,
     },
-    `Day ${state.day + 1} dawns.`,
+    describeDawn(nextDay, weather, forecast),
   );
 }
 
@@ -442,7 +454,10 @@ function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options
   const starterCrop = cropDefinition(starterCropId);
 
   if (menu === 'journal') {
-    return `Journal: Day ${state.day}, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}.`;
+    const weather = weatherDefinition(state.weather);
+    const forecast = weatherDefinition(state.forecast);
+
+    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}.`;
   }
 
   if (menu === 'inventory') {
@@ -501,6 +516,25 @@ function shopWordSummary(): string {
   }
 
   return `${words.slice(0, -1).join(', ')}, or ${words[words.length - 1]}`;
+}
+
+function applyDawnWeather(plots: CropPlot[], weather: WeatherId): CropPlot[] {
+  if (!weatherDefinition(weather).watersCrops) {
+    return plots;
+  }
+
+  return plots.map((plot) => ({
+    ...plot,
+    wateredToday: Boolean(plot.crop) && plot.stage !== 'ripe',
+  }));
+}
+
+function describeDawn(day: number, weather: WeatherId, forecast: WeatherId): string {
+  const weatherText = weatherDefinition(weather).dawnPhrase;
+  const forecastText = weatherDefinition(forecast).forecastLabel;
+  const rainText = weatherDefinition(weather).watersCrops ? ' Rain watered planted crops.' : '';
+
+  return `Day ${day} dawns ${weatherText}.${rainText} Tomorrow: ${forecastText}.`;
 }
 
 function capitalize(value: string): string {
