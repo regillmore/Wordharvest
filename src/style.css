@@ -132,12 +132,54 @@ h1 {
   font-weight: 900;
 }
 
-.word-panel {
+.word-panel,
+.audio-panel {
   min-height: 120px;
   padding: 16px;
   border: 1px solid #d7c9a7;
   border-radius: 6px;
   background: #f6edda;
+}
+
+.audio-panel {
+  display: grid;
+  gap: 12px;
+  min-height: 0;
+  margin: 0;
+}
+
+.audio-panel legend {
+  padding: 0;
+}
+
+.check-control,
+.range-control {
+  display: grid;
+  align-items: center;
+  gap: 8px;
+  color: #2b332b;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.check-control {
+  grid-template-columns: auto 1fr;
+  justify-content: start;
+}
+
+.check-control input {
+  width: 18px;
+  height: 18px;
+  accent-color: #2f5d46;
+}
+
+.range-control {
+  grid-template-columns: 76px minmax(0, 1fr);
+}
+
+.range-control input {
+  width: 100%;
+  accent-color: #2f5d46;
 }
 
 .typed-word {

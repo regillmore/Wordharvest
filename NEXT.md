@@ -29,7 +29,7 @@ Complete when:
 - [x] Typed labels queue walking to the target before the action completes.
 - [x] The player can type visible labels to plant, water, harvest, enter the house, and use the shipping bin.
 - [x] Crops visibly progress through stages over days.
-- [ ] Actions produce HUD feedback and audio placeholders.
+- [x] Actions produce HUD feedback and audio placeholders.
 - [x] A local save can be created, loaded, and reset.
 - [x] Unit tests cover the action sequence from seed to sale.
 
@@ -66,10 +66,10 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add the first audio channel wrapper and mute/options state.
-2. Replace the placeholder scene with a tile-based farm view.
-3. Create a visual style guide before generating or importing sprite sheets.
-4. Promote target labels into typed content definitions with validation tests.
-5. Add tile-aware path previews and blocked-path feedback.
-6. Add a shop or seed source so planting no longer spends coins directly.
-7. Add a visible save indicator for restored save timestamps.
+1. Replace the placeholder scene with a tile-based farm view.
+2. Create a visual style guide before generating or importing sprite sheets.
+3. Promote target labels into typed content definitions with validation tests.
+4. Add tile-aware path previews and blocked-path feedback.
+5. Add a shop or seed source so planting no longer spends coins directly.
+6. Add a visible save indicator for restored save timestamps.
+7. Replace generated tone placeholders with authored audio assets.

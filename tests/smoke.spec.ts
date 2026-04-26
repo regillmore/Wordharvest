@@ -43,3 +43,20 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await page.getByRole('button', { name: 'Load' }).click();
   await expect(page.getByText('No save found.')).toBeVisible();
 });
+
+test('persists audio options locally', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();
+
+  await page.getByLabel('Mute').check();
+  await page.locator('#effects-volume').evaluate((input) => {
+    const slider = input as HTMLInputElement;
+    slider.value = '0.25';
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+
+  await page.reload();
+
+  await expect(page.getByLabel('Mute')).toBeChecked();
+  await expect(page.locator('#effects-volume')).toHaveValue('0.25');
+});

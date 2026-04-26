@@ -1,5 +1,5 @@
-import { Howler } from 'howler';
 import { Application, Container, Graphics, Text } from 'pixi.js';
+import { AudioSystem, cueForLogMessage, deserializeAudioSettings, serializeAudioSettings, type AudioSettings } from './audio/audio';
 import {
   addFarmLog,
   advanceDay,
@@ -31,6 +31,9 @@ let farm = createFarmState();
 let typedBuffer = '';
 
 const saveKey = 'wordharvest:save:v1';
+const audioSettingsKey = 'wordharvest:audio:v1';
+let audioSettings = deserializeAudioSettings(localStorage.getItem(audioSettingsKey));
+const audio = new AudioSystem(audioSettings);
 
 root.innerHTML = `
   <main class="game-shell">
@@ -54,6 +57,25 @@ root.innerHTML = `
         <p class="label">Nearby words</p>
         <p id="word-preview" class="word-preview"></p>
       </section>
+      <fieldset class="audio-panel">
+        <legend class="label">Audio</legend>
+        <label class="check-control">
+          <input id="audio-muted" type="checkbox" />
+          <span>Mute</span>
+        </label>
+        <label class="range-control">
+          <span>Music</span>
+          <input id="music-volume" type="range" min="0" max="1" step="0.05" />
+        </label>
+        <label class="range-control">
+          <span>Ambience</span>
+          <input id="ambience-volume" type="range" min="0" max="1" step="0.05" />
+        </label>
+        <label class="range-control">
+          <span>Effects</span>
+          <input id="effects-volume" type="range" min="0" max="1" step="0.05" />
+        </label>
+      </fieldset>
       <section>
         <p class="label">Farm log</p>
         <ol id="farm-log" class="farm-log"></ol>
@@ -82,8 +104,10 @@ const saveGame = requireElement<HTMLButtonElement>('#save-game');
 const loadGame = requireElement<HTMLButtonElement>('#load-game');
 const resetGame = requireElement<HTMLButtonElement>('#reset-game');
 const saveStatus = requireElement<HTMLElement>('#save-status');
-
-Howler.volume(0.7);
+const mutedControl = requireElement<HTMLInputElement>('#audio-muted');
+const musicVolume = requireElement<HTMLInputElement>('#music-volume');
+const ambienceVolume = requireElement<HTMLInputElement>('#ambience-volume');
+const effectsVolume = requireElement<HTMLInputElement>('#effects-volume');
 
 const app = new Application();
 await app.init({
@@ -96,12 +120,14 @@ canvasHost.appendChild(app.canvas);
 
 nextDay.addEventListener('click', () => {
   farm = advanceDay(farm);
+  playCueForLatestLog();
   redraw();
 });
 
 saveGame.addEventListener('click', () => {
   if (farm.pendingAction) {
     farm = addFarmLog(farm, `Finish walking to ${farm.pendingAction.label} before saving.`);
+    audio.play('error');
     redraw();
     return;
   }
@@ -109,12 +135,14 @@ saveGame.addEventListener('click', () => {
   localStorage.setItem(saveKey, serializeSave(farm));
   farm = addFarmLog(farm, 'Saved the farm.');
   saveStatus.textContent = 'Saved.';
+  audio.play('save');
   redraw();
 });
 
 loadGame.addEventListener('click', () => {
   if (farm.pendingAction) {
     farm = addFarmLog(farm, `Finish walking to ${farm.pendingAction.label} before loading.`);
+    audio.play('error');
     redraw();
     return;
   }
@@ -123,6 +151,7 @@ loadGame.addEventListener('click', () => {
   if (!rawSave) {
     farm = addFarmLog(farm, 'No local save found.');
     saveStatus.textContent = 'No save found.';
+    audio.play('error');
     redraw();
     return;
   }
@@ -131,12 +160,14 @@ loadGame.addEventListener('click', () => {
   if (!result.ok) {
     farm = addFarmLog(farm, result.error);
     saveStatus.textContent = 'Load failed.';
+    audio.play('error');
     redraw();
     return;
   }
 
   farm = addFarmLog(result.state, result.migrated ? 'Loaded and migrated the farm.' : 'Loaded the farm.');
   saveStatus.textContent = result.migrated ? 'Loaded migrated save.' : 'Loaded.';
+  audio.play('load');
   redraw();
 });
 
@@ -145,8 +176,15 @@ resetGame.addEventListener('click', () => {
   farm = addFarmLog(createFarmState(), 'Reset the local save.');
   typedBuffer = '';
   saveStatus.textContent = 'Reset.';
+  audio.play('load');
   redraw();
 });
+
+for (const control of [mutedControl, musicVolume, ambienceVolume, effectsVolume]) {
+  control.addEventListener('input', () => {
+    updateAudioSettings(readAudioSettingsFromControls());
+  });
+}
 
 window.addEventListener('keydown', (event) => {
   if (event.ctrlKey || event.metaKey || event.altKey) {
@@ -161,7 +199,13 @@ window.addEventListener('keydown', (event) => {
   }
 
   if (event.key === 'Enter' || event.key === ' ') {
+    const wasPending = Boolean(farm.pendingAction);
     farm = applyTypedWord(farm, typedBuffer);
+    if (!wasPending && farm.pendingAction) {
+      audio.play('walk');
+    } else {
+      playCueForLatestLog();
+    }
     typedBuffer = '';
     redraw();
     event.preventDefault();
@@ -170,6 +214,7 @@ window.addEventListener('keydown', (event) => {
 
   if (/^[a-z]$/i.test(event.key)) {
     typedBuffer = normalizeTypedWord(`${typedBuffer}${event.key}`).slice(0, 16);
+    audio.play('type');
     redrawHud();
   }
 });
@@ -179,10 +224,15 @@ app.ticker.add((ticker) => {
     return;
   }
 
+  const hadPendingAction = Boolean(farm.pendingAction);
   farm = advanceFarmTime(farm, ticker.deltaMS / 1000);
+  if (hadPendingAction && !farm.pendingAction) {
+    playCueForLatestLog();
+  }
   redraw();
 });
 
+syncAudioControls();
 redraw();
 
 interface Viewport {
@@ -231,6 +281,36 @@ function redrawHud(): void {
     : visibleTargets.map((target) => target.label).join(', ');
 
   farmLog.innerHTML = farm.log.map((entry) => `<li>${entry}</li>`).join('');
+}
+
+function readAudioSettingsFromControls(): AudioSettings {
+  return {
+    muted: mutedControl.checked,
+    musicVolume: Number(musicVolume.value),
+    ambienceVolume: Number(ambienceVolume.value),
+    effectsVolume: Number(effectsVolume.value),
+  };
+}
+
+function updateAudioSettings(settings: AudioSettings): void {
+  audioSettings = settings;
+  audio.updateSettings(audioSettings);
+  localStorage.setItem(audioSettingsKey, serializeAudioSettings(audioSettings));
+}
+
+function syncAudioControls(): void {
+  mutedControl.checked = audioSettings.muted;
+  musicVolume.value = String(audioSettings.musicVolume);
+  ambienceVolume.value = String(audioSettings.ambienceVolume);
+  effectsVolume.value = String(audioSettings.effectsVolume);
+}
+
+function playCueForLatestLog(): void {
+  const cue = cueForLogMessage(farm.log[0] ?? '');
+
+  if (cue) {
+    audio.play(cue);
+  }
 }
 
 function createScene(state: FarmState): Container {
