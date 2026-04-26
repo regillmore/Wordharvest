@@ -14,6 +14,8 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#weather-value')).toHaveText('Sunny');
   await expect(page.locator('#forecast-value')).toHaveText('Sunny');
   await expect(page.locator('#can-value')).toHaveText('Basic');
+  await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds');
+  await expect(page.locator('#crop-value')).toHaveText('no harvested crops');
   await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: 0/3 crops shipped');
   await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds open');
 
@@ -50,6 +52,7 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await page.keyboard.press('Enter');
   await expect(page.getByText('Bought 2 radish seeds for 8 coins.')).toBeVisible();
   await expect(page.locator('#coin-value')).toHaveText('17');
+  await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds, 2 radish seeds');
 
   await page.keyboard.type('can');
   await page.keyboard.press('Enter');
@@ -70,6 +73,7 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await page.keyboard.type('radish');
   await page.keyboard.press('Enter');
   await expect(page.getByText('Planted radish seeds.')).toBeVisible();
+  await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds, 1 radish seed');
 });
 
 test('opens menu words from typed labels', async ({ page }) => {
@@ -81,6 +85,10 @@ test('opens menu words from typed labels', async ({ page }) => {
   await expect(page.getByText(/Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can\./)).toBeVisible();
   await expect(page.locator('#farm-log').getByText(/Spring Basket: 0\/3 crops shipped/)).toBeVisible();
   await expect(page.locator('#farm-log').getByText(/First Week: 0\/7 goals done/)).toBeVisible();
+
+  await page.keyboard.type('pack');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Pack: Seeds: 3 turnip seeds. Crops: no harvested crops.')).toBeVisible();
 });
 
 test('saves, loads, and resets the local farm slot', async ({ page }) => {
@@ -92,7 +100,8 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(page.getByText('Planted turnip seeds.')).toBeVisible();
   await expect(page.locator('#coin-value')).toHaveText('25');
-  await expect(page.locator('#seed-value')).toHaveText('2');
+  await expect(page.locator('#seed-value')).toHaveText('2 turnip seeds');
+  await expect(page.locator('#crop-value')).toHaveText('no harvested crops');
   await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds done');
 
   await page.getByRole('button', { name: 'Save' }).click();
@@ -108,7 +117,7 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.locator('#day-value')).toHaveText('1');
   await expect(page.locator('#forecast-value')).toHaveText('Sunny');
   await expect(page.locator('#coin-value')).toHaveText('25');
-  await expect(page.locator('#seed-value')).toHaveText('2');
+  await expect(page.locator('#seed-value')).toHaveText('2 turnip seeds');
   await expect(page.locator('#save-timestamp')).toContainText(/^Restored save: \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
 
   await page.getByRole('button', { name: 'Reset' }).click();

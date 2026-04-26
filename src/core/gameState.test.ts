@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { advanceDay, advanceFarmTime, applyTypedWord, createFarmState, type FarmState } from './gameState';
+import {
+  advanceDay,
+  advanceFarmTime,
+  applyTypedWord,
+  createFarmState,
+  cropInventorySummary,
+  packInventorySummary,
+  seedInventorySummary,
+  type FarmState,
+} from './gameState';
 
 describe('farm state', () => {
   it('starts with current weather and a next-day forecast', () => {
@@ -11,6 +20,28 @@ describe('farm state', () => {
     expect(state.seasonObjective.id).toBe('springBasket');
     expect(state.seasonObjective.completed).toBe(false);
     expect(state.weekGoals.plantFirstSeeds).toBe(false);
+  });
+
+  it('summarizes seeds and harvested crops across the crop catalog', () => {
+    const state: FarmState = {
+      ...createFarmState(),
+      seeds: {
+        ...createFarmState().seeds,
+        radish: 2,
+        carrot: 1,
+      },
+      inventory: {
+        ...createFarmState().inventory,
+        turnip: 1,
+        pea: 2,
+      },
+    };
+
+    expect(seedInventorySummary(state)).toBe('3 turnip seeds, 2 radish seeds, 1 carrot seed');
+    expect(cropInventorySummary(state)).toBe('1 turnip, 2 snap peas');
+    expect(packInventorySummary(state)).toBe(
+      'Pack: Seeds: 3 turnip seeds, 2 radish seeds, 1 carrot seed. Crops: 1 turnip, 2 snap peas.',
+    );
   });
 
   it('queues a visible typed target before completing it on arrival', () => {
@@ -219,6 +250,24 @@ describe('farm state', () => {
     expect(state.log[0]).toBe(
       'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1). First Week: 0/7 goals done. Today: Plant first seeds - Plant any seed in a farm plot.',
     );
+
+    const packState = applyTypedWord(
+      {
+        ...createFarmState(),
+        seeds: {
+          ...createFarmState().seeds,
+          radish: 2,
+        },
+        inventory: {
+          ...createFarmState().inventory,
+          carrot: 1,
+        },
+      },
+      'pack',
+    );
+
+    expect(packState.pendingAction).toBeNull();
+    expect(packState.log[0]).toBe('Pack: Seeds: 3 turnip seeds, 2 radish seeds. Crops: 1 carrot.');
   });
 
   it('advances weather and lets rain water planted crops at dawn', () => {

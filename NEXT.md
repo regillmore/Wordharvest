@@ -77,6 +77,6 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add a fuller seed and crop pack summary for the expanded crop roster.
-2. Add objective completion affordances beyond the first reward log.
-3. Add daily goal rewards or request variation after the first-week guide proves fun.
+1. Add objective completion affordances beyond the first reward log.
+2. Add daily goal rewards or request variation after the first-week guide proves fun.
+3. Add collection log tracking for discovered crops and shipped varieties.

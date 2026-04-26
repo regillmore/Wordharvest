@@ -6,6 +6,7 @@ import {
   shopWordForCrop,
   stageForCropGrowth,
   starterCropId,
+  type CropDefinition,
   type CropCounts,
   type CropGrowthStage,
   type CropId,
@@ -419,6 +420,26 @@ export function addFarmLog(state: FarmState, message: string): FarmState {
   return withLog(state, message);
 }
 
+export function seedInventorySummary(state: Pick<FarmState, 'seeds'>): string {
+  return cropCountSummary(state.seeds, 'no seeds', (crop, count) => {
+    const seedName = count === 1 ? singularItemName(crop.seedName) : crop.seedName;
+
+    return `${count} ${seedName}`;
+  });
+}
+
+export function cropInventorySummary(state: Pick<FarmState, 'inventory'>): string {
+  return cropCountSummary(state.inventory, 'no harvested crops', (crop, count) => {
+    const cropName = count === 1 ? crop.name : crop.pluralName;
+
+    return `${count} ${cropName}`;
+  });
+}
+
+export function packInventorySummary(state: Pick<FarmState, 'seeds' | 'inventory'>): string {
+  return `Pack: Seeds: ${seedInventorySummary(state)}. Crops: ${cropInventorySummary(state)}.`;
+}
+
 function updatePlot(
   state: FarmState,
   updatedPlot: CropPlot,
@@ -544,7 +565,7 @@ function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options
   }
 
   if (menu === 'inventory') {
-    return `Pack: ${state.inventory[starterCrop.id]} ${starterCrop.pluralName}, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}.`;
+    return packInventorySummary(state);
   }
 
   return 'Options: audio, save, load, and reset controls are on the HUD.';
@@ -616,6 +637,25 @@ function shipmentSummary(shipments: Array<{ crop: ReturnType<typeof cropDefiniti
   return shipments
     .map((shipment) => `${shipment.count} ${shipment.count === 1 ? shipment.crop.name : shipment.crop.pluralName}`)
     .join(' and ');
+}
+
+function cropCountSummary(
+  counts: CropCounts,
+  emptyText: string,
+  formatItem: (crop: CropDefinition, count: number) => string,
+): string {
+  const entries: Array<{ crop: CropDefinition; count: number }> = cropCatalog
+    .map((crop) => ({
+      crop,
+      count: counts[crop.id],
+    }))
+    .filter((entry) => entry.count > 0);
+
+  return entries.length > 0 ? entries.map((entry) => formatItem(entry.crop, entry.count)).join(', ') : emptyText;
+}
+
+function singularItemName(name: string): string {
+  return name.endsWith('s') ? name.slice(0, -1) : name;
 }
 
 function shopWordSummary(state: FarmState): string {

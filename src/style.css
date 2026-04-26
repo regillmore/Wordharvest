@@ -132,6 +132,12 @@ h1 {
   font-weight: 900;
 }
 
+.stats dd.inventory-summary {
+  overflow-wrap: anywhere;
+  font-size: 0.92rem;
+  line-height: 1.25;
+}
+
 .word-panel,
 .audio-panel {
   min-height: 120px;

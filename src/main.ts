@@ -6,7 +6,9 @@ import {
   advanceDay,
   advanceFarmTime,
   applyTypedWord,
+  cropInventorySummary,
   createFarmState,
+  seedInventorySummary,
   type CropStage,
   type FarmState,
 } from './core/gameState';
@@ -64,8 +66,8 @@ root.innerHTML = `
         <div><dt>Weather</dt><dd id="weather-value"></dd></div>
         <div><dt>Tomorrow</dt><dd id="forecast-value"></dd></div>
         <div><dt>Can</dt><dd id="can-value"></dd></div>
-        <div><dt>Seeds</dt><dd id="seed-value"></dd></div>
-        <div><dt>Turnips</dt><dd id="turnip-value"></dd></div>
+        <div><dt>Seeds</dt><dd id="seed-value" class="inventory-summary"></dd></div>
+        <div><dt>Crops</dt><dd id="crop-value" class="inventory-summary"></dd></div>
       </dl>
       <section class="word-panel" aria-live="polite">
         <p class="label">Spring goal</p>
@@ -120,7 +122,7 @@ const weatherValue = requireElement<HTMLElement>('#weather-value');
 const forecastValue = requireElement<HTMLElement>('#forecast-value');
 const canValue = requireElement<HTMLElement>('#can-value');
 const seedValue = requireElement<HTMLElement>('#seed-value');
-const turnipValue = requireElement<HTMLElement>('#turnip-value');
+const cropValue = requireElement<HTMLElement>('#crop-value');
 const objectiveProgress = requireElement<HTMLElement>('#objective-progress');
 const weekProgress = requireElement<HTMLElement>('#week-progress');
 const typedWord = requireElement<HTMLElement>('#typed-word');
@@ -321,8 +323,8 @@ function redrawHud(): void {
   weatherValue.textContent = weatherDefinition(farm.weather).name;
   forecastValue.textContent = weatherDefinition(farm.forecast).name;
   canValue.textContent = farm.upgrades.wateringCan ? 'Tin' : 'Basic';
-  seedValue.textContent = String(farm.seeds.turnip);
-  turnipValue.textContent = String(farm.inventory.turnip);
+  seedValue.textContent = seedInventorySummary(farm);
+  cropValue.textContent = cropInventorySummary(farm);
   objectiveProgress.textContent = objectiveProgressText(farm.seasonObjective);
   weekProgress.textContent = weekGoalProgressText(farm.day, farm.weekGoals);
   typedWord.textContent = typedBuffer || '...';
