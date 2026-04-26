@@ -1,5 +1,6 @@
-import { Application, Container, Graphics, Text } from 'pixi.js';
+import { Application, Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import { AudioSystem, cueForLogMessage, deserializeAudioSettings, serializeAudioSettings, type AudioSettings } from './audio/audio';
+import { playerSpriteSheet, playerSpriteSource, type PlayerSpriteFrameId } from './assets/playerSprites';
 import {
   addFarmLog,
   advanceDay,
@@ -127,6 +128,8 @@ await app.init({
 });
 
 canvasHost.appendChild(app.canvas);
+
+const playerTextures = await loadPlayerTextures();
 
 nextDay.addEventListener('click', () => {
   farm = advanceDay(farm);
@@ -272,6 +275,26 @@ function requireElement<T extends Element>(selector: string): T {
   }
 
   return element;
+}
+
+async function loadPlayerTextures(): Promise<Record<PlayerSpriteFrameId, Texture>> {
+  const sheetTexture = (await Assets.load(playerSpriteSource())) as Texture;
+  sheetTexture.source.scaleMode = 'nearest';
+
+  return Object.fromEntries(
+    Object.entries(playerSpriteSheet.frames).map(([frameId, definition]) => {
+      const frame = definition.frame;
+
+      return [
+        frameId,
+        new Texture({
+          source: sheetTexture.source,
+          frame: new Rectangle(frame.x, frame.y, frame.w, frame.h),
+          defaultAnchor: definition.anchor,
+        }),
+      ];
+    }),
+  ) as Record<PlayerSpriteFrameId, Texture>;
 }
 
 function redrawHud(): void {
@@ -616,13 +639,18 @@ function drawSeedSource(scene: Container, viewport: Viewport): void {
 
 function drawPlayer(scene: Container, viewport: Viewport, position: WorldPoint): void {
   const point = worldToScreen(viewport, position);
-  const body = new Graphics();
+  const sprite = new Sprite({
+    texture: playerTextures.player_idle_down,
+    anchor: playerSpriteSheet.frames.player_idle_down.anchor,
+    roundPixels: true,
+  });
+  const spriteHeight = viewport.scale * 0.72;
 
-  body.circle(point.x, point.y, viewport.scale * 0.18).fill(0x2f5d46);
-  body.circle(point.x, point.y - viewport.scale * 0.18, viewport.scale * 0.13).fill(0xf1c27d);
-  body.rect(point.x - viewport.scale * 0.2, point.y - viewport.scale * 0.36, viewport.scale * 0.4, viewport.scale * 0.08).fill(0xf4d35e);
+  sprite.width = spriteHeight * (playerSpriteSheet.cell.w / playerSpriteSheet.cell.h);
+  sprite.height = spriteHeight;
+  sprite.position.set(point.x, point.y + viewport.scale * 0.1);
 
-  scene.addChild(body);
+  scene.addChild(sprite);
 }
 
 function drawTargets(scene: Container, viewport: Viewport, targets: WorldTarget[]): void {

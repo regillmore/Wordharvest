@@ -1,7 +1,12 @@
 import { expect, test } from '@playwright/test';
 
 test('boots the farm shell and accepts visible world words', async ({ page }) => {
+  const playerSheetResponse = page.waitForResponse(
+    (response) => response.url().includes('/assets/sprites/player_base_v001.png') && response.status() === 200,
+  );
+
   await page.goto('/');
+  await playerSheetResponse;
 
   await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();
   await expect(page.locator('canvas')).toBeVisible();
