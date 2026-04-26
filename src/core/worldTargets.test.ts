@@ -42,6 +42,52 @@ describe('world targets', () => {
     expect(listWorldTargets(createFarmState()).map((target) => target.word)).toContain('seeds');
   });
 
+  it('shows crop-specific planting choices when multiple seed packets are in the bag', () => {
+    const base = createFarmState();
+    const state: FarmState = {
+      ...base,
+      seeds: {
+        ...base.seeds,
+        radish: 2,
+        carrot: 2,
+        spinach: 2,
+      },
+    };
+    const nearestPlot = state.plots[4];
+    const targets = listWorldTargets(state);
+    const words = targets.map((target) => target.word);
+    const carrotTarget = targets.find((target) => target.word === 'carrot');
+
+    expect(words).toEqual(expect.arrayContaining(['turnip', 'radish', 'carrot', 'spinach']));
+    expect(carrotTarget?.position).not.toEqual(nearestPlot.position);
+    expect(carrotTarget?.action).toEqual({
+      kind: 'plant-plot',
+      plotId: nearestPlot.id,
+      crop: 'carrot',
+      destination: nearestPlot.position,
+    });
+  });
+
+  it('uses a crop word for a lone non-starter seed packet', () => {
+    const base = createFarmState();
+    const state: FarmState = {
+      ...base,
+      seeds: {
+        ...base.seeds,
+        turnip: 0,
+        carrot: 1,
+      },
+    };
+    const carrotTarget = listWorldTargets(state).find((target) => target.word === 'carrot');
+
+    expect(carrotTarget?.action).toEqual({
+      kind: 'plant-plot',
+      plotId: 5,
+      crop: 'carrot',
+      destination: state.plots[4].position,
+    });
+  });
+
   it('shows the town boundary on the farm and a farm return target in town', () => {
     const farmWords = listWorldTargets(createFarmState()).map((target) => target.word);
     expect(farmWords).toContain('town');

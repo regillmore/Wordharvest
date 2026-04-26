@@ -77,6 +77,6 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add crop-specific planting selection for non-turnip seed packets.
-2. Add a first-season objective with progress tracking.
-3. Add seven-day play pacing with enough goals to make each day meaningful.
+1. Add a first-season objective with progress tracking.
+2. Add seven-day play pacing with enough goals to make each day meaningful.
+3. Add a fuller seed and crop pack summary for the expanded crop roster.

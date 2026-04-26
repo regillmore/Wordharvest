@@ -84,6 +84,26 @@ describe('farm state', () => {
     expect(state.log[0]).toBe('No turnip seeds in your bag.');
   });
 
+  it('plants non-turnip seed packets from typed crop labels', () => {
+    let state: FarmState = {
+      ...createFarmState(),
+      seeds: {
+        ...createFarmState().seeds,
+        carrot: 1,
+      },
+    };
+
+    state = applyTypedWord(state, 'carrot');
+    expect(state.pendingAction?.label).toBe('carrot');
+
+    state = settleAction(state);
+    expect(state.plots[4].crop).toBe('carrot');
+    expect(state.plots[4].stage).toBe('seed');
+    expect(state.seeds.carrot).toBe(0);
+    expect(state.seeds.turnip).toBe(3);
+    expect(state.log[0]).toBe('Planted carrot seeds.');
+  });
+
   it('uses distant and near labels to approach and enter the farmhouse', () => {
     let state = createFarmState();
 

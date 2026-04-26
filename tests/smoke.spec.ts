@@ -62,6 +62,11 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await page.keyboard.press('Enter');
   await expect(page.getByText('Walked back up the lane to the farm.')).toBeVisible();
   await expect(page.locator('#word-preview')).toContainText('town');
+  await expect(page.locator('#word-preview')).toContainText('radish');
+
+  await page.keyboard.type('radish');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Planted radish seeds.')).toBeVisible();
 });
 
 test('opens menu words from typed labels', async ({ page }) => {

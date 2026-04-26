@@ -23,7 +23,7 @@ export type WorldTargetAction =
   | { kind: 'ship-inventory' }
   | { kind: 'buy-seeds'; crop: CropId; destination: WorldPoint }
   | { kind: 'buy-upgrade'; upgrade: UpgradeId; destination: WorldPoint }
-  | { kind: 'plant-plot'; plotId: number; crop: CropId }
+  | { kind: 'plant-plot'; plotId: number; crop: CropId; destination: WorldPoint }
   | { kind: 'water-plot'; plotId: number }
   | { kind: 'harvest-plot'; plotId: number }
   | { kind: 'inspect-plot'; plotId: number };
@@ -191,8 +191,10 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
 
   const actionWordIndexes: Partial<Record<TargetWordRole, number>> = {};
 
-  for (const { plot, distance } of visiblePlots) {
-    const target = targetForPlot(plot, distance, actionWordIndexes);
+  targets.push(...plantTargetsForEmptyPlots(state, visiblePlots, actionWordIndexes));
+
+  for (const { plot, distance } of visiblePlots.filter(({ plot }) => plot.crop)) {
+    const target = targetForPlantedPlot(plot, distance, actionWordIndexes);
 
     if (target) {
       targets.push(target);
@@ -220,7 +222,8 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
     target.action.kind === 'return-farm' ||
     target.action.kind === 'open-menu' ||
     target.action.kind === 'buy-seeds' ||
-    target.action.kind === 'buy-upgrade'
+    target.action.kind === 'buy-upgrade' ||
+    target.action.kind === 'plant-plot'
   ) {
     return target.action.destination;
   }
@@ -311,19 +314,86 @@ function shopUpgradeTargets(player: WorldPoint): WorldTarget[] {
   });
 }
 
-function targetForPlot(
+function plantTargetsForEmptyPlots(
+  state: FarmState,
+  visiblePlots: Array<{ plot: CropPlot; distance: number }>,
+  actionWordIndexes: Partial<Record<TargetWordRole, number>>,
+): WorldTarget[] {
+  const emptyPlots = visiblePlots.filter(({ plot }) => !plot.crop);
+
+  if (emptyPlots.length === 0) {
+    return [];
+  }
+
+  const seedCrops = availableSeedCrops(state);
+
+  if (seedCrops.length > 1) {
+    const nearestPlot = emptyPlots[0];
+
+    if (!nearestPlot) {
+      return [];
+    }
+
+    return seedCrops.map((cropId, index) =>
+      plantPlotTarget(
+        nearestPlot.plot,
+        nearestPlot.distance,
+        shopWordForCrop(cropId),
+        cropId,
+        seedChoiceLabelPosition(nearestPlot.plot.position, index),
+      ),
+    );
+  }
+
+  const cropId = seedCrops[0] ?? starterCropId;
+
+  return emptyPlots.map(({ plot, distance }, index) => {
+    const word =
+      index === 0 && cropId !== starterCropId
+        ? shopWordForCrop(cropId)
+        : nextWordForTargetRole('plant-crop', actionWordIndexes);
+
+    return plantPlotTarget(plot, distance, word, cropId, plot.position);
+  });
+}
+
+function availableSeedCrops(state: FarmState): CropId[] {
+  return cropCatalog.filter((crop) => state.seeds[crop.id] > 0).map((crop) => crop.id);
+}
+
+function seedChoiceLabelPosition(plotPosition: WorldPoint, index: number): WorldPoint {
+  const columns = 3;
+  const column = index % columns;
+  const row = Math.floor(index / columns);
+
+  return {
+    x: plotPosition.x - 1.45 + column * 1.45,
+    y: plotPosition.y - 0.86 + row * 0.46,
+  };
+}
+
+function plantPlotTarget(
+  plot: CropPlot,
+  distance: number,
+  word: string,
+  crop: CropId,
+  labelPosition: WorldPoint,
+): WorldTarget {
+  return {
+    id: `plot-${plot.id}-plant-${crop}`,
+    word,
+    label: word,
+    position: labelPosition,
+    distance,
+    action: { kind: 'plant-plot', plotId: plot.id, crop, destination: plot.position },
+  };
+}
+
+function targetForPlantedPlot(
   plot: CropPlot,
   distance: number,
   actionWordIndexes: Partial<Record<TargetWordRole, number>>,
 ): WorldTarget | undefined {
-  if (!plot.crop) {
-    return plotTarget(plot, distance, nextWordForTargetRole('plant-crop', actionWordIndexes), {
-      kind: 'plant-plot',
-      plotId: plot.id,
-      crop: starterCropId,
-    });
-  }
-
   if (plot.stage === 'ripe') {
     return plotTarget(plot, distance, nextWordForTargetRole('harvest-crop', actionWordIndexes), {
       kind: 'harvest-plot',
