@@ -20,6 +20,8 @@ describe('farm state', () => {
     expect(state.seasonObjective.id).toBe('springBasket');
     expect(state.seasonObjective.completed).toBe(false);
     expect(state.weekGoals.plantFirstSeeds).toBe(false);
+    expect(state.collectionLog.discoveredCrops.turnip).toBe(true);
+    expect(state.collectionLog.shippedCrops.turnip).toBe(false);
   });
 
   it('summarizes seeds and harvested crops across the crop catalog', () => {
@@ -40,7 +42,7 @@ describe('farm state', () => {
     expect(seedInventorySummary(state)).toBe('3 turnip seeds, 2 radish seeds, 1 carrot seed');
     expect(cropInventorySummary(state)).toBe('1 turnip, 2 snap peas');
     expect(packInventorySummary(state)).toBe(
-      'Pack: Seeds: 3 turnip seeds, 2 radish seeds, 1 carrot seed. Crops: 1 turnip, 2 snap peas.',
+      'Pack: Seeds: 3 turnip seeds, 2 radish seeds, 1 carrot seed. Crops: 1 turnip, 2 snap peas. Collection: 1/10 found, 0/10 shipped. Found: turnip. Shipped: none.',
     );
   });
 
@@ -92,6 +94,7 @@ describe('farm state', () => {
     expect(state.seasonObjective.shipped.turnip).toBe(1);
     expect(state.seasonObjective.completed).toBe(false);
     expect(state.weekGoals.shipFirstCrop).toBe(true);
+    expect(state.collectionLog.shippedCrops.turnip).toBe(true);
     expect(state.log[0]).toBe('Shipped 1 turnip for 12 coins.');
   });
 
@@ -141,6 +144,7 @@ describe('farm state', () => {
     expect(state.seeds.carrot).toBe(0);
     expect(state.seeds.turnip).toBe(3);
     expect(state.weekGoals.plantFirstSeeds).toBe(true);
+    expect(state.collectionLog.discoveredCrops.carrot).toBe(true);
     expect(state.log[0]).toBe('Planted carrot seeds.');
   });
 
@@ -203,6 +207,7 @@ describe('farm state', () => {
     expect(state.coins).toBe(26);
     expect(state.seeds.radish).toBe(2);
     expect(state.weekGoals.buySpringSeeds).toBe(true);
+    expect(state.collectionLog.discoveredCrops.radish).toBe(true);
     expect(state.log[0]).toBe('Bought 2 radish seeds for 8 coins.');
     expect(state.log[1]).toBe('Day 4 goal complete: a new seed packet is in the bag. Reward: 5 coins.');
 
@@ -210,6 +215,7 @@ describe('farm state', () => {
 
     expect(state.coins).toBe(19);
     expect(state.seeds.carrot).toBe(2);
+    expect(state.collectionLog.discoveredCrops.carrot).toBe(true);
     expect(state.log[0]).toBe('Bought 2 carrot seeds for 7 coins.');
 
     state = applyTypedWord({ ...state, coins: 0 }, 'strawberry');
@@ -269,7 +275,9 @@ describe('farm state', () => {
     );
 
     expect(packState.pendingAction).toBeNull();
-    expect(packState.log[0]).toBe('Pack: Seeds: 3 turnip seeds, 2 radish seeds. Crops: 1 carrot.');
+    expect(packState.log[0]).toBe(
+      'Pack: Seeds: 3 turnip seeds, 2 radish seeds. Crops: 1 carrot. Collection: 1/10 found, 0/10 shipped. Found: turnip. Shipped: none.',
+    );
   });
 
   it('advances weather and lets rain water planted crops at dawn', () => {
@@ -342,6 +350,9 @@ describe('farm state', () => {
     expect(state.inventory.pea).toBe(0);
     expect(state.seasonObjective.shipped.radish).toBe(2);
     expect(state.weekGoals.shipFirstCrop).toBe(true);
+    expect(state.collectionLog.discoveredCrops.pea).toBe(true);
+    expect(state.collectionLog.shippedCrops.radish).toBe(true);
+    expect(state.collectionLog.shippedCrops.pea).toBe(true);
     expect(state.log[0]).toBe('Shipped 2 radishes and 1 snap pea for 58 coins.');
   });
 
@@ -368,6 +379,9 @@ describe('farm state', () => {
     expect(state.inventory.carrot).toBe(0);
     expect(state.seasonObjective.completed).toBe(true);
     expect(state.weekGoals.completeSpringBasket).toBe(true);
+    expect(state.collectionLog.shippedCrops.turnip).toBe(true);
+    expect(state.collectionLog.shippedCrops.radish).toBe(true);
+    expect(state.collectionLog.shippedCrops.carrot).toBe(true);
     expect(state.log[0]).toBe('Spring Basket complete! Mira added 25 coins for the market table.');
     expect(state.log[1]).toBe('Shipped 1 turnip and 1 radish and 1 carrot for 46 coins.');
     expect(state.log[2]).toBe('Day 5 goal complete: the first crop shipment went out. Reward: 6 coins.');

@@ -14,6 +14,7 @@ import {
 } from './core/gameState';
 import { deserializeSave, serializeSave } from './core/save';
 import { normalizeTypedWord } from './core/typing';
+import { collectionProgressText } from './content/collectionLog';
 import { objectiveCompletionText, objectiveProgressText } from './content/objectives';
 import { weekGoalProgressText } from './content/weekGoals';
 import { weatherDefinition, type WeatherId } from './content/weather';
@@ -68,6 +69,7 @@ root.innerHTML = `
         <div><dt>Can</dt><dd id="can-value"></dd></div>
         <div><dt>Seeds</dt><dd id="seed-value" class="inventory-summary"></dd></div>
         <div><dt>Crops</dt><dd id="crop-value" class="inventory-summary"></dd></div>
+        <div><dt>Collection</dt><dd id="collection-value" class="inventory-summary"></dd></div>
       </dl>
       <section class="word-panel" aria-live="polite">
         <p class="label">Spring goal</p>
@@ -124,6 +126,7 @@ const forecastValue = requireElement<HTMLElement>('#forecast-value');
 const canValue = requireElement<HTMLElement>('#can-value');
 const seedValue = requireElement<HTMLElement>('#seed-value');
 const cropValue = requireElement<HTMLElement>('#crop-value');
+const collectionValue = requireElement<HTMLElement>('#collection-value');
 const objectiveProgress = requireElement<HTMLElement>('#objective-progress');
 const objectiveCompletion = requireElement<HTMLElement>('#objective-completion');
 const weekProgress = requireElement<HTMLElement>('#week-progress');
@@ -329,6 +332,7 @@ function redrawHud(): void {
   canValue.textContent = farm.upgrades.wateringCan ? 'Tin' : 'Basic';
   seedValue.textContent = seedInventorySummary(farm);
   cropValue.textContent = cropInventorySummary(farm);
+  collectionValue.textContent = collectionProgressText(farm.collectionLog);
   objectiveProgress.textContent = objectiveProgressText(farm.seasonObjective);
   objectiveProgress.classList.toggle('is-complete', farm.seasonObjective.completed);
   objectiveCompletion.textContent = completionText;

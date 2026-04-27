@@ -12,6 +12,13 @@ import {
   type CropId,
 } from '../content/crops';
 import {
+  collectionDetailText,
+  createCollectionLogProgress,
+  markCropsDiscovered,
+  markCropsShipped,
+  type CollectionLogProgress,
+} from '../content/collectionLog';
+import {
   emptyUpgradeFlags,
   shopWordForUpgrade,
   upgradeCatalog,
@@ -84,6 +91,7 @@ export interface FarmState {
   upgrades: UpgradeFlags;
   seasonObjective: ObjectiveProgress;
   weekGoals: WeekGoalProgress;
+  collectionLog: CollectionLogProgress;
   plots: CropPlot[];
   log: string[];
 }
@@ -109,6 +117,7 @@ export function createFarmState(): FarmState {
     upgrades: emptyUpgradeFlags(),
     seasonObjective: createObjectiveProgress(),
     weekGoals: emptyWeekGoalProgress(),
+    collectionLog: createCollectionLogProgress(),
     plots: Array.from({ length: startingPlots }, (_, index) => ({
       id: index + 1,
       position: {
@@ -330,6 +339,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
           ...state.seeds,
           [action.crop]: state.seeds[action.crop] - 1,
         },
+        collectionLog: markCropsDiscovered(state.collectionLog, [action.crop]).progress,
         stamina: Math.max(0, state.stamina - 1),
         player: plot.position,
       },
@@ -371,6 +381,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
           ...state.inventory,
           [crop.id]: state.inventory[crop.id] + 1,
         },
+        collectionLog: markCropsDiscovered(state.collectionLog, [crop.id]).progress,
         player: plot.position,
       },
       crop.harvestMessage,
@@ -437,14 +448,14 @@ export function cropInventorySummary(state: Pick<FarmState, 'inventory'>): strin
   });
 }
 
-export function packInventorySummary(state: Pick<FarmState, 'seeds' | 'inventory'>): string {
-  return `Pack: Seeds: ${seedInventorySummary(state)}. Crops: ${cropInventorySummary(state)}.`;
+export function packInventorySummary(state: Pick<FarmState, 'seeds' | 'inventory' | 'collectionLog'>): string {
+  return `Pack: Seeds: ${seedInventorySummary(state)}. Crops: ${cropInventorySummary(state)}. ${collectionDetailText(state.collectionLog)}`;
 }
 
 function updatePlot(
   state: FarmState,
   updatedPlot: CropPlot,
-  patch: Partial<Pick<FarmState, 'coins' | 'stamina' | 'player' | 'seeds' | 'inventory'>>,
+  patch: Partial<Pick<FarmState, 'coins' | 'stamina' | 'player' | 'seeds' | 'inventory' | 'collectionLog'>>,
   message: string,
   completedGoals: readonly WeekGoalId[] = [],
 ): FarmState {
@@ -474,6 +485,7 @@ function buySeeds(state: FarmState, cropId: CropId): FarmState {
         ...state.seeds,
         [crop.id]: state.seeds[crop.id] + crop.seedPacketQuantity,
       },
+      collectionLog: markCropsDiscovered(state.collectionLog, [crop.id]).progress,
     },
     [`Bought ${crop.seedPacketQuantity} ${crop.seedName} for ${crop.seedPacketPrice} coins.`],
     cropId === starterCropId ? [] : ['buySpringSeeds'],
@@ -546,6 +558,10 @@ function shipInventory(state: FarmState): FarmState {
       coins: state.coins + coinsEarned + objectiveReward,
       inventory: shippedInventory,
       seasonObjective: objectiveUpdate.progress,
+      collectionLog: markCropsShipped(
+        state.collectionLog,
+        shipments.map((shipment) => shipment.crop.id),
+      ).progress,
     },
     objectiveUpdate.newlyCompleted
       ? [objectiveDefinition(objectiveUpdate.progress.id).completedLog, shipmentLog]

@@ -1,4 +1,10 @@
 import { cropCatalog, emptyCropCounts, isCropId, type CropId } from '../content/crops';
+import {
+  markCropsDiscovered,
+  markCropsShipped,
+  normalizeCollectionLogProgress,
+  type CollectionLogProgress,
+} from '../content/collectionLog';
 import { normalizeObjectiveProgress } from '../content/objectives';
 import { emptyUpgradeFlags, upgradeCatalog, type UpgradeFlags } from '../content/upgrades';
 import { normalizeWeekGoalProgress } from '../content/weekGoals';
@@ -6,9 +12,9 @@ import { forecastForDay, isWeatherId, weatherForDay, type WeatherId } from '../c
 import { createFarmState, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
 import type { WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 6;
+export const SAVE_SCHEMA_VERSION = 7;
 
-export interface SaveDataV6 {
+export interface SaveDataV7 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -19,7 +25,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV6 = {
+  const saveData: SaveDataV7 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -42,6 +48,10 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
+    return deserializeV7(parsed);
+  }
+
+  if (parsed.schemaVersion === 6) {
     return deserializeV6(parsed);
   }
 
@@ -81,10 +91,24 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
     upgrades: normalizeUpgrades(state.upgrades),
     seasonObjective: normalizeObjectiveProgress(state.seasonObjective),
     weekGoals: normalizeWeekGoalProgress(state.weekGoals),
+    collectionLog: normalizeCollectionLogProgress(state.collectionLog),
     plots: state.plots.map((plot) => ({ ...plot, position: { ...plot.position } })),
     player: { ...state.player },
     log: state.log.slice(0, 6),
   };
+}
+
+function deserializeV7(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: false };
 }
 
 function deserializeV6(data: Record<string, unknown>): LoadSaveResult {
@@ -97,7 +121,7 @@ function deserializeV6(data: Record<string, unknown>): LoadSaveResult {
     return { ok: false, error: 'Save data has an invalid farm state.' };
   }
 
-  return { ok: true, state, savedAt: data.savedAt, migrated: false };
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function migrateV5(data: Record<string, unknown>): LoadSaveResult {
@@ -169,6 +193,10 @@ function migrateV0(data: Record<string, unknown>): LoadSaveResult {
   const base = createFarmState();
   const rawState = isRecord(data.state) ? data.state : data;
   const day = readNumber(rawState.day, base.day);
+  const seeds = normalizeInventory(isRecord(rawState.seeds) ? rawState.seeds : base.seeds);
+  const inventory = normalizeInventory(isRecord(rawState.inventory) ? rawState.inventory : {});
+  const seasonObjective = normalizeObjectiveProgress(rawState.seasonObjective);
+  const plots = parsePlots(rawState.plots) ?? base.plots;
   const partialState: FarmState = {
     ...base,
     day,
@@ -179,10 +207,13 @@ function migrateV0(data: Record<string, unknown>): LoadSaveResult {
     weather: parseWeatherId(rawState.weather) ?? weatherForDay(day),
     forecast: parseWeatherId(rawState.forecast) ?? forecastForDay(day),
     pendingAction: null,
-    seeds: normalizeInventory(isRecord(rawState.seeds) ? rawState.seeds : base.seeds),
-    inventory: normalizeInventory(isRecord(rawState.inventory) ? rawState.inventory : {}),
+    seeds,
+    inventory,
     upgrades: normalizeUpgrades(isRecord(rawState.upgrades) ? rawState.upgrades : base.upgrades),
-    plots: parsePlots(rawState.plots) ?? base.plots,
+    seasonObjective,
+    weekGoals: normalizeWeekGoalProgress(rawState.weekGoals),
+    collectionLog: inferCollectionLog(base.collectionLog, seeds, inventory, plots, seasonObjective.shipped),
+    plots,
     log: parseLog(rawState.log) ?? ['Loaded an older Wordharvest save.'],
   };
   const savedAt = typeof data.savedAt === 'string' ? data.savedAt : new Date(0).toISOString();
@@ -214,6 +245,15 @@ function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null):
   }
 
   const day = value.day;
+  const inventory = normalizeInventory(isRecord(value.inventory) ? value.inventory : {});
+  const seasonObjective = normalizeObjectiveProgress(value.seasonObjective);
+  const collectionLog = inferCollectionLog(
+    normalizeCollectionLogProgress(value.collectionLog),
+    seeds,
+    inventory,
+    plots,
+    seasonObjective.shipped,
+  );
 
   return sanitizeStateForSave({
     day,
@@ -225,13 +265,36 @@ function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null):
     forecast: parseWeatherId(value.forecast) ?? forecastForDay(day),
     pendingAction: null,
     seeds,
-    inventory: normalizeInventory(isRecord(value.inventory) ? value.inventory : {}),
+    inventory,
     upgrades: normalizeUpgrades(isRecord(value.upgrades) ? value.upgrades : {}),
-    seasonObjective: normalizeObjectiveProgress(value.seasonObjective),
+    seasonObjective,
     weekGoals: normalizeWeekGoalProgress(value.weekGoals),
+    collectionLog,
     plots,
     log,
   });
+}
+
+function inferCollectionLog(
+  collectionLog: CollectionLogProgress,
+  seeds: Inventory,
+  inventory: Inventory,
+  plots: CropPlot[],
+  shipped: Inventory,
+): CollectionLogProgress {
+  const discoveredCropIds = cropCatalog
+    .filter(
+      (crop) =>
+        seeds[crop.id] > 0 ||
+        inventory[crop.id] > 0 ||
+        shipped[crop.id] > 0 ||
+        plots.some((plot) => plot.crop === crop.id),
+    )
+    .map((crop) => crop.id);
+  const shippedCropIds = cropCatalog.filter((crop) => shipped[crop.id] > 0).map((crop) => crop.id);
+  const discoveredUpdate = markCropsDiscovered(collectionLog, discoveredCropIds);
+
+  return markCropsShipped(discoveredUpdate.progress, shippedCropIds).progress;
 }
 
 function parsePlots(value: unknown): CropPlot[] | null {

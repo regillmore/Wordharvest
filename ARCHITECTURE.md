@@ -62,7 +62,7 @@ Saves should be local JSON stored in `localStorage` with a visible schema versio
 
 Save data should include:
 
-- Farm state, day, weather, inventory, money, quests, achievements, options, unlocked words, and map changes.
+- Farm state, day, weather, inventory, money, quests, collection log, achievements, options, unlocked words, and map changes.
 - Content version and save schema version.
 - A small event summary for diagnostics, not a full infinite event log.
 

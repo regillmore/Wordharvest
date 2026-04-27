@@ -30,6 +30,8 @@ describe('save codec', () => {
       expect(result.state.seasonObjective.id).toBe('springBasket');
       expect(result.state.seasonObjective.shipped.turnip).toBe(0);
       expect(result.state.weekGoals.plantFirstSeeds).toBe(true);
+      expect(result.state.collectionLog.discoveredCrops.turnip).toBe(true);
+      expect(result.state.collectionLog.shippedCrops.turnip).toBe(false);
       expect(result.state.plots).toEqual(state.plots);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(false);
@@ -62,6 +64,51 @@ describe('save codec', () => {
     }
   });
 
+  it('migrates a version 6 save by adding inferred collection log progress', () => {
+    const olderState = {
+      ...createFarmState(),
+      seeds: {
+        ...createFarmState().seeds,
+        radish: 2,
+      },
+      inventory: {
+        ...createFarmState().inventory,
+        carrot: 1,
+      },
+      seasonObjective: {
+        ...createFarmState().seasonObjective,
+        shipped: {
+          ...createFarmState().seasonObjective.shipped,
+          pea: 1,
+        },
+      },
+      plots: createFarmState().plots.map((plot) => (plot.id === 1 ? { ...plot, crop: 'potato' as const } : plot)),
+    };
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 6,
+        savedAt: '2026-04-20T00:00:00.000Z',
+        state: {
+          ...olderState,
+          collectionLog: undefined,
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.collectionLog.discoveredCrops.turnip).toBe(true);
+      expect(result.state.collectionLog.discoveredCrops.radish).toBe(true);
+      expect(result.state.collectionLog.discoveredCrops.carrot).toBe(true);
+      expect(result.state.collectionLog.discoveredCrops.pea).toBe(true);
+      expect(result.state.collectionLog.discoveredCrops.potato).toBe(true);
+      expect(result.state.collectionLog.shippedCrops.pea).toBe(true);
+      expect(result.state.collectionLog.shippedCrops.radish).toBe(false);
+      expect(result.migrated).toBe(true);
+    }
+  });
+
   it('migrates a version 5 save by adding first-week pacing goals', () => {
     const olderState = createFarmState();
     const result = deserializeSave(
@@ -80,6 +127,7 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.state.weekGoals.plantFirstSeeds).toBe(false);
       expect(result.state.weekGoals.completeSpringBasket).toBe(false);
+      expect(result.state.collectionLog.discoveredCrops.turnip).toBe(true);
       expect(result.migrated).toBe(true);
     }
   });
