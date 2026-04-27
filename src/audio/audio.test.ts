@@ -2,17 +2,24 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
+  audioBedDefinitions,
+  audioBedFiles,
+  audioBedSource,
   audioCueFiles,
+  audioCueDefinitions,
   audioCueSource,
   cueForLogMessage,
   defaultAudioSettings,
   deserializeAudioSettings,
   normalizeAudioSettings,
   serializeAudioSettings,
+  volumeForAudioChannel,
+  type AudioBed,
   type AudioCue,
 } from './audio';
 
 const allCues: AudioCue[] = ['type', 'walk', 'plant', 'water', 'harvest', 'ship', 'door', 'day', 'save', 'load', 'error'];
+const allBeds: AudioBed[] = ['farmMusic', 'townMusic', 'festivalMusic', 'springAmbience', 'rainAmbience', 'indoorAmbience'];
 
 describe('audio settings', () => {
   it('normalizes partial or invalid settings', () => {
@@ -50,6 +57,19 @@ describe('audio settings', () => {
     expect(deserializeAudioSettings('not json')).toEqual(defaultAudioSettings);
   });
 
+  it('routes normalized settings by audio channel', () => {
+    const settings = normalizeAudioSettings({
+      musicVolume: 0.2,
+      ambienceVolume: 0.35,
+      effectsVolume: 0.65,
+    });
+
+    expect(volumeForAudioChannel(settings, 'music')).toBe(0.2);
+    expect(volumeForAudioChannel(settings, 'ambience')).toBe(0.35);
+    expect(volumeForAudioChannel(settings, 'effects')).toBe(0.65);
+    expect(volumeForAudioChannel({ ...settings, muted: true }, 'effects')).toBe(0);
+  });
+
   it('maps farm log messages to authored cues', () => {
     expect(cueForLogMessage('Planted turnip seeds.')).toBe('plant');
     expect(cueForLogMessage('The watering can sings against the soil.')).toBe('water');
@@ -72,8 +92,25 @@ describe('audio settings', () => {
     for (const cue of allCues) {
       const fileName = audioCueFiles[cue];
 
+      expect(audioCueDefinitions[cue]).toMatchObject({ channel: 'effects', loop: false, fileName });
       expect(fileName.endsWith('.wav')).toBe(true);
       expect(audioCueSource(cue)).toBe(`/assets/audio/${fileName}`);
+      expect(existsSync(resolve(process.cwd(), 'public/assets/audio', fileName))).toBe(true);
+    }
+  });
+
+  it('registers looping music and ambience beds', () => {
+    expect(Object.keys(audioBedFiles).sort()).toEqual([...allBeds].sort());
+    expect(new Set(Object.values(audioBedFiles)).size).toBe(allBeds.length);
+
+    for (const bed of allBeds) {
+      const fileName = audioBedFiles[bed];
+      const definition = audioBedDefinitions[bed];
+
+      expect(definition.loop).toBe(true);
+      expect(definition.channel === 'music' || definition.channel === 'ambience').toBe(true);
+      expect(fileName.endsWith('.wav')).toBe(true);
+      expect(audioBedSource(bed)).toBe(`/assets/audio/${fileName}`);
       expect(existsSync(resolve(process.cwd(), 'public/assets/audio', fileName))).toBe(true);
     }
   });

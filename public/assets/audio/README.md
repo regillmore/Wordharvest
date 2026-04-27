@@ -20,3 +20,12 @@ Cue intent:
 - `save-chime.wav`: saved game cue.
 - `load-chime.wav`: loaded game cue.
 - `error-thud.wav`: blocked or invalid action.
+
+Loop intent:
+
+- `music-farm-loop.wav`: quiet farm music bed.
+- `music-town-loop.wav`: brighter town music bed.
+- `music-festival-loop.wav`: market day music bed.
+- `ambience-spring-loop.wav`: calm outdoor spring ambience.
+- `ambience-rain-loop.wav`: rainy outdoor ambience.
+- `ambience-indoor-loop.wav`: soft farmhouse room tone.

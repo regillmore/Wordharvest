@@ -1,5 +1,12 @@
 import { Application, Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
-import { AudioSystem, cueForLogMessage, deserializeAudioSettings, serializeAudioSettings, type AudioSettings } from './audio/audio';
+import {
+  AudioSystem,
+  cueForLogMessage,
+  deserializeAudioSettings,
+  serializeAudioSettings,
+  type AudioBedSelection,
+  type AudioSettings,
+} from './audio/audio';
 import { playerSpriteSheet, playerSpriteSource, type PlayerSpriteFrameId } from './assets/playerSprites';
 import { achievementProgressText } from './content/achievements';
 import {
@@ -305,6 +312,7 @@ function redraw(): void {
   app.stage.removeChildren();
   app.stage.addChild(createScene(farm, typedBuffer));
   redrawHud();
+  syncAudioScene();
 }
 
 function requireElement<T extends Element>(selector: string): T {
@@ -405,6 +413,22 @@ function syncAudioControls(): void {
   musicVolume.value = String(audioSettings.musicVolume);
   ambienceVolume.value = String(audioSettings.ambienceVolume);
   effectsVolume.value = String(audioSettings.effectsVolume);
+}
+
+function syncAudioScene(): void {
+  audio.setBeds(audioBedsForFarm(farm));
+}
+
+function audioBedsForFarm(state: FarmState): AudioBedSelection {
+  const music =
+    state.location === 'town' ? (townEventForDay(state.day) ? 'festivalMusic' : 'townMusic') : 'farmMusic';
+  const ambience =
+    state.location === 'house' ? 'indoorAmbience' : weatherDefinition(state.weather).watersCrops ? 'rainAmbience' : 'springAmbience';
+
+  return {
+    music,
+    ambience,
+  };
 }
 
 function syncSaveTimestampFromStorage(): void {

@@ -99,6 +99,61 @@ const cueSpecs = [
       { wave: 'square', frequency: 72, startSeconds: 0.03, durationSeconds: 0.07, volume: 0.05, attackSeconds: 0.002, releaseSeconds: 0.05 },
     ],
   },
+  {
+    fileName: 'music-farm-loop.wav',
+    durationSeconds: 2.4,
+    voices: [
+      { wave: 'triangle', frequency: 261.63, durationSeconds: 2.2, volume: 0.08, attackSeconds: 0.04, releaseSeconds: 0.32 },
+      { wave: 'triangle', frequency: 329.63, startSeconds: 0.36, durationSeconds: 1.72, volume: 0.06, attackSeconds: 0.05, releaseSeconds: 0.36 },
+      { wave: 'sine', frequency: 392, startSeconds: 0.88, durationSeconds: 1.18, volume: 0.045, attackSeconds: 0.05, releaseSeconds: 0.34 },
+    ],
+  },
+  {
+    fileName: 'music-town-loop.wav',
+    durationSeconds: 2.4,
+    voices: [
+      { wave: 'triangle', frequency: 293.66, durationSeconds: 2.1, volume: 0.075, attackSeconds: 0.04, releaseSeconds: 0.3 },
+      { wave: 'triangle', frequency: 440, startSeconds: 0.32, durationSeconds: 1.55, volume: 0.055, attackSeconds: 0.05, releaseSeconds: 0.32 },
+      { wave: 'sine', frequency: 587.33, startSeconds: 1.02, durationSeconds: 0.9, volume: 0.04, attackSeconds: 0.05, releaseSeconds: 0.28 },
+    ],
+  },
+  {
+    fileName: 'music-festival-loop.wav',
+    durationSeconds: 2.4,
+    voices: [
+      { wave: 'triangle', frequency: 392, durationSeconds: 0.7, volume: 0.075, attackSeconds: 0.02, releaseSeconds: 0.18 },
+      { wave: 'triangle', frequency: 493.88, startSeconds: 0.44, durationSeconds: 0.72, volume: 0.07, attackSeconds: 0.02, releaseSeconds: 0.18 },
+      { wave: 'triangle', frequency: 659.25, startSeconds: 0.9, durationSeconds: 0.8, volume: 0.06, attackSeconds: 0.02, releaseSeconds: 0.22 },
+      { wave: 'sine', frequency: 783.99, startSeconds: 1.52, durationSeconds: 0.55, volume: 0.04, attackSeconds: 0.02, releaseSeconds: 0.18 },
+    ],
+  },
+  {
+    fileName: 'ambience-spring-loop.wav',
+    durationSeconds: 2.4,
+    voices: [
+      { wave: 'noise', seed: 31, durationSeconds: 2.2, volume: 0.018, attackSeconds: 0.08, releaseSeconds: 0.32 },
+      { wave: 'sine', frequency: 1760, startSeconds: 0.46, durationSeconds: 0.16, volume: 0.025, attackSeconds: 0.02, releaseSeconds: 0.08 },
+      { wave: 'sine', frequency: 2349.32, startSeconds: 1.26, durationSeconds: 0.12, volume: 0.02, attackSeconds: 0.02, releaseSeconds: 0.07 },
+    ],
+  },
+  {
+    fileName: 'ambience-rain-loop.wav',
+    durationSeconds: 2.4,
+    voices: [
+      { wave: 'noise', seed: 44, durationSeconds: 2.3, volume: 0.07, attackSeconds: 0.06, releaseSeconds: 0.3 },
+      { wave: 'noise', seed: 47, startSeconds: 0.12, durationSeconds: 2.0, volume: 0.035, attackSeconds: 0.05, releaseSeconds: 0.26 },
+      { wave: 'sine', frequency: 610, startSeconds: 0.84, durationSeconds: 0.18, volume: 0.018, attackSeconds: 0.01, releaseSeconds: 0.12 },
+    ],
+  },
+  {
+    fileName: 'ambience-indoor-loop.wav',
+    durationSeconds: 2.4,
+    voices: [
+      { wave: 'noise', seed: 58, durationSeconds: 2.2, volume: 0.016, attackSeconds: 0.08, releaseSeconds: 0.32 },
+      { wave: 'sine', frequency: 130.81, durationSeconds: 2.1, volume: 0.018, attackSeconds: 0.08, releaseSeconds: 0.34 },
+      { wave: 'triangle', frequency: 196, startSeconds: 1.1, durationSeconds: 0.5, volume: 0.018, attackSeconds: 0.06, releaseSeconds: 0.18 },
+    ],
+  },
 ];
 
 await mkdir(outputDirectory, { recursive: true });

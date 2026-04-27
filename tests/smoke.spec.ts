@@ -129,6 +129,7 @@ test('opens menu words from typed labels', async ({ page }) => {
 
 test('joins the weekly town event from a visible festival label', async ({ page }) => {
   await page.goto('/');
+  await expect(page.locator('#word-preview')).toContainText('seed');
 
   for (let day = 2; day <= 7; day += 1) {
     await page.getByRole('button', { name: 'End Day' }).click();
@@ -157,6 +158,7 @@ test('shows persistent affordances for a completed Spring Basket', async ({ page
   }, completedSpringBasketSave());
 
   await page.goto('/');
+  await expect(page.locator('#word-preview')).toContainText('seed');
   await page.getByRole('button', { name: 'Load' }).click();
 
   await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: complete');
@@ -228,8 +230,19 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
 test('persists audio options locally', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();
+  await expect(page.locator('#word-preview')).toContainText('seed');
 
   await page.getByLabel('Mute').check();
+  await page.locator('#music-volume').evaluate((input) => {
+    const slider = input as HTMLInputElement;
+    slider.value = '0.15';
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  await page.locator('#ambience-volume').evaluate((input) => {
+    const slider = input as HTMLInputElement;
+    slider.value = '0.45';
+    slider.dispatchEvent(new Event('input', { bubbles: true }));
+  });
   await page.locator('#effects-volume').evaluate((input) => {
     const slider = input as HTMLInputElement;
     slider.value = '0.25';
@@ -239,6 +252,8 @@ test('persists audio options locally', async ({ page }) => {
   await page.reload();
 
   await expect(page.getByLabel('Mute')).toBeChecked();
+  await expect(page.locator('#music-volume')).toHaveValue('0.15');
+  await expect(page.locator('#ambience-volume')).toHaveValue('0.45');
   await expect(page.locator('#effects-volume')).toHaveValue('0.25');
 });
 
