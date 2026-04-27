@@ -28,6 +28,7 @@ import {
 } from '../content/objectives';
 import {
   emptyWeekGoalProgress,
+  weekGoalCompletionLog,
   markWeekGoalComplete,
   weekGoalDawnText,
   weekGoalDefinition,
@@ -611,7 +612,11 @@ function withActionLogs(
     };
 
     if (update.newlyCompleted) {
-      goalMessages.push(weekGoalDefinition(goalId).completedLog);
+      nextState = {
+        ...nextState,
+        coins: nextState.coins + weekGoalDefinition(goalId).rewardCoins,
+      };
+      goalMessages.push(weekGoalCompletionLog(goalId));
     }
   }
 

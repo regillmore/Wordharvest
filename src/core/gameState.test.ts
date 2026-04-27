@@ -53,11 +53,11 @@ describe('farm state', () => {
     expect(state.coins).toBe(25);
 
     state = settleAction(state);
-    expect(state.coins).toBe(25);
+    expect(state.coins).toBe(28);
     expect(state.seeds.turnip).toBe(2);
     expect(state.plots[4].stage).toBe('seed');
     expect(state.weekGoals.plantFirstSeeds).toBe(true);
-    expect(state.log[1]).toBe('Day 1 goal complete: first seeds planted.');
+    expect(state.log[1]).toBe('Day 1 goal complete: first seeds planted. Reward: 3 coins.');
     expect(state.pendingAction).toBeNull();
     expect(state.player).toEqual(state.plots[4].position);
   });
@@ -81,13 +81,13 @@ describe('farm state', () => {
 
     state = applyTypedWord(state, 'pick');
     state = settleAction(state);
-    expect(state.coins).toBe(25);
+    expect(state.coins).toBe(32);
     expect(state.inventory.turnip).toBe(1);
     expect(state.plots[4].stage).toBe('empty');
 
     state = applyTypedWord(state, 'bin');
     state = settleAction(state);
-    expect(state.coins).toBe(37);
+    expect(state.coins).toBe(50);
     expect(state.inventory.turnip).toBe(0);
     expect(state.seasonObjective.shipped.turnip).toBe(1);
     expect(state.seasonObjective.completed).toBe(false);
@@ -200,14 +200,15 @@ describe('farm state', () => {
     state = applyTypedWord(state, 'radish');
 
     expect(state.pendingAction).toBeNull();
-    expect(state.coins).toBe(17);
+    expect(state.coins).toBe(26);
     expect(state.seeds.radish).toBe(2);
     expect(state.weekGoals.buySpringSeeds).toBe(true);
     expect(state.log[0]).toBe('Bought 2 radish seeds for 8 coins.');
+    expect(state.log[1]).toBe('Day 4 goal complete: a new seed packet is in the bag. Reward: 5 coins.');
 
     state = applyTypedWord(state, 'carrot');
 
-    expect(state.coins).toBe(10);
+    expect(state.coins).toBe(19);
     expect(state.seeds.carrot).toBe(2);
     expect(state.log[0]).toBe('Bought 2 carrot seeds for 7 coins.');
 
@@ -224,14 +225,15 @@ describe('farm state', () => {
     state = settleAction(applyTypedWord(state, 'shop'));
     state = applyTypedWord(state, 'can');
 
-    expect(state.coins).toBe(13);
+    expect(state.coins).toBe(25);
     expect(state.upgrades.wateringCan).toBe(true);
     expect(state.weekGoals.buyTinCan).toBe(true);
     expect(state.log[0]).toBe('Bought the tin watering can for 12 coins.');
+    expect(state.log[1]).toBe('Day 6 goal complete: the tin watering can is ready. Reward: 8 coins.');
 
     state = applyTypedWord(state, 'can');
 
-    expect(state.coins).toBe(13);
+    expect(state.coins).toBe(25);
     expect(state.log[0]).toBe('The tin watering can is already yours.');
 
     state = settleAction(applyTypedWord(state, 'farm'));
@@ -248,7 +250,7 @@ describe('farm state', () => {
 
     expect(state.pendingAction).toBeNull();
     expect(state.log[0]).toBe(
-      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1). First Week: 0/7 goals done. Today: Plant first seeds - Plant any seed in a farm plot.',
+      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1). First Week: 0/7 goals done. Today: Plant first seeds - Plant any seed in a farm plot. Reward: 3 coins.',
     );
 
     const packState = applyTypedWord(
@@ -279,7 +281,7 @@ describe('farm state', () => {
     expect(state.forecast).toBe('rain');
     expect(state.plots[4].wateredToday).toBe(false);
     expect(state.log[0]).toBe(
-      'Day 2 dawns sunny. Tomorrow: rain. Goal: Water a growing crop. Water any planted crop before ending the day.',
+      'Day 2 dawns sunny. Tomorrow: rain. Goal: Water a growing crop. Water any planted crop before ending the day. Reward: 4 coins.',
     );
 
     state = advanceDay(state);
@@ -288,7 +290,7 @@ describe('farm state', () => {
     expect(state.forecast).toBe('sunny');
     expect(state.plots[4].wateredToday).toBe(true);
     expect(state.log[0]).toBe(
-      'Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny. Goal: Visit the town shop. Type shop in town to inspect the seed shelf.',
+      'Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny. Goal: Visit the town shop. Type shop in town to inspect the seed shelf. Reward: 4 coins.',
     );
   });
 
@@ -335,7 +337,7 @@ describe('farm state', () => {
 
     state = settleAction(state);
 
-    expect(state.coins).toBe(83);
+    expect(state.coins).toBe(89);
     expect(state.inventory.radish).toBe(0);
     expect(state.inventory.pea).toBe(0);
     expect(state.seasonObjective.shipped.radish).toBe(2);
@@ -360,7 +362,7 @@ describe('farm state', () => {
 
     state = settleAction(state);
 
-    expect(state.coins).toBe(71);
+    expect(state.coins).toBe(87);
     expect(state.inventory.turnip).toBe(0);
     expect(state.inventory.radish).toBe(0);
     expect(state.inventory.carrot).toBe(0);
@@ -368,8 +370,8 @@ describe('farm state', () => {
     expect(state.weekGoals.completeSpringBasket).toBe(true);
     expect(state.log[0]).toBe('Spring Basket complete! Mira added 25 coins for the market table.');
     expect(state.log[1]).toBe('Shipped 1 turnip and 1 radish and 1 carrot for 46 coins.');
-    expect(state.log[2]).toBe('Day 5 goal complete: the first crop shipment went out.');
-    expect(state.log[3]).toBe('Day 7 goal complete: Spring Basket is finished.');
+    expect(state.log[2]).toBe('Day 5 goal complete: the first crop shipment went out. Reward: 6 coins.');
+    expect(state.log[3]).toBe('Day 7 goal complete: Spring Basket is finished. Reward: 10 coins.');
 
     const journalState = applyTypedWord(state, 'journal');
 

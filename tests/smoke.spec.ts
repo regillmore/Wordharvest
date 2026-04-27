@@ -18,13 +18,15 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#crop-value')).toHaveText('no harvested crops');
   await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: 0/3 crops shipped');
   await expect(page.locator('#objective-completion')).toBeHidden();
-  await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds open');
+  await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds open (+3 coins)');
 
   await page.keyboard.type('seed');
   await page.keyboard.press('Enter');
 
   await expect(page.getByText('Planted turnip seeds.')).toBeVisible();
-  await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds done');
+  await expect(page.locator('#coin-value')).toHaveText('28');
+  await expect(page.getByText('Day 1 goal complete: first seeds planted. Reward: 3 coins.')).toBeVisible();
+  await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds done (+3 coins)');
 
   await page.keyboard.type('house');
   await page.keyboard.press('Enter');
@@ -52,13 +54,15 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await page.keyboard.type('radish');
   await page.keyboard.press('Enter');
   await expect(page.getByText('Bought 2 radish seeds for 8 coins.')).toBeVisible();
-  await expect(page.locator('#coin-value')).toHaveText('17');
+  await expect(page.getByText('Day 4 goal complete: a new seed packet is in the bag. Reward: 5 coins.')).toBeVisible();
+  await expect(page.locator('#coin-value')).toHaveText('26');
   await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds, 2 radish seeds');
 
   await page.keyboard.type('can');
   await page.keyboard.press('Enter');
   await expect(page.getByText('Bought the tin watering can for 12 coins.')).toBeVisible();
-  await expect(page.locator('#coin-value')).toHaveText('5');
+  await expect(page.getByText('Day 6 goal complete: the tin watering can is ready. Reward: 8 coins.')).toBeVisible();
+  await expect(page.locator('#coin-value')).toHaveText('22');
   await expect(page.locator('#can-value')).toHaveText('Tin');
 
   await page.keyboard.type('hello');
@@ -120,10 +124,10 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await page.keyboard.type('seed');
   await page.keyboard.press('Enter');
   await expect(page.getByText('Planted turnip seeds.')).toBeVisible();
-  await expect(page.locator('#coin-value')).toHaveText('25');
+  await expect(page.locator('#coin-value')).toHaveText('28');
   await expect(page.locator('#seed-value')).toHaveText('2 turnip seeds');
   await expect(page.locator('#crop-value')).toHaveText('no harvested crops');
-  await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds done');
+  await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds done (+3 coins)');
 
   await page.getByRole('button', { name: 'Save' }).click();
   await expect(page.getByText('Saved.')).toBeVisible();
@@ -132,12 +136,12 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await page.getByRole('button', { name: 'End Day' }).click();
   await expect(page.locator('#day-value')).toHaveText('2');
   await expect(page.locator('#forecast-value')).toHaveText('Rain');
-  await expect(page.locator('#week-progress')).toHaveText('Day 2: Water a growing crop open');
+  await expect(page.locator('#week-progress')).toHaveText('Day 2: Water a growing crop open (+4 coins)');
 
   await page.getByRole('button', { name: 'Load' }).click();
   await expect(page.locator('#day-value')).toHaveText('1');
   await expect(page.locator('#forecast-value')).toHaveText('Sunny');
-  await expect(page.locator('#coin-value')).toHaveText('25');
+  await expect(page.locator('#coin-value')).toHaveText('28');
   await expect(page.locator('#seed-value')).toHaveText('2 turnip seeds');
   await expect(page.locator('#save-timestamp')).toContainText(/^Restored save: \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
 
@@ -185,7 +189,7 @@ function completedSpringBasketSave(): string {
     savedAt: '2026-04-25T00:00:00.000Z',
     state: {
       day: 8,
-      coins: 71,
+      coins: 87,
       stamina: 10,
       player: { x: 2, y: 4.4 },
       location: 'farm',

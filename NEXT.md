@@ -77,6 +77,6 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add daily goal rewards or request variation after the first-week guide proves fun.
-2. Add collection log tracking for discovered crops and shipped varieties.
-3. Add a post-Spring Basket follow-up goal that keeps completed saves pointed at a next activity.
+1. Add collection log tracking for discovered crops and shipped varieties.
+2. Add a post-Spring Basket follow-up goal that keeps completed saves pointed at a next activity.
+3. Add daily request variation once the rewarded first-week guide feels stable.

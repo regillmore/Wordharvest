@@ -16,6 +16,7 @@ export interface WeekGoalDefinition {
   day: number;
   title: string;
   prompt: string;
+  rewardCoins: number;
   completedLog: string;
 }
 
@@ -35,6 +36,7 @@ export const firstWeekGoalCatalog = [
     day: 1,
     title: 'Plant first seeds',
     prompt: 'Plant any seed in a farm plot.',
+    rewardCoins: 3,
     completedLog: 'Day 1 goal complete: first seeds planted.',
   },
   {
@@ -42,6 +44,7 @@ export const firstWeekGoalCatalog = [
     day: 2,
     title: 'Water a growing crop',
     prompt: 'Water any planted crop before ending the day.',
+    rewardCoins: 4,
     completedLog: 'Day 2 goal complete: a crop was watered.',
   },
   {
@@ -49,6 +52,7 @@ export const firstWeekGoalCatalog = [
     day: 3,
     title: 'Visit the town shop',
     prompt: 'Type shop in town to inspect the seed shelf.',
+    rewardCoins: 4,
     completedLog: 'Day 3 goal complete: the town shop is on your route now.',
   },
   {
@@ -56,6 +60,7 @@ export const firstWeekGoalCatalog = [
     day: 4,
     title: 'Buy a new seed packet',
     prompt: 'Buy a non-turnip seed packet from the town shop.',
+    rewardCoins: 5,
     completedLog: 'Day 4 goal complete: a new seed packet is in the bag.',
   },
   {
@@ -63,6 +68,7 @@ export const firstWeekGoalCatalog = [
     day: 5,
     title: 'Ship a harvested crop',
     prompt: 'Put at least one harvested crop into the shipping bin.',
+    rewardCoins: 6,
     completedLog: 'Day 5 goal complete: the first crop shipment went out.',
   },
   {
@@ -70,6 +76,7 @@ export const firstWeekGoalCatalog = [
     day: 6,
     title: 'Upgrade the watering can',
     prompt: 'Buy the tin watering can from the town shop.',
+    rewardCoins: 8,
     completedLog: 'Day 6 goal complete: the tin watering can is ready.',
   },
   {
@@ -77,6 +84,7 @@ export const firstWeekGoalCatalog = [
     day: 7,
     title: 'Finish Spring Basket',
     prompt: 'Ship the turnip, radish, and carrot Mira requested.',
+    rewardCoins: 10,
     completedLog: 'Day 7 goal complete: Spring Basket is finished.',
   },
 ] as const satisfies readonly WeekGoalDefinition[];
@@ -139,6 +147,12 @@ export function weekGoalForDay(day: number): WeekGoalDefinition | undefined {
   return firstWeekGoalCatalog.find((definition) => definition.day === day);
 }
 
+export function weekGoalCompletionLog(goalId: WeekGoalId): string {
+  const goal = weekGoalDefinition(goalId);
+
+  return `${goal.completedLog} Reward: ${goal.rewardCoins} coins.`;
+}
+
 export function weekGoalProgressText(day: number, progress: WeekGoalProgress): string {
   const normalizedProgress = normalizeWeekGoalProgress(progress);
   const goal = weekGoalForDay(day);
@@ -147,7 +161,7 @@ export function weekGoalProgressText(day: number, progress: WeekGoalProgress): s
     return `First Week: ${completedWeekGoalCount(normalizedProgress)}/${firstWeekGoalCatalog.length} goals done`;
   }
 
-  return `Day ${goal.day}: ${goal.title} ${normalizedProgress[goal.id] ? 'done' : 'open'}`;
+  return `Day ${goal.day}: ${goal.title} ${normalizedProgress[goal.id] ? 'done' : 'open'} (+${goal.rewardCoins} coins)`;
 }
 
 export function weekGoalDetailText(day: number, progress: WeekGoalProgress): string {
@@ -159,13 +173,15 @@ export function weekGoalDetailText(day: number, progress: WeekGoalProgress): str
     return summary;
   }
 
-  return `${summary}. Today: ${goal.title} - ${goal.prompt}`;
+  return `${summary}. Today: ${goal.title} - ${goal.prompt} Reward: ${goal.rewardCoins} coins.`;
 }
 
 export function weekGoalDawnText(day: number): string {
   const goal = weekGoalForDay(day);
 
-  return goal ? `Goal: ${goal.title}. ${goal.prompt}` : 'Goal: Keep tending crops and Spring Basket.';
+  return goal
+    ? `Goal: ${goal.title}. ${goal.prompt} Reward: ${goal.rewardCoins} coins.`
+    : 'Goal: Keep tending crops and Spring Basket.';
 }
 
 export function validateWeekGoalCatalog(): WeekGoalCatalogValidationResult {
@@ -192,6 +208,10 @@ export function validateWeekGoalCatalog(): WeekGoalCatalogValidationResult {
 
     if (!definition.title || !definition.prompt || !definition.completedLog) {
       errors.push(`Week goal ${definition.id} is missing display text.`);
+    }
+
+    if (!Number.isInteger(definition.rewardCoins) || definition.rewardCoins < 0) {
+      errors.push(`Week goal ${definition.id} must have a non-negative integer reward.`);
     }
   }
 
