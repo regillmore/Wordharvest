@@ -61,8 +61,8 @@ Complete when:
 - [x] Achievements reward farming, typing, exploration, collection, and economy goals.
 - [x] A small town edge supports NPCs, shop, requests, and a festival.
 - [x] Audio channels, options, and mute are complete.
-- [ ] Accessibility options cover typing assists, reduced motion, readable UI, and visual cue equivalents.
-- [ ] Playwright covers boot, input, save/load, and settings.
+- [x] Accessibility options cover typing assists, reduced motion, readable UI, and visual cue equivalents.
+- [x] Playwright covers boot, input, save/load, and settings.
 
 ## Milestone 4 - 1.0 Beta
 
@@ -79,4 +79,4 @@ Complete when:
 
 1. Add recipe and forage collection sections once their source actions exist.
 2. Expand achievement presentation with a dedicated badge view once menus grow beyond HUD logs.
-3. Add accessibility options for typing assists, reduced motion, readable UI, and visual cue equivalents.
+3. Start the Milestone 4 release checklist with save migration review and GitHub Pages preview notes.

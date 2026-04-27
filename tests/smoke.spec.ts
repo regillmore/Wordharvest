@@ -227,7 +227,7 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.getByText('No save found.')).toBeVisible();
 });
 
-test('persists audio options locally', async ({ page }) => {
+test('persists audio and accessibility options locally', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();
   await expect(page.locator('#word-preview')).toContainText('seed');
@@ -248,6 +248,10 @@ test('persists audio options locally', async ({ page }) => {
     slider.value = '0.25';
     slider.dispatchEvent(new Event('input', { bubbles: true }));
   });
+  await page.getByLabel('Typing assist').check();
+  await page.getByLabel('Reduced motion').check();
+  await page.getByLabel('Readable UI').check();
+  await page.getByLabel('Visual cues').uncheck();
 
   await page.reload();
 
@@ -255,6 +259,23 @@ test('persists audio options locally', async ({ page }) => {
   await expect(page.locator('#music-volume')).toHaveValue('0.15');
   await expect(page.locator('#ambience-volume')).toHaveValue('0.45');
   await expect(page.locator('#effects-volume')).toHaveValue('0.25');
+  await expect(page.getByLabel('Typing assist')).toBeChecked();
+  await expect(page.getByLabel('Reduced motion')).toBeChecked();
+  await expect(page.getByLabel('Readable UI')).toBeChecked();
+  await expect(page.getByLabel('Visual cues')).not.toBeChecked();
+  await expect(page.locator('.game-shell')).toHaveClass(/is-reduced-motion/);
+  await expect(page.locator('.game-shell')).toHaveClass(/is-readable-ui/);
+});
+
+test('supports typing assist with visual cue equivalents', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('#word-preview')).toContainText('seed');
+
+  await page.getByLabel('Typing assist').check();
+  await page.keyboard.type('seed');
+
+  await expect(page.getByText('Planted turnip seeds.')).toBeVisible();
+  await expect(page.locator('#visual-cue')).toHaveText('Cue: planted');
 });
 
 function completedSpringBasketSave(): string {

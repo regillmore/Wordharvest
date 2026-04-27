@@ -5,6 +5,7 @@ import {
   deserializeAudioSettings,
   serializeAudioSettings,
   type AudioBedSelection,
+  type AudioCue,
   type AudioSettings,
 } from './audio/audio';
 import { playerSpriteSheet, playerSpriteSource, type PlayerSpriteFrameId } from './assets/playerSprites';
@@ -14,6 +15,7 @@ import {
   advanceDay,
   advanceFarmTime,
   applyTypedWord,
+  completePendingAction,
   cropInventorySummary,
   createFarmState,
   seedInventorySummary,
@@ -47,6 +49,12 @@ import {
 } from './core/worldTargets';
 import { farmTiles, type FarmTile, type FarmTileKind } from './world/farmMap';
 import { findFarmPath } from './world/pathfinding';
+import {
+  deserializeAccessibilitySettings,
+  normalizeAccessibilitySettings,
+  serializeAccessibilitySettings,
+  type AccessibilitySettings,
+} from './ui/accessibility';
 import './style.css';
 
 const root = document.querySelector<HTMLDivElement>('#app');
@@ -60,7 +68,9 @@ let typedBuffer = '';
 
 const saveKey = 'wordharvest:save:v1';
 const audioSettingsKey = 'wordharvest:audio:v1';
+const accessibilitySettingsKey = 'wordharvest:accessibility:v1';
 let audioSettings = deserializeAudioSettings(localStorage.getItem(audioSettingsKey));
+let accessibilitySettings = deserializeAccessibilitySettings(localStorage.getItem(accessibilitySettingsKey));
 const audio = new AudioSystem(audioSettings);
 
 root.innerHTML = `
@@ -101,8 +111,8 @@ root.innerHTML = `
         <p class="label">Nearby words</p>
         <p id="word-preview" class="word-preview"></p>
       </section>
-      <fieldset class="audio-panel">
-        <legend class="label">Audio</legend>
+      <section class="audio-panel" aria-labelledby="audio-options-title">
+        <p id="audio-options-title" class="label">Audio</p>
         <label class="check-control">
           <input id="audio-muted" type="checkbox" />
           <span>Mute</span>
@@ -119,7 +129,27 @@ root.innerHTML = `
           <span>Effects</span>
           <input id="effects-volume" type="range" min="0" max="1" step="0.05" />
         </label>
-      </fieldset>
+      </section>
+      <section class="accessibility-panel" aria-labelledby="accessibility-options-title">
+        <p id="accessibility-options-title" class="label">Accessibility</p>
+        <label class="check-control">
+          <input id="typing-assist" type="checkbox" />
+          <span>Typing assist</span>
+        </label>
+        <label class="check-control">
+          <input id="reduced-motion" type="checkbox" />
+          <span>Reduced motion</span>
+        </label>
+        <label class="check-control">
+          <input id="readable-ui" type="checkbox" />
+          <span>Readable UI</span>
+        </label>
+        <label class="check-control">
+          <input id="visual-cues" type="checkbox" />
+          <span>Visual cues</span>
+        </label>
+        <p id="visual-cue" class="visual-cue" role="status" aria-live="polite"></p>
+      </section>
       <section>
         <p class="label">Farm log</p>
         <ol id="farm-log" class="farm-log"></ol>
@@ -136,6 +166,7 @@ root.innerHTML = `
   </main>
 `;
 
+const gameShell = requireElement<HTMLElement>('.game-shell');
 const canvasHost = requireElement<HTMLDivElement>('#game-canvas');
 const dayValue = requireElement<HTMLElement>('#day-value');
 const coinValue = requireElement<HTMLElement>('#coin-value');
@@ -166,6 +197,11 @@ const mutedControl = requireElement<HTMLInputElement>('#audio-muted');
 const musicVolume = requireElement<HTMLInputElement>('#music-volume');
 const ambienceVolume = requireElement<HTMLInputElement>('#ambience-volume');
 const effectsVolume = requireElement<HTMLInputElement>('#effects-volume');
+const typingAssistControl = requireElement<HTMLInputElement>('#typing-assist');
+const reducedMotionControl = requireElement<HTMLInputElement>('#reduced-motion');
+const readableUiControl = requireElement<HTMLInputElement>('#readable-ui');
+const visualCuesControl = requireElement<HTMLInputElement>('#visual-cues');
+const visualCue = requireElement<HTMLElement>('#visual-cue');
 
 const app = new Application();
 await app.init({
@@ -187,7 +223,7 @@ nextDay.addEventListener('click', () => {
 saveGame.addEventListener('click', () => {
   if (farm.pendingAction) {
     farm = addFarmLog(farm, `Finish walking to ${farm.pendingAction.label} before saving.`);
-    audio.play('error');
+    playCue('error');
     redraw();
     return;
   }
@@ -197,14 +233,14 @@ saveGame.addEventListener('click', () => {
   farm = addFarmLog(farm, 'Saved the farm.');
   saveStatus.textContent = 'Saved.';
   saveTimestamp.textContent = `Last saved: ${formatSaveTimestamp(savedAt)}`;
-  audio.play('save');
+  playCue('save');
   redraw();
 });
 
 loadGame.addEventListener('click', () => {
   if (farm.pendingAction) {
     farm = addFarmLog(farm, `Finish walking to ${farm.pendingAction.label} before loading.`);
-    audio.play('error');
+    playCue('error');
     redraw();
     return;
   }
@@ -214,7 +250,7 @@ loadGame.addEventListener('click', () => {
     farm = addFarmLog(farm, 'No local save found.');
     saveStatus.textContent = 'No save found.';
     saveTimestamp.textContent = 'No save restored.';
-    audio.play('error');
+    playCue('error');
     redraw();
     return;
   }
@@ -224,7 +260,7 @@ loadGame.addEventListener('click', () => {
     farm = addFarmLog(farm, result.error);
     saveStatus.textContent = 'Load failed.';
     saveTimestamp.textContent = 'Stored save could not be loaded.';
-    audio.play('error');
+    playCue('error');
     redraw();
     return;
   }
@@ -232,7 +268,7 @@ loadGame.addEventListener('click', () => {
   farm = addFarmLog(result.state, result.migrated ? 'Loaded and migrated the farm.' : 'Loaded the farm.');
   saveStatus.textContent = result.migrated ? 'Loaded migrated save.' : 'Loaded.';
   saveTimestamp.textContent = `${result.migrated ? 'Restored migrated save' : 'Restored save'}: ${formatSaveTimestamp(result.savedAt)}`;
-  audio.play('load');
+  playCue('load');
   redraw();
 });
 
@@ -242,13 +278,19 @@ resetGame.addEventListener('click', () => {
   typedBuffer = '';
   saveStatus.textContent = 'Reset.';
   saveTimestamp.textContent = 'No save restored.';
-  audio.play('load');
+  playCue('load');
   redraw();
 });
 
 for (const control of [mutedControl, musicVolume, ambienceVolume, effectsVolume]) {
   control.addEventListener('input', () => {
     updateAudioSettings(readAudioSettingsFromControls());
+  });
+}
+
+for (const control of [typingAssistControl, reducedMotionControl, readableUiControl, visualCuesControl]) {
+  control.addEventListener('input', () => {
+    updateAccessibilitySettings(readAccessibilitySettingsFromControls());
   });
 }
 
@@ -265,22 +307,19 @@ window.addEventListener('keydown', (event) => {
   }
 
   if (event.key === 'Enter' || event.key === ' ') {
-    const wasPending = Boolean(farm.pendingAction);
-    farm = applyTypedWord(farm, typedBuffer);
-    if (!wasPending && farm.pendingAction) {
-      audio.play('walk');
-    } else {
-      playCueForLatestLog();
-    }
-    typedBuffer = '';
-    redraw();
+    submitTypedBuffer();
     event.preventDefault();
     return;
   }
 
   if (/^[a-z]$/i.test(event.key)) {
     typedBuffer = normalizeTypedWord(`${typedBuffer}${event.key}`).slice(0, 16);
-    audio.play('type');
+    playCue('type');
+    if (accessibilitySettings.typingAssist && resolveWorldTarget(farm, typedBuffer)) {
+      submitTypedBuffer();
+      event.preventDefault();
+      return;
+    }
     redrawHud();
   }
 });
@@ -291,7 +330,7 @@ app.ticker.add((ticker) => {
   }
 
   const hadPendingAction = Boolean(farm.pendingAction);
-  farm = advanceFarmTime(farm, ticker.deltaMS / 1000);
+  farm = accessibilitySettings.reducedMotion ? completePendingAction(farm) : advanceFarmTime(farm, ticker.deltaMS / 1000);
   if (hadPendingAction && !farm.pendingAction) {
     playCueForLatestLog();
   }
@@ -299,6 +338,8 @@ app.ticker.add((ticker) => {
 });
 
 syncAudioControls();
+syncAccessibilityControls();
+applyAccessibilitySettings();
 syncSaveTimestampFromStorage();
 redraw();
 
@@ -313,6 +354,18 @@ function redraw(): void {
   app.stage.addChild(createScene(farm, typedBuffer));
   redrawHud();
   syncAudioScene();
+}
+
+function submitTypedBuffer(): void {
+  const wasPending = Boolean(farm.pendingAction);
+  farm = applyTypedWord(farm, typedBuffer);
+  if (!wasPending && farm.pendingAction) {
+    playCue('walk');
+  } else {
+    playCueForLatestLog();
+  }
+  typedBuffer = '';
+  redraw();
 }
 
 function requireElement<T extends Element>(selector: string): T {
@@ -415,6 +468,37 @@ function syncAudioControls(): void {
   effectsVolume.value = String(audioSettings.effectsVolume);
 }
 
+function readAccessibilitySettingsFromControls(): AccessibilitySettings {
+  return {
+    typingAssist: typingAssistControl.checked,
+    reducedMotion: reducedMotionControl.checked,
+    readableUi: readableUiControl.checked,
+    visualCues: visualCuesControl.checked,
+  };
+}
+
+function updateAccessibilitySettings(settings: AccessibilitySettings): void {
+  accessibilitySettings = normalizeAccessibilitySettings(settings);
+  localStorage.setItem(accessibilitySettingsKey, serializeAccessibilitySettings(accessibilitySettings));
+  applyAccessibilitySettings();
+}
+
+function syncAccessibilityControls(): void {
+  typingAssistControl.checked = accessibilitySettings.typingAssist;
+  reducedMotionControl.checked = accessibilitySettings.reducedMotion;
+  readableUiControl.checked = accessibilitySettings.readableUi;
+  visualCuesControl.checked = accessibilitySettings.visualCues;
+}
+
+function applyAccessibilitySettings(): void {
+  gameShell.classList.toggle('is-reduced-motion', accessibilitySettings.reducedMotion);
+  gameShell.classList.toggle('is-readable-ui', accessibilitySettings.readableUi);
+
+  if (!accessibilitySettings.visualCues) {
+    visualCue.textContent = '';
+  }
+}
+
 function syncAudioScene(): void {
   audio.setBeds(audioBedsForFarm(farm));
 }
@@ -454,12 +538,38 @@ function formatSaveTimestamp(savedAt: string): string {
   return `${date.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 }
 
+function playCue(cue: AudioCue): void {
+  audio.play(cue);
+
+  if (accessibilitySettings.visualCues) {
+    visualCue.textContent = visualCueText(cue);
+  }
+}
+
 function playCueForLatestLog(): void {
   const cue = cueForLogMessage(farm.log[0] ?? '');
 
   if (cue) {
-    audio.play(cue);
+    playCue(cue);
   }
+}
+
+function visualCueText(cue: AudioCue): string {
+  const cueText = {
+    type: 'Cue: typing',
+    walk: 'Cue: walking',
+    plant: 'Cue: planted',
+    water: 'Cue: watered',
+    harvest: 'Cue: harvested',
+    ship: 'Cue: reward',
+    door: 'Cue: door',
+    day: 'Cue: new day',
+    save: 'Cue: saved',
+    load: 'Cue: loaded',
+    error: 'Cue: needs attention',
+  } as const satisfies Record<AudioCue, string>;
+
+  return cueText[cue];
 }
 
 function createScene(state: FarmState, typedWord: string): Container {
