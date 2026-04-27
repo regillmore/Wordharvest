@@ -20,6 +20,7 @@ export type WorldTargetAction =
   | { kind: 'return-farm'; destination: WorldPoint }
   | { kind: 'visit-shop' }
   | { kind: 'talk-villager' }
+  | { kind: 'read-request-board'; destination: WorldPoint }
   | { kind: 'complete-daily-request'; destination: WorldPoint }
   | { kind: 'open-menu'; menu: MenuId; destination: WorldPoint }
   | { kind: 'ship-inventory' }
@@ -49,6 +50,7 @@ export const townGatePosition: WorldPoint = { x: 0, y: 6 };
 export const townArrivalPosition: WorldPoint = { x: 0, y: 5.6 };
 export const farmReturnPosition: WorldPoint = { x: 0, y: 5.7 };
 export const townShopPosition: WorldPoint = { x: -2, y: 5.1 };
+export const townRequestBoardPosition: WorldPoint = { x: -0.82, y: 5.08 };
 export const townVillagerPosition: WorldPoint = { x: 2, y: 5.15 };
 
 const houseSightRange = 7;
@@ -105,6 +107,14 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
         position: townShopPosition,
         distance: distanceBetween(state.player, townShopPosition),
         action: { kind: 'visit-shop' },
+      },
+      {
+        id: 'town-request-board',
+        word: primaryWordForTargetRole('request-board'),
+        label: primaryWordForTargetRole('request-board'),
+        position: townRequestBoardPosition,
+        distance: distanceBetween(state.player, townRequestBoardPosition),
+        action: { kind: 'read-request-board', destination: townRequestBoardPosition },
       },
       {
         id: 'town-villager',
@@ -234,6 +244,7 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
     target.action.kind === 'exit-house' ||
     target.action.kind === 'enter-town' ||
     target.action.kind === 'return-farm' ||
+    target.action.kind === 'read-request-board' ||
     target.action.kind === 'complete-daily-request' ||
     target.action.kind === 'open-menu' ||
     target.action.kind === 'buy-seeds' ||

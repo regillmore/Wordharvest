@@ -9,6 +9,7 @@ export type TargetWordRole =
   | 'town-shop'
   | 'talk-villager'
   | 'daily-request'
+  | 'request-board'
   | 'open-journal'
   | 'open-inventory'
   | 'open-options'
@@ -81,6 +82,12 @@ export const targetWordCatalog = [
     category: 'person',
     words: ['favor', 'errand', 'order', 'delivery'],
     description: 'Villager request labels for delivering the current daily crop request.',
+  },
+  {
+    role: 'request-board',
+    category: 'object',
+    words: ['board', 'notice', 'bulletin'],
+    description: 'Town request board label for reading the current delivery note.',
   },
   {
     role: 'open-journal',
@@ -229,6 +236,7 @@ const requiredTargetWordRoles: readonly TargetWordRole[] = [
   'town-shop',
   'talk-villager',
   'daily-request',
+  'request-board',
   'open-journal',
   'open-inventory',
   'open-options',

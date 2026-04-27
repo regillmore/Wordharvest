@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createDailyRequestProgress,
+  dailyRequestBoardText,
   dailyRequestCatalog,
   dailyRequestDeliveryLog,
   dailyRequestDetailText,
@@ -33,6 +34,9 @@ describe('daily requests', () => {
     expect(dailyRequestDetailText(1, progress)).toBe(
       'Town request: Mira wants 1 turnip for Pantry Turnip. Type favor in town to deliver. Status: open. Reward: 6 coins.',
     );
+    expect(dailyRequestBoardText(1, progress)).toBe(
+      'Request board: Pantry Turnip - Mira wants 1 turnip. Type favor near Mira to deliver. Reward: 6 coins.',
+    );
     expect(dailyRequestDawnText(2, progress)).toBe(
       'Request: Mira wants 1 radish for Radish Crunch. Type errand in town to deliver. Reward: 8 coins.',
     );
@@ -43,6 +47,9 @@ describe('daily requests', () => {
     expect(update.newlyCompleted).toBe(true);
     expect(isDailyRequestComplete(1, progress)).toBe(true);
     expect(dailyRequestProgressText(1, progress)).toBe('Request: Pantry Turnip done (+6 coins)');
+    expect(dailyRequestBoardText(1, progress)).toBe(
+      'Request board: Pantry Turnip is complete for today. Tomorrow will bring another note.',
+    );
     expect(dailyRequestDeliveryLog(dailyRequestForDay(1))).toBe(
       "Delivered 1 turnip for Mira's Pantry Turnip request. Reward: 6 coins.",
     );

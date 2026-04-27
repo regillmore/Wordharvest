@@ -47,8 +47,13 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await expect(page.getByText('Followed the south path toward town.')).toBeVisible();
   await expect(page.locator('#word-preview')).toContainText('farm');
   await expect(page.locator('#word-preview')).toContainText('shop');
+  await expect(page.locator('#word-preview')).toContainText('board');
   await expect(page.locator('#word-preview')).toContainText('hello');
   await expect(page.locator('#word-preview')).toContainText('favor');
+
+  await page.keyboard.type('board');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Request board: Pantry Turnip - Mira wants 1 turnip. Type favor near Mira to deliver. Reward: 6 coins.')).toBeVisible();
 
   await page.keyboard.type('favor');
   await page.keyboard.press('Enter');
@@ -68,7 +73,7 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await expect(page.locator('#coin-value')).toHaveText('26');
   await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds, 2 radish seeds');
   await expect(page.locator('#collection-value')).toHaveText(
-    /Crops 2\/10 found, 0\/10 shipped; Words 26\/\d+ found, 4\/\d+ used/,
+    /Crops 2\/10 found, 0\/10 shipped; Words 27\/\d+ found, 5\/\d+ used/,
   );
 
   await page.keyboard.type('can');
@@ -93,7 +98,7 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await expect(page.getByText('Planted radish seeds.')).toBeVisible();
   await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds, 1 radish seed');
   await expect(page.locator('#collection-value')).toHaveText(
-    /Crops 2\/10 found, 0\/10 shipped; Words 27\/\d+ found, 7\/\d+ used/,
+    /Crops 2\/10 found, 0\/10 shipped; Words 28\/\d+ found, 8\/\d+ used/,
   );
 });
 

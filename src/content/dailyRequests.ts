@@ -139,6 +139,16 @@ export function dailyRequestDetailText(day: number, progress: DailyRequestProgre
   return `Town request: ${request.requester} wants ${requestCropText(request)} for ${request.title}. Type ${request.word} in town to deliver. Status: ${status}. Reward: ${request.rewardCoins} coins.`;
 }
 
+export function dailyRequestBoardText(day: number, progress: DailyRequestProgress): string {
+  const request = dailyRequestForDay(day);
+
+  if (isDailyRequestComplete(day, progress)) {
+    return `Request board: ${request.title} is complete for today. Tomorrow will bring another note.`;
+  }
+
+  return `Request board: ${request.title} - ${request.requester} wants ${requestCropText(request)}. Type ${request.word} near ${request.requester} to deliver. Reward: ${request.rewardCoins} coins.`;
+}
+
 export function dailyRequestDawnText(day: number, progress: DailyRequestProgress): string {
   const request = dailyRequestForDay(day);
 

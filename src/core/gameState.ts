@@ -28,6 +28,7 @@ import {
 } from '../content/followUpGoals';
 import {
   createDailyRequestProgress,
+  dailyRequestBoardText,
   dailyRequestDawnText,
   dailyRequestDeliveryLog,
   dailyRequestDetailText,
@@ -333,6 +334,10 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
 
   if (action.kind === 'talk-villager') {
     return withLog(state, 'Mira says hello and asks how the turnips are growing.');
+  }
+
+  if (action.kind === 'read-request-board') {
+    return withLog(state, dailyRequestBoardText(state.day, state.dailyRequests));
   }
 
   if (action.kind === 'complete-daily-request') {

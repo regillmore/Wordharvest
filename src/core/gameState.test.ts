@@ -192,6 +192,12 @@ describe('farm state', () => {
   it('supports town shop and villager targets', () => {
     let state = settleAction(applyTypedWord(createFarmState(), 'town'));
 
+    state = settleAction(applyTypedWord(state, 'board'));
+    expect(state.location).toBe('town');
+    expect(state.log[0]).toBe(
+      'Request board: Pantry Turnip - Mira wants 1 turnip. Type favor near Mira to deliver. Reward: 6 coins.',
+    );
+
     state = settleAction(applyTypedWord(state, 'shop'));
     expect(state.location).toBe('town');
     expect(state.weekGoals.visitTownShop).toBe(true);

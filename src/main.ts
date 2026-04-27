@@ -29,6 +29,7 @@ import {
   seedSourcePosition,
   shippingBinPosition,
   townGatePosition,
+  townRequestBoardPosition,
   townShopPosition,
   townVillagerPosition,
   type WorldPoint,
@@ -485,6 +486,7 @@ function createTownEdge(state: FarmState, typedWord: string): Container {
 
   drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
   drawTownShop(scene, viewport);
+  drawTownRequestBoard(scene, viewport);
   drawTownVillager(scene, viewport);
   drawPlayer(scene, viewport, state.player);
   drawTargets(scene, viewport, listWorldTargets(state));
@@ -753,6 +755,19 @@ function drawTownShop(scene: Container, viewport: Viewport): void {
   scene.addChild(rect(shop.x - width * 0.58, shop.y - height, width * 1.16, height * 0.28, 0x7d3f2a));
   scene.addChild(rect(shop.x - width * 0.24, shop.y - height * 0.42, width * 0.48, height * 0.16, 0xe7d39f));
   scene.addChild(rect(shop.x - width * 0.12, shop.y - height * 0.2, width * 0.24, height * 0.28, 0x4f3328));
+}
+
+function drawTownRequestBoard(scene: Container, viewport: Viewport): void {
+  const board = worldToScreen(viewport, townRequestBoardPosition);
+  const width = viewport.scale * 0.7;
+  const height = viewport.scale * 0.52;
+  const postWidth = viewport.scale * 0.08;
+
+  scene.addChild(rect(board.x - postWidth / 2, board.y - height * 0.08, postWidth, height * 0.86, 0x4f3328));
+  scene.addChild(rect(board.x - width / 2, board.y - height * 0.78, width, height, 0x7b4e2c));
+  scene.addChild(rect(board.x - width * 0.4, board.y - height * 0.66, width * 0.34, height * 0.28, 0xf4e3a3));
+  scene.addChild(rect(board.x + width * 0.06, board.y - height * 0.64, width * 0.32, height * 0.23, 0xe7d39f));
+  scene.addChild(rect(board.x - width * 0.3, board.y - height * 0.24, width * 0.6, height * 0.08, 0xc8ad72));
 }
 
 function drawTownVillager(scene: Container, viewport: Viewport): void {

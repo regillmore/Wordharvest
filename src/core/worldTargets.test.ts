@@ -103,6 +103,7 @@ describe('world targets', () => {
     expect(listWorldTargets(townState).map((target) => target.word)).toEqual([
       'farm',
       'shop',
+      'board',
       'hello',
       'favor',
       'journal',

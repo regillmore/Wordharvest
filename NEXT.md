@@ -78,5 +78,5 @@ Complete when:
 ## Immediate Task Queue
 
 1. Add recipe and forage collection sections once their source actions exist.
-2. Add a request board or villager request summary once daily deliveries need more discoverability.
-3. Add the first achievement catalog for farming, typing, collection, and economy goals.
+2. Add the first achievement catalog for farming, typing, collection, and economy goals.
+3. Add a small festival or town event hook once the daily request board loop feels clear.
