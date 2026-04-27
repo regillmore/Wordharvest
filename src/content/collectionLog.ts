@@ -104,6 +104,14 @@ export function collectionProgressText(progress: CollectionLogProgress): string 
   return `${countFlags(normalizedProgress.discoveredCrops)}/${total} found, ${countFlags(normalizedProgress.shippedCrops)}/${total} shipped`;
 }
 
+export function countDiscoveredCrops(progress: CollectionLogProgress): number {
+  return countFlags(normalizeCollectionLogProgress(progress).discoveredCrops);
+}
+
+export function countShippedCrops(progress: CollectionLogProgress): number {
+  return countFlags(normalizeCollectionLogProgress(progress).shippedCrops);
+}
+
 export function collectionDetailText(progress: CollectionLogProgress): string {
   const normalizedProgress = normalizeCollectionLogProgress(progress);
 

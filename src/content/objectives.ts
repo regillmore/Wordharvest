@@ -1,4 +1,5 @@
 import { cropDefinition, emptyCropCounts, isCropId, type CropCounts, type CropId } from './crops';
+import { postSpringBasketFollowUpGoal } from './followUpGoals';
 
 const objectiveIds = ['springBasket'] as const;
 
@@ -56,7 +57,7 @@ export const objectiveCatalog = [
     rewardCoins: 25,
     completedLog: 'Spring Basket complete! Mira added 25 coins for the market table.',
     completionSummary: "Mira's market table is stocked for spring.",
-    followUpPrompt: 'Grow extra spring crops for coins and farm upgrades.',
+    followUpPrompt: postSpringBasketFollowUpGoal.summary,
   },
 ] as const satisfies readonly ObjectiveDefinition[];
 

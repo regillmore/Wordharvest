@@ -15,6 +15,7 @@ import {
 import { deserializeSave, serializeSave } from './core/save';
 import { normalizeTypedWord } from './core/typing';
 import { collectionProgressText } from './content/collectionLog';
+import { followUpGoalDetailText, isFollowUpGoalComplete } from './content/followUpGoals';
 import { objectiveCompletionText, objectiveProgressText } from './content/objectives';
 import { weekGoalProgressText } from './content/weekGoals';
 import { weatherDefinition, type WeatherId } from './content/weather';
@@ -75,6 +76,7 @@ root.innerHTML = `
         <p class="label">Spring goal</p>
         <p id="objective-progress" class="objective-progress"></p>
         <p id="objective-completion" class="objective-completion" hidden></p>
+        <p id="follow-up-progress" class="objective-completion follow-up-progress" hidden></p>
         <p class="label">Week pace</p>
         <p id="week-progress" class="objective-progress"></p>
         <p class="label">Typed word</p>
@@ -129,6 +131,7 @@ const cropValue = requireElement<HTMLElement>('#crop-value');
 const collectionValue = requireElement<HTMLElement>('#collection-value');
 const objectiveProgress = requireElement<HTMLElement>('#objective-progress');
 const objectiveCompletion = requireElement<HTMLElement>('#objective-completion');
+const followUpProgress = requireElement<HTMLElement>('#follow-up-progress');
 const weekProgress = requireElement<HTMLElement>('#week-progress');
 const typedWord = requireElement<HTMLElement>('#typed-word');
 const wordPreview = requireElement<HTMLElement>('#word-preview');
@@ -323,6 +326,7 @@ async function loadPlayerTextures(): Promise<Record<PlayerSpriteFrameId, Texture
 
 function redrawHud(): void {
   const completionText = objectiveCompletionText(farm.seasonObjective);
+  const followUpText = farm.seasonObjective.completed ? followUpGoalDetailText(farm.collectionLog) : '';
 
   dayValue.textContent = String(farm.day);
   coinValue.textContent = String(farm.coins);
@@ -337,6 +341,12 @@ function redrawHud(): void {
   objectiveProgress.classList.toggle('is-complete', farm.seasonObjective.completed);
   objectiveCompletion.textContent = completionText;
   objectiveCompletion.hidden = completionText.length === 0;
+  followUpProgress.textContent = followUpText;
+  followUpProgress.hidden = followUpText.length === 0;
+  followUpProgress.classList.toggle(
+    'is-complete',
+    followUpText.length > 0 && isFollowUpGoalComplete(farm.collectionLog),
+  );
   weekProgress.textContent = weekGoalProgressText(farm.day, farm.weekGoals);
   typedWord.textContent = typedBuffer || '...';
 

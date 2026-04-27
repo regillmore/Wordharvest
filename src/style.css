@@ -225,6 +225,16 @@ h1 {
   display: none;
 }
 
+.follow-up-progress {
+  border-left-color: #8fb36a;
+  background: #f2f7de;
+}
+
+.follow-up-progress.is-complete {
+  border-left-color: #4f8b62;
+  background: #e8f4e7;
+}
+
 .word-preview {
   margin: 8px 0 0;
   color: #526352;

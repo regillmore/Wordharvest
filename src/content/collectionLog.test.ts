@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
   collectionDetailText,
   collectionProgressText,
+  countDiscoveredCrops,
+  countShippedCrops,
   createCollectionLogProgress,
   markCropsDiscovered,
   markCropsShipped,
@@ -31,6 +33,8 @@ describe('collection log', () => {
 
     expect(shippedUpdate.newlyDiscovered).toEqual(['pea']);
     expect(shippedUpdate.newlyShipped).toEqual(['radish', 'pea']);
+    expect(countDiscoveredCrops(progress)).toBe(4);
+    expect(countShippedCrops(progress)).toBe(2);
     expect(collectionProgressText(progress)).toBe('4/10 found, 2/10 shipped');
     expect(collectionDetailText(progress)).toBe(
       'Collection: 4/10 found, 2/10 shipped. Found: turnip, radish, snap pea, carrot. Shipped: radish, snap pea.',

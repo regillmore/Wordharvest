@@ -45,10 +45,10 @@ describe('objective catalog', () => {
     expect(update.progress.completed).toBe(true);
     expect(objectiveProgressText(update.progress)).toBe('Spring Basket: complete');
     expect(objectiveCompletionText(update.progress)).toBe(
-      "Mira's market table is stocked for spring. Reward received: 25 coins. Next: Grow extra spring crops for coins and farm upgrades.",
+      "Mira's market table is stocked for spring. Reward received: 25 coins. Next: Ship five different spring crop varieties for Market Encore.",
     );
     expect(objectiveDetailText(update.progress)).toBe(
-      "Spring Basket: complete. Mira's market table is stocked for spring. Reward received: 25 coins. Next: Grow extra spring crops for coins and farm upgrades. (turnip 1/1, radish 1/1, carrot 1/1)",
+      "Spring Basket: complete. Mira's market table is stocked for spring. Reward received: 25 coins. Next: Ship five different spring crop varieties for Market Encore. (turnip 1/1, radish 1/1, carrot 1/1)",
     );
   });
 });

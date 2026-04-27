@@ -19,6 +19,7 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#collection-value')).toHaveText('1/10 found, 0/10 shipped');
   await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: 0/3 crops shipped');
   await expect(page.locator('#objective-completion')).toBeHidden();
+  await expect(page.locator('#follow-up-progress')).toBeHidden();
   await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds open (+3 coins)');
 
   await page.keyboard.type('seed');
@@ -114,7 +115,10 @@ test('shows persistent affordances for a completed Spring Basket', async ({ page
   await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: complete');
   await expect(page.locator('#objective-progress')).toHaveClass(/is-complete/);
   await expect(page.locator('#objective-completion')).toHaveText(
-    "Mira's market table is stocked for spring. Reward received: 25 coins. Next: Grow extra spring crops for coins and farm upgrades.",
+    "Mira's market table is stocked for spring. Reward received: 25 coins. Next: Ship five different spring crop varieties for Market Encore.",
+  );
+  await expect(page.locator('#follow-up-progress')).toHaveText(
+    "Market Encore: 3/5 crop varieties shipped. 2 more varieties will broaden Mira's market stall.",
   );
   await expect(page.locator('#collection-value')).toHaveText('3/10 found, 3/10 shipped');
 
@@ -122,6 +126,7 @@ test('shows persistent affordances for a completed Spring Basket', async ({ page
   await page.keyboard.press('Enter');
   await expect(page.locator('#farm-log').getByText(/Spring Basket: complete/)).toBeVisible();
   await expect(page.locator('#farm-log').getByText(/Mira's market table is stocked for spring/)).toBeVisible();
+  await expect(page.locator('#farm-log').getByText(/Market Encore: 3\/5 crop varieties shipped/)).toBeVisible();
 });
 
 test('saves, loads, and resets the local farm slot', async ({ page }) => {

@@ -18,6 +18,7 @@ import {
   markCropsShipped,
   type CollectionLogProgress,
 } from '../content/collectionLog';
+import { followUpGoalDetailText } from '../content/followUpGoals';
 import {
   emptyUpgradeFlags,
   shopWordForUpgrade,
@@ -577,8 +578,9 @@ function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options
     const weather = weatherDefinition(state.weather);
     const forecast = weatherDefinition(state.forecast);
     const can = state.upgrades.wateringCan ? 'tin can' : 'basic can';
+    const followUpDetail = state.seasonObjective.completed ? ` ${followUpGoalDetailText(state.collectionLog)}` : '';
 
-    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}. ${weekGoalDetailText(state.day, state.weekGoals)}`;
+    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}.${followUpDetail} ${weekGoalDetailText(state.day, state.weekGoals)}`;
   }
 
   if (menu === 'inventory') {

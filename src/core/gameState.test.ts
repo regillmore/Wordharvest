@@ -392,6 +392,9 @@ describe('farm state', () => {
     expect(journalState.log[0]).toContain(
       "Spring Basket: complete. Mira's market table is stocked for spring. Reward received: 25 coins.",
     );
+    expect(journalState.log[0]).toContain(
+      "Market Encore: 3/5 crop varieties shipped. 2 more varieties will broaden Mira's market stall.",
+    );
   });
 
   it('rejects visible targets when no walkable tile path exists', () => {
