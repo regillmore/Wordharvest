@@ -370,6 +370,12 @@ describe('farm state', () => {
     expect(state.log[1]).toBe('Shipped 1 turnip and 1 radish and 1 carrot for 46 coins.');
     expect(state.log[2]).toBe('Day 5 goal complete: the first crop shipment went out.');
     expect(state.log[3]).toBe('Day 7 goal complete: Spring Basket is finished.');
+
+    const journalState = applyTypedWord(state, 'journal');
+
+    expect(journalState.log[0]).toContain(
+      "Spring Basket: complete. Mira's market table is stocked for spring. Reward received: 25 coins.",
+    );
   });
 
   it('rejects visible targets when no walkable tile path exists', () => {

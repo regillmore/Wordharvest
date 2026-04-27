@@ -205,6 +205,26 @@ h1 {
   line-height: 1.3;
 }
 
+.objective-progress.is-complete {
+  color: #2f5d46;
+}
+
+.objective-completion {
+  margin: -6px 0 14px;
+  padding: 10px 12px;
+  border-left: 4px solid #f4d35e;
+  border-radius: 4px;
+  color: #2b332b;
+  background: #fff5cf;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.objective-completion[hidden] {
+  display: none;
+}
+
 .word-preview {
   margin: 8px 0 0;
   color: #526352;

@@ -14,7 +14,7 @@ import {
 } from './core/gameState';
 import { deserializeSave, serializeSave } from './core/save';
 import { normalizeTypedWord } from './core/typing';
-import { objectiveProgressText } from './content/objectives';
+import { objectiveCompletionText, objectiveProgressText } from './content/objectives';
 import { weekGoalProgressText } from './content/weekGoals';
 import { weatherDefinition, type WeatherId } from './content/weather';
 import {
@@ -72,6 +72,7 @@ root.innerHTML = `
       <section class="word-panel" aria-live="polite">
         <p class="label">Spring goal</p>
         <p id="objective-progress" class="objective-progress"></p>
+        <p id="objective-completion" class="objective-completion" hidden></p>
         <p class="label">Week pace</p>
         <p id="week-progress" class="objective-progress"></p>
         <p class="label">Typed word</p>
@@ -124,6 +125,7 @@ const canValue = requireElement<HTMLElement>('#can-value');
 const seedValue = requireElement<HTMLElement>('#seed-value');
 const cropValue = requireElement<HTMLElement>('#crop-value');
 const objectiveProgress = requireElement<HTMLElement>('#objective-progress');
+const objectiveCompletion = requireElement<HTMLElement>('#objective-completion');
 const weekProgress = requireElement<HTMLElement>('#week-progress');
 const typedWord = requireElement<HTMLElement>('#typed-word');
 const wordPreview = requireElement<HTMLElement>('#word-preview');
@@ -317,6 +319,8 @@ async function loadPlayerTextures(): Promise<Record<PlayerSpriteFrameId, Texture
 }
 
 function redrawHud(): void {
+  const completionText = objectiveCompletionText(farm.seasonObjective);
+
   dayValue.textContent = String(farm.day);
   coinValue.textContent = String(farm.coins);
   staminaValue.textContent = String(farm.stamina);
@@ -326,6 +330,9 @@ function redrawHud(): void {
   seedValue.textContent = seedInventorySummary(farm);
   cropValue.textContent = cropInventorySummary(farm);
   objectiveProgress.textContent = objectiveProgressText(farm.seasonObjective);
+  objectiveProgress.classList.toggle('is-complete', farm.seasonObjective.completed);
+  objectiveCompletion.textContent = completionText;
+  objectiveCompletion.hidden = completionText.length === 0;
   weekProgress.textContent = weekGoalProgressText(farm.day, farm.weekGoals);
   typedWord.textContent = typedBuffer || '...';
 
@@ -426,6 +433,7 @@ function createFarmExterior(state: FarmState, typedWord: string): Container {
   drawHouse(scene, viewport);
   drawSeedSource(scene, viewport);
   drawShippingBin(scene, viewport);
+  drawObjectiveCompletionMarker(scene, viewport, state);
   drawTownGate(scene, viewport);
 
   for (const plot of state.plots) {
@@ -659,6 +667,27 @@ function drawShippingBin(scene: Container, viewport: Viewport): void {
   scene.addChild(rect(bin.x - width / 2, bin.y - height / 2, width, height, 0x8b5a3c));
   scene.addChild(rect(bin.x - width * 0.58, bin.y - height * 0.66, width * 1.16, height * 0.18, 0x5c3a28));
   scene.addChild(rect(bin.x - width * 0.38, bin.y - height * 0.16, width * 0.76, height * 0.08, 0xe7d39f));
+}
+
+function drawObjectiveCompletionMarker(scene: Container, viewport: Viewport, state: FarmState): void {
+  if (!state.seasonObjective.completed) {
+    return;
+  }
+
+  const marker = worldToScreen(viewport, { x: shippingBinPosition.x + 0.62, y: shippingBinPosition.y - 0.18 });
+  const width = viewport.scale * 0.42;
+  const height = viewport.scale * 0.3;
+  const graphic = new Graphics();
+
+  graphic.rect(marker.x - width / 2, marker.y - height / 2, width, height).fill(0xc98c42);
+  graphic.rect(marker.x - width * 0.42, marker.y - height * 0.65, width * 0.84, height * 0.18).fill(0x7b4e2c);
+  graphic.moveTo(marker.x - width * 0.34, marker.y - height * 0.5).lineTo(marker.x, marker.y - height * 0.92);
+  graphic.lineTo(marker.x + width * 0.34, marker.y - height * 0.5).stroke({ color: 0x7b4e2c, width: 2 });
+  graphic.circle(marker.x - width * 0.17, marker.y - height * 0.1, width * 0.09).fill(0xf4d35e);
+  graphic.circle(marker.x, marker.y - height * 0.18, width * 0.08).fill(0xf7a8a3);
+  graphic.circle(marker.x + width * 0.16, marker.y - height * 0.08, width * 0.08).fill(0xe7d39f);
+
+  scene.addChild(graphic);
 }
 
 function drawTownGate(scene: Container, viewport: Viewport): void {

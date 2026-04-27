@@ -77,6 +77,6 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Add objective completion affordances beyond the first reward log.
-2. Add daily goal rewards or request variation after the first-week guide proves fun.
-3. Add collection log tracking for discovered crops and shipped varieties.
+1. Add daily goal rewards or request variation after the first-week guide proves fun.
+2. Add collection log tracking for discovered crops and shipped varieties.
+3. Add a post-Spring Basket follow-up goal that keeps completed saves pointed at a next activity.

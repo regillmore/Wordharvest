@@ -17,6 +17,7 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds');
   await expect(page.locator('#crop-value')).toHaveText('no harvested crops');
   await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: 0/3 crops shipped');
+  await expect(page.locator('#objective-completion')).toBeHidden();
   await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds open');
 
   await page.keyboard.type('seed');
@@ -91,6 +92,26 @@ test('opens menu words from typed labels', async ({ page }) => {
   await expect(page.getByText('Pack: Seeds: 3 turnip seeds. Crops: no harvested crops.')).toBeVisible();
 });
 
+test('shows persistent affordances for a completed Spring Basket', async ({ page }) => {
+  await page.addInitScript((rawSave) => {
+    localStorage.setItem('wordharvest:save:v1', rawSave);
+  }, completedSpringBasketSave());
+
+  await page.goto('/');
+  await page.getByRole('button', { name: 'Load' }).click();
+
+  await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: complete');
+  await expect(page.locator('#objective-progress')).toHaveClass(/is-complete/);
+  await expect(page.locator('#objective-completion')).toHaveText(
+    "Mira's market table is stocked for spring. Reward received: 25 coins. Next: Grow extra spring crops for coins and farm upgrades.",
+  );
+
+  await page.keyboard.type('journal');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#farm-log').getByText(/Spring Basket: complete/)).toBeVisible();
+  await expect(page.locator('#farm-log').getByText(/Mira's market table is stocked for spring/)).toBeVisible();
+});
+
 test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();
@@ -144,3 +165,59 @@ test('persists audio options locally', async ({ page }) => {
   await expect(page.getByLabel('Mute')).toBeChecked();
   await expect(page.locator('#effects-volume')).toHaveValue('0.25');
 });
+
+function completedSpringBasketSave(): string {
+  const cropCounts = {
+    turnip: 0,
+    radish: 0,
+    pea: 0,
+    strawberry: 0,
+    carrot: 0,
+    lettuce: 0,
+    potato: 0,
+    onion: 0,
+    tulip: 0,
+    spinach: 0,
+  };
+
+  return JSON.stringify({
+    schemaVersion: 6,
+    savedAt: '2026-04-25T00:00:00.000Z',
+    state: {
+      day: 8,
+      coins: 71,
+      stamina: 10,
+      player: { x: 2, y: 4.4 },
+      location: 'farm',
+      weather: 'sunny',
+      forecast: 'sunny',
+      pendingAction: null,
+      seeds: { ...cropCounts, turnip: 3 },
+      inventory: cropCounts,
+      upgrades: { wateringCan: true },
+      seasonObjective: {
+        id: 'springBasket',
+        shipped: { ...cropCounts, turnip: 1, radish: 1, carrot: 1 },
+        completed: true,
+      },
+      weekGoals: {
+        plantFirstSeeds: true,
+        waterFirstCrop: true,
+        visitTownShop: true,
+        buySpringSeeds: true,
+        shipFirstCrop: true,
+        buyTinCan: true,
+        completeSpringBasket: true,
+      },
+      plots: [
+        { id: 1, position: { x: -1, y: 3 }, crop: null, stage: 'empty', wateredToday: false, growth: 0 },
+        { id: 2, position: { x: 0, y: 3 }, crop: null, stage: 'empty', wateredToday: false, growth: 0 },
+        { id: 3, position: { x: 1, y: 3 }, crop: null, stage: 'empty', wateredToday: false, growth: 0 },
+        { id: 4, position: { x: -1, y: 4 }, crop: null, stage: 'empty', wateredToday: false, growth: 0 },
+        { id: 5, position: { x: 0, y: 4 }, crop: null, stage: 'empty', wateredToday: false, growth: 0 },
+        { id: 6, position: { x: 1, y: 4 }, crop: null, stage: 'empty', wateredToday: false, growth: 0 },
+      ],
+      log: ['Spring Basket complete! Mira added 25 coins for the market table.'],
+    },
+  });
+}

@@ -16,6 +16,8 @@ export interface ObjectiveDefinition {
   requiredShipments: readonly CropShipmentRequirement[];
   rewardCoins: number;
   completedLog: string;
+  completionSummary: string;
+  followUpPrompt: string;
 }
 
 export interface ObjectiveProgress {
@@ -53,6 +55,8 @@ export const objectiveCatalog = [
     ],
     rewardCoins: 25,
     completedLog: 'Spring Basket complete! Mira added 25 coins for the market table.',
+    completionSummary: "Mira's market table is stocked for spring.",
+    followUpPrompt: 'Grow extra spring crops for coins and farm upgrades.',
   },
 ] as const satisfies readonly ObjectiveDefinition[];
 
@@ -134,6 +138,18 @@ export function objectiveProgressText(progress: ObjectiveProgress): string {
   return `${definition.name}: ${completeCount}/${definition.requiredShipments.length} crops shipped`;
 }
 
+export function objectiveCompletionText(progress: ObjectiveProgress): string {
+  const normalizedProgress = normalizeObjectiveProgress(progress);
+
+  if (!normalizedProgress.completed) {
+    return '';
+  }
+
+  const definition = objectiveDefinition(normalizedProgress.id);
+
+  return `${definition.completionSummary} Reward received: ${definition.rewardCoins} coins. Next: ${definition.followUpPrompt}`;
+}
+
 export function objectiveDetailText(progress: ObjectiveProgress): string {
   const normalizedProgress = normalizeObjectiveProgress(progress);
   const definition = objectiveDefinition(normalizedProgress.id);
@@ -145,6 +161,10 @@ export function objectiveDetailText(progress: ObjectiveProgress): string {
       return `${crop.name} ${count}/${requirement.count}`;
     })
     .join(', ');
+
+  if (normalizedProgress.completed) {
+    return `${objectiveProgressText(normalizedProgress)}. ${objectiveCompletionText(normalizedProgress)} (${details})`;
+  }
 
   return `${objectiveProgressText(normalizedProgress)} (${details})`;
 }
@@ -161,7 +181,13 @@ export function validateObjectiveCatalog(): ObjectiveCatalogValidationResult {
     }
     seenIds.add(definition.id);
 
-    if (!definition.name || !definition.summary || !definition.completedLog) {
+    if (
+      !definition.name ||
+      !definition.summary ||
+      !definition.completedLog ||
+      !definition.completionSummary ||
+      !definition.followUpPrompt
+    ) {
       errors.push(`Objective ${definition.id} is missing display text.`);
     }
 

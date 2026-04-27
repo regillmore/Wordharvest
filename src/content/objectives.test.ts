@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   createObjectiveProgress,
   objectiveCatalog,
+  objectiveCompletionText,
   objectiveDefinition,
   objectiveDetailText,
   objectiveProgressText,
@@ -26,6 +27,7 @@ describe('objective catalog', () => {
     let progress = createObjectiveProgress();
 
     expect(objectiveProgressText(progress)).toBe('Spring Basket: 0/3 crops shipped');
+    expect(objectiveCompletionText(progress)).toBe('');
     expect(objectiveDetailText(progress)).toBe('Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1)');
 
     let update = recordObjectiveShipments(progress, [
@@ -42,5 +44,11 @@ describe('objective catalog', () => {
     expect(update.newlyCompleted).toBe(true);
     expect(update.progress.completed).toBe(true);
     expect(objectiveProgressText(update.progress)).toBe('Spring Basket: complete');
+    expect(objectiveCompletionText(update.progress)).toBe(
+      "Mira's market table is stocked for spring. Reward received: 25 coins. Next: Grow extra spring crops for coins and farm upgrades.",
+    );
+    expect(objectiveDetailText(update.progress)).toBe(
+      "Spring Basket: complete. Mira's market table is stocked for spring. Reward received: 25 coins. Next: Grow extra spring crops for coins and farm upgrades. (turnip 1/1, radish 1/1, carrot 1/1)",
+    );
   });
 });
