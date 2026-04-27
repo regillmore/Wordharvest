@@ -120,6 +120,10 @@ export function cueForLogMessage(message: string): AudioCue | null {
     return 'ship';
   }
 
+  if (message.startsWith('Delivered')) {
+    return 'ship';
+  }
+
   if (message.startsWith('Opened') || message.startsWith('Stepped')) {
     return 'door';
   }

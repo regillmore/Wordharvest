@@ -20,6 +20,7 @@ describe('farm state', () => {
     expect(state.seasonObjective.id).toBe('springBasket');
     expect(state.seasonObjective.completed).toBe(false);
     expect(state.weekGoals.plantFirstSeeds).toBe(false);
+    expect(state.dailyRequests.completedKeys).toEqual([]);
     expect(state.collectionLog.discoveredCrops.turnip).toBe(true);
     expect(state.collectionLog.shippedCrops.turnip).toBe(false);
   });
@@ -197,6 +198,45 @@ describe('farm state', () => {
     expect(state.log[0]).toBe('Mira says hello and asks how the turnips are growing.');
   });
 
+  it('shows and completes the current daily town request once', () => {
+    let state = settleAction(
+      applyTypedWord(
+        {
+          ...createFarmState(),
+          inventory: {
+            ...createFarmState().inventory,
+            turnip: 1,
+          },
+        },
+        'town',
+      ),
+    );
+
+    state = applyTypedWord(state, 'favor');
+    expect(state.pendingAction?.label).toBe('favor');
+
+    state = settleAction(state);
+
+    expect(state.coins).toBe(31);
+    expect(state.inventory.turnip).toBe(0);
+    expect(state.dailyRequests.completedKeys).toEqual(['1:pantryTurnip']);
+    expect(state.log[0]).toBe("Delivered 1 turnip for Mira's Pantry Turnip request. Reward: 6 coins.");
+
+    state = applyTypedWord(state, 'favor');
+
+    expect(state.log[0]).toBe('No visible target named "favor".');
+  });
+
+  it('explains the current daily request when the crop is missing', () => {
+    let state = settleAction(applyTypedWord(createFarmState(), 'town'));
+
+    state = settleAction(applyTypedWord(state, 'favor'));
+
+    expect(state.coins).toBe(25);
+    expect(state.dailyRequests.completedKeys).toEqual([]);
+    expect(state.log[0]).toBe("Mira's Pantry Turnip request needs 1 turnip. Your pack has none.");
+  });
+
   it('buys catalog seed packets from town shop crop words', () => {
     let state = settleAction(applyTypedWord(createFarmState(), 'town'));
 
@@ -256,7 +296,7 @@ describe('farm state', () => {
 
     expect(state.pendingAction).toBeNull();
     expect(state.log[0]).toBe(
-      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1). First Week: 0/7 goals done. Today: Plant first seeds - Plant any seed in a farm plot. Reward: 3 coins.',
+      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1). First Week: 0/7 goals done. Today: Plant first seeds - Plant any seed in a farm plot. Reward: 3 coins. Town request: Mira wants 1 turnip for Pantry Turnip. Type favor in town to deliver. Status: open. Reward: 6 coins.',
     );
 
     const packState = applyTypedWord(
@@ -289,7 +329,7 @@ describe('farm state', () => {
     expect(state.forecast).toBe('rain');
     expect(state.plots[4].wateredToday).toBe(false);
     expect(state.log[0]).toBe(
-      'Day 2 dawns sunny. Tomorrow: rain. Goal: Water a growing crop. Water any planted crop before ending the day. Reward: 4 coins.',
+      'Day 2 dawns sunny. Tomorrow: rain. Goal: Water a growing crop. Water any planted crop before ending the day. Reward: 4 coins. Request: Mira wants 1 radish for Radish Crunch. Type errand in town to deliver. Reward: 8 coins.',
     );
 
     state = advanceDay(state);
@@ -298,7 +338,7 @@ describe('farm state', () => {
     expect(state.forecast).toBe('sunny');
     expect(state.plots[4].wateredToday).toBe(true);
     expect(state.log[0]).toBe(
-      'Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny. Goal: Visit the town shop. Type shop in town to inspect the seed shelf. Reward: 4 coins.',
+      'Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny. Goal: Visit the town shop. Type shop in town to inspect the seed shelf. Reward: 4 coins. Request: Mira wants 1 carrot for Carrot Bundle. Type order in town to deliver. Reward: 8 coins.',
     );
   });
 

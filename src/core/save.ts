@@ -6,15 +6,16 @@ import {
   type CollectionLogProgress,
 } from '../content/collectionLog';
 import { normalizeObjectiveProgress } from '../content/objectives';
+import { normalizeDailyRequestProgress } from '../content/dailyRequests';
 import { emptyUpgradeFlags, upgradeCatalog, type UpgradeFlags } from '../content/upgrades';
 import { normalizeWeekGoalProgress } from '../content/weekGoals';
 import { forecastForDay, isWeatherId, weatherForDay, type WeatherId } from '../content/weather';
 import { createFarmState, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
 import type { WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 7;
+export const SAVE_SCHEMA_VERSION = 8;
 
-export interface SaveDataV7 {
+export interface SaveDataV8 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -25,7 +26,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV7 = {
+  const saveData: SaveDataV8 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -48,6 +49,10 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
+    return deserializeV8(parsed);
+  }
+
+  if (parsed.schemaVersion === 7) {
     return deserializeV7(parsed);
   }
 
@@ -91,11 +96,25 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
     upgrades: normalizeUpgrades(state.upgrades),
     seasonObjective: normalizeObjectiveProgress(state.seasonObjective),
     weekGoals: normalizeWeekGoalProgress(state.weekGoals),
+    dailyRequests: normalizeDailyRequestProgress(state.dailyRequests),
     collectionLog: normalizeCollectionLogProgress(state.collectionLog),
     plots: state.plots.map((plot) => ({ ...plot, position: { ...plot.position } })),
     player: { ...state.player },
     log: state.log.slice(0, 6),
   };
+}
+
+function deserializeV8(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: false };
 }
 
 function deserializeV7(data: Record<string, unknown>): LoadSaveResult {
@@ -108,7 +127,7 @@ function deserializeV7(data: Record<string, unknown>): LoadSaveResult {
     return { ok: false, error: 'Save data has an invalid farm state.' };
   }
 
-  return { ok: true, state, savedAt: data.savedAt, migrated: false };
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function deserializeV6(data: Record<string, unknown>): LoadSaveResult {
@@ -212,6 +231,7 @@ function migrateV0(data: Record<string, unknown>): LoadSaveResult {
     upgrades: normalizeUpgrades(isRecord(rawState.upgrades) ? rawState.upgrades : base.upgrades),
     seasonObjective,
     weekGoals: normalizeWeekGoalProgress(rawState.weekGoals),
+    dailyRequests: normalizeDailyRequestProgress(rawState.dailyRequests),
     collectionLog: inferCollectionLog(base.collectionLog, seeds, inventory, plots, seasonObjective.shipped),
     plots,
     log: parseLog(rawState.log) ?? ['Loaded an older Wordharvest save.'],
@@ -269,6 +289,7 @@ function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null):
     upgrades: normalizeUpgrades(isRecord(value.upgrades) ? value.upgrades : {}),
     seasonObjective,
     weekGoals: normalizeWeekGoalProgress(value.weekGoals),
+    dailyRequests: normalizeDailyRequestProgress(value.dailyRequests),
     collectionLog,
     plots,
     log,

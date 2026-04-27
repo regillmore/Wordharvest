@@ -20,6 +20,17 @@ import {
 } from '../content/collectionLog';
 import { followUpGoalDetailText } from '../content/followUpGoals';
 import {
+  createDailyRequestProgress,
+  dailyRequestDawnText,
+  dailyRequestDeliveryLog,
+  dailyRequestDetailText,
+  dailyRequestForDay,
+  dailyRequestMissingLog,
+  isDailyRequestComplete,
+  markDailyRequestComplete,
+  type DailyRequestProgress,
+} from '../content/dailyRequests';
+import {
   emptyUpgradeFlags,
   shopWordForUpgrade,
   upgradeCatalog,
@@ -92,6 +103,7 @@ export interface FarmState {
   upgrades: UpgradeFlags;
   seasonObjective: ObjectiveProgress;
   weekGoals: WeekGoalProgress;
+  dailyRequests: DailyRequestProgress;
   collectionLog: CollectionLogProgress;
   plots: CropPlot[];
   log: string[];
@@ -118,6 +130,7 @@ export function createFarmState(): FarmState {
     upgrades: emptyUpgradeFlags(),
     seasonObjective: createObjectiveProgress(),
     weekGoals: emptyWeekGoalProgress(),
+    dailyRequests: createDailyRequestProgress(),
     collectionLog: createCollectionLogProgress(),
     plots: Array.from({ length: startingPlots }, (_, index) => ({
       id: index + 1,
@@ -312,6 +325,10 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     return withLog(state, 'Mira says hello and asks how the turnips are growing.');
   }
 
+  if (action.kind === 'complete-daily-request') {
+    return completeDailyRequest(state);
+  }
+
   if (action.kind === 'open-menu') {
     return withLog(state, describeMenu(state, action.menu));
   }
@@ -425,7 +442,7 @@ export function advanceDay(state: FarmState): FarmState {
       forecast,
       plots,
     },
-    `${describeDawn(nextDay, weather, forecast)} ${weekGoalDawnText(nextDay)}`,
+    `${describeDawn(nextDay, weather, forecast)} ${weekGoalDawnText(nextDay)} ${dailyRequestDawnText(nextDay, state.dailyRequests)}`,
   );
 }
 
@@ -571,6 +588,33 @@ function shipInventory(state: FarmState): FarmState {
   );
 }
 
+function completeDailyRequest(state: FarmState): FarmState {
+  const request = dailyRequestForDay(state.day);
+
+  if (isDailyRequestComplete(state.day, state.dailyRequests)) {
+    return withLog(state, `${request.title} is already complete.`);
+  }
+
+  if (state.inventory[request.crop] < request.count) {
+    return withLog(state, dailyRequestMissingLog(request, state.inventory[request.crop]));
+  }
+
+  const requestUpdate = markDailyRequestComplete(state.day, state.dailyRequests);
+
+  return withLog(
+    {
+      ...state,
+      coins: state.coins + request.rewardCoins,
+      inventory: {
+        ...state.inventory,
+        [request.crop]: state.inventory[request.crop] - request.count,
+      },
+      dailyRequests: requestUpdate.progress,
+    },
+    dailyRequestDeliveryLog(request),
+  );
+}
+
 function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options'): string {
   const starterCrop = cropDefinition(starterCropId);
 
@@ -580,7 +624,7 @@ function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options
     const can = state.upgrades.wateringCan ? 'tin can' : 'basic can';
     const followUpDetail = state.seasonObjective.completed ? ` ${followUpGoalDetailText(state.collectionLog)}` : '';
 
-    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}.${followUpDetail} ${weekGoalDetailText(state.day, state.weekGoals)}`;
+    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}.${followUpDetail} ${weekGoalDetailText(state.day, state.weekGoals)} ${dailyRequestDetailText(state.day, state.dailyRequests)}`;
   }
 
   if (menu === 'inventory') {

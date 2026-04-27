@@ -30,6 +30,7 @@ describe('save codec', () => {
       expect(result.state.seasonObjective.id).toBe('springBasket');
       expect(result.state.seasonObjective.shipped.turnip).toBe(0);
       expect(result.state.weekGoals.plantFirstSeeds).toBe(true);
+      expect(result.state.dailyRequests.completedKeys).toEqual([]);
       expect(result.state.collectionLog.discoveredCrops.turnip).toBe(true);
       expect(result.state.collectionLog.shippedCrops.turnip).toBe(false);
       expect(result.state.plots).toEqual(state.plots);
@@ -61,6 +62,26 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.state.location).toBe('town');
       expect(result.state.player).toEqual({ x: 0, y: 5.6 });
+    }
+  });
+
+  it('migrates a version 7 save by adding daily request progress', () => {
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 7,
+        savedAt: '2026-04-22T00:00:00.000Z',
+        state: {
+          ...createFarmState(),
+          dailyRequests: undefined,
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.dailyRequests.completedKeys).toEqual([]);
+      expect(result.migrated).toBe(true);
     }
   });
 

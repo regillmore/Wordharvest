@@ -21,6 +21,7 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#objective-completion')).toBeHidden();
   await expect(page.locator('#follow-up-progress')).toBeHidden();
   await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds open (+3 coins)');
+  await expect(page.locator('#request-progress')).toHaveText('Request: Pantry Turnip open (+6 coins)');
 
   await page.keyboard.type('seed');
   await page.keyboard.press('Enter');
@@ -45,6 +46,11 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await expect(page.locator('#word-preview')).toContainText('farm');
   await expect(page.locator('#word-preview')).toContainText('shop');
   await expect(page.locator('#word-preview')).toContainText('hello');
+  await expect(page.locator('#word-preview')).toContainText('favor');
+
+  await page.keyboard.type('favor');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText("Mira's Pantry Turnip request needs 1 turnip. Your pack has none.")).toBeVisible();
 
   await page.keyboard.type('shop');
   await page.keyboard.press('Enter');
@@ -151,6 +157,7 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.locator('#day-value')).toHaveText('2');
   await expect(page.locator('#forecast-value')).toHaveText('Rain');
   await expect(page.locator('#week-progress')).toHaveText('Day 2: Water a growing crop open (+4 coins)');
+  await expect(page.locator('#request-progress')).toHaveText('Request: Radish Crunch open (+8 coins)');
 
   await page.getByRole('button', { name: 'Load' }).click();
   await expect(page.locator('#day-value')).toHaveText('1');
@@ -158,6 +165,7 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.locator('#coin-value')).toHaveText('28');
   await expect(page.locator('#seed-value')).toHaveText('2 turnip seeds');
   await expect(page.locator('#collection-value')).toHaveText('1/10 found, 0/10 shipped');
+  await expect(page.locator('#request-progress')).toHaveText('Request: Pantry Turnip open (+6 coins)');
   await expect(page.locator('#save-timestamp')).toContainText(/^Restored save: \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
 
   await page.getByRole('button', { name: 'Reset' }).click();

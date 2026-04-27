@@ -23,6 +23,7 @@ describe('target word catalog', () => {
       'enter-town',
       'town-shop',
       'talk-villager',
+      'daily-request',
       'open-journal',
       'open-inventory',
       'open-options',
@@ -43,6 +44,7 @@ describe('target word catalog', () => {
     expect(primaryWordForTargetRole('enter-town')).toBe('town');
     expect(primaryWordForTargetRole('town-shop')).toBe('shop');
     expect(primaryWordForTargetRole('talk-villager')).toBe('hello');
+    expect(primaryWordForTargetRole('daily-request')).toBe('favor');
     expect(primaryWordForTargetRole('open-journal')).toBe('journal');
     expect(primaryWordForTargetRole('ship-bin')).toBe('bin');
     expect(primaryWordForTargetRole('seed-source')).toBe('seeds');

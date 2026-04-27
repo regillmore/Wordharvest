@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { cropCatalog, shopWordForCrop } from '../content/crops';
+import { createDailyRequestProgress, markDailyRequestComplete } from '../content/dailyRequests';
 import { applyTypedWord, createFarmState, type FarmState } from './gameState';
 import { listWorldTargets, townShopPosition } from './worldTargets';
 
@@ -103,10 +104,23 @@ describe('world targets', () => {
       'farm',
       'shop',
       'hello',
+      'favor',
       'journal',
       'pack',
       'options',
     ]);
+  });
+
+  it('hides the daily request label after the current request is complete', () => {
+    const completeRequest = markDailyRequestComplete(1, createDailyRequestProgress()).progress;
+    const townState: FarmState = {
+      ...createFarmState(),
+      location: 'town',
+      player: { x: 0, y: 5.6 },
+      dailyRequests: completeRequest,
+    };
+
+    expect(listWorldTargets(townState).map((target) => target.word)).not.toContain('favor');
   });
 
   it('shows crop purchase words when the player is at the town shop shelf', () => {

@@ -1,5 +1,6 @@
 import { nextWordForTargetRole, primaryWordForTargetRole, type TargetWordRole } from '../content/targetWords';
 import { cropCatalog, shopWordForCrop, starterCropId, type CropId } from '../content/crops';
+import { dailyRequestForDay, isDailyRequestComplete } from '../content/dailyRequests';
 import { shopWordForUpgrade, upgradeCatalog, type UpgradeId } from '../content/upgrades';
 import type { CropPlot, FarmState } from './gameState';
 import { normalizeTypedWord } from './typing';
@@ -19,6 +20,7 @@ export type WorldTargetAction =
   | { kind: 'return-farm'; destination: WorldPoint }
   | { kind: 'visit-shop' }
   | { kind: 'talk-villager' }
+  | { kind: 'complete-daily-request'; destination: WorldPoint }
   | { kind: 'open-menu'; menu: MenuId; destination: WorldPoint }
   | { kind: 'ship-inventory' }
   | { kind: 'buy-seeds'; crop: CropId; destination: WorldPoint }
@@ -86,6 +88,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
   }
 
   if (state.location === 'town') {
+    const dailyRequest = dailyRequestForDay(state.day);
     const townTargets: WorldTarget[] = [
       {
         id: 'town-farm-return',
@@ -112,6 +115,17 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
         action: { kind: 'talk-villager' },
       },
     ];
+
+    if (!isDailyRequestComplete(state.day, state.dailyRequests)) {
+      townTargets.push({
+        id: `town-request-${dailyRequest.id}`,
+        word: dailyRequest.word,
+        label: dailyRequest.word,
+        position: { x: townVillagerPosition.x, y: townVillagerPosition.y - 0.62 },
+        distance: distanceBetween(state.player, townVillagerPosition),
+        action: { kind: 'complete-daily-request', destination: townVillagerPosition },
+      });
+    }
 
     if (distanceBetween(state.player, townShopPosition) <= shopShelfRange) {
       townTargets.push(...shopSeedTargets(state.player));
@@ -220,6 +234,7 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
     target.action.kind === 'exit-house' ||
     target.action.kind === 'enter-town' ||
     target.action.kind === 'return-farm' ||
+    target.action.kind === 'complete-daily-request' ||
     target.action.kind === 'open-menu' ||
     target.action.kind === 'buy-seeds' ||
     target.action.kind === 'buy-upgrade' ||
