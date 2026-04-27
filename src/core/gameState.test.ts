@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { collectionWordCatalog } from '../content/collectionLog';
 import {
   advanceDay,
   advanceFarmTime,
@@ -23,6 +24,9 @@ describe('farm state', () => {
     expect(state.dailyRequests.completedKeys).toEqual([]);
     expect(state.collectionLog.discoveredCrops.turnip).toBe(true);
     expect(state.collectionLog.shippedCrops.turnip).toBe(false);
+    expect(state.collectionLog.discoveredWords.house).toBe(true);
+    expect(state.collectionLog.discoveredWords.seed).toBe(true);
+    expect(state.collectionLog.usedWords.seed).toBe(false);
   });
 
   it('summarizes seeds and harvested crops across the crop catalog', () => {
@@ -43,7 +47,7 @@ describe('farm state', () => {
     expect(seedInventorySummary(state)).toBe('3 turnip seeds, 2 radish seeds, 1 carrot seed');
     expect(cropInventorySummary(state)).toBe('1 turnip, 2 snap peas');
     expect(packInventorySummary(state)).toBe(
-      'Pack: Seeds: 3 turnip seeds, 2 radish seeds, 1 carrot seed. Crops: 1 turnip, 2 snap peas. Collection: 1/10 found, 0/10 shipped. Found: turnip. Shipped: none.',
+      `Pack: Seeds: 3 turnip seeds, 2 radish seeds, 1 carrot seed. Crops: 1 turnip, 2 snap peas. Collection: Crops 1/10 found, 0/10 shipped; Words 11/${collectionWordCatalog.length} found, 0/${collectionWordCatalog.length} used. Found crops: turnip. Shipped crops: none. Found words: house, town, journal, pack, options, bin, seeds, seed, plant, sow, crop. Used words: none.`,
     );
   });
 
@@ -60,6 +64,9 @@ describe('farm state', () => {
     expect(state.seeds.turnip).toBe(2);
     expect(state.plots[4].stage).toBe('seed');
     expect(state.weekGoals.plantFirstSeeds).toBe(true);
+    expect(state.collectionLog.usedWords.seed).toBe(true);
+    expect(state.collectionLog.discoveredWords.water).toBe(true);
+    expect(state.collectionLog.discoveredWords.crop).toBe(true);
     expect(state.log[1]).toBe('Day 1 goal complete: first seeds planted. Reward: 3 coins.');
     expect(state.pendingAction).toBeNull();
     expect(state.player).toEqual(state.plots[4].position);
@@ -316,7 +323,7 @@ describe('farm state', () => {
 
     expect(packState.pendingAction).toBeNull();
     expect(packState.log[0]).toBe(
-      'Pack: Seeds: 3 turnip seeds, 2 radish seeds. Crops: 1 carrot. Collection: 1/10 found, 0/10 shipped. Found: turnip. Shipped: none.',
+      `Pack: Seeds: 3 turnip seeds, 2 radish seeds. Crops: 1 carrot. Collection: Crops 1/10 found, 0/10 shipped; Words 11/${collectionWordCatalog.length} found, 1/${collectionWordCatalog.length} used. Found crops: turnip. Shipped crops: none. Found words: house, town, journal, pack, options, bin, seeds, seed, plant, sow, crop. Used words: pack.`,
     );
   });
 

@@ -77,6 +77,6 @@ Complete when:
 
 ## Immediate Task Queue
 
-1. Expand the collection log beyond crops into words, recipes, and later forage.
+1. Add recipe and forage collection sections once their source actions exist.
 2. Add a reward or scene for completing Market Encore after broader crop shipping is fun.
 3. Add a request board or villager request summary once daily deliveries need more discoverability.

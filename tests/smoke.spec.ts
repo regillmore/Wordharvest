@@ -16,7 +16,9 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#can-value')).toHaveText('Basic');
   await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds');
   await expect(page.locator('#crop-value')).toHaveText('no harvested crops');
-  await expect(page.locator('#collection-value')).toHaveText('1/10 found, 0/10 shipped');
+  await expect(page.locator('#collection-value')).toHaveText(
+    /Crops 1\/10 found, 0\/10 shipped; Words 11\/\d+ found, 0\/\d+ used/,
+  );
   await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: 0/3 crops shipped');
   await expect(page.locator('#objective-completion')).toBeHidden();
   await expect(page.locator('#follow-up-progress')).toBeHidden();
@@ -65,7 +67,9 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await expect(page.getByText('Day 4 goal complete: a new seed packet is in the bag. Reward: 5 coins.')).toBeVisible();
   await expect(page.locator('#coin-value')).toHaveText('26');
   await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds, 2 radish seeds');
-  await expect(page.locator('#collection-value')).toHaveText('2/10 found, 0/10 shipped');
+  await expect(page.locator('#collection-value')).toHaveText(
+    /Crops 2\/10 found, 0\/10 shipped; Words 26\/\d+ found, 4\/\d+ used/,
+  );
 
   await page.keyboard.type('can');
   await page.keyboard.press('Enter');
@@ -88,7 +92,9 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await page.keyboard.press('Enter');
   await expect(page.getByText('Planted radish seeds.')).toBeVisible();
   await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds, 1 radish seed');
-  await expect(page.locator('#collection-value')).toHaveText('2/10 found, 0/10 shipped');
+  await expect(page.locator('#collection-value')).toHaveText(
+    /Crops 2\/10 found, 0\/10 shipped; Words 27\/\d+ found, 7\/\d+ used/,
+  );
 });
 
 test('opens menu words from typed labels', async ({ page }) => {
@@ -105,7 +111,7 @@ test('opens menu words from typed labels', async ({ page }) => {
   await page.keyboard.press('Enter');
   await expect(
     page.getByText(
-      'Pack: Seeds: 3 turnip seeds. Crops: no harvested crops. Collection: 1/10 found, 0/10 shipped. Found: turnip. Shipped: none.',
+      /Pack: Seeds: 3 turnip seeds\. Crops: no harvested crops\. Collection: Crops 1\/10 found, 0\/10 shipped; Words 11\/\d+ found, 2\/\d+ used\..*Used words: journal, pack\./,
     ),
   ).toBeVisible();
 });
@@ -126,7 +132,9 @@ test('shows persistent affordances for a completed Spring Basket', async ({ page
   await expect(page.locator('#follow-up-progress')).toHaveText(
     "Market Encore: 3/5 crop varieties shipped. 2 more varieties will broaden Mira's market stall.",
   );
-  await expect(page.locator('#collection-value')).toHaveText('3/10 found, 3/10 shipped');
+  await expect(page.locator('#collection-value')).toHaveText(
+    /Crops 3\/10 found, 3\/10 shipped; Words 8\/\d+ found, 0\/\d+ used/,
+  );
 
   await page.keyboard.type('journal');
   await page.keyboard.press('Enter');
@@ -146,7 +154,9 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.locator('#coin-value')).toHaveText('28');
   await expect(page.locator('#seed-value')).toHaveText('2 turnip seeds');
   await expect(page.locator('#crop-value')).toHaveText('no harvested crops');
-  await expect(page.locator('#collection-value')).toHaveText('1/10 found, 0/10 shipped');
+  await expect(page.locator('#collection-value')).toHaveText(
+    /Crops 1\/10 found, 0\/10 shipped; Words 13\/\d+ found, 1\/\d+ used/,
+  );
   await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds done (+3 coins)');
 
   await page.getByRole('button', { name: 'Save' }).click();
@@ -164,7 +174,9 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.locator('#forecast-value')).toHaveText('Sunny');
   await expect(page.locator('#coin-value')).toHaveText('28');
   await expect(page.locator('#seed-value')).toHaveText('2 turnip seeds');
-  await expect(page.locator('#collection-value')).toHaveText('1/10 found, 0/10 shipped');
+  await expect(page.locator('#collection-value')).toHaveText(
+    /Crops 1\/10 found, 0\/10 shipped; Words 13\/\d+ found, 1\/\d+ used/,
+  );
   await expect(page.locator('#request-progress')).toHaveText('Request: Pantry Turnip open (+6 coins)');
   await expect(page.locator('#save-timestamp')).toContainText(/^Restored save: \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
 

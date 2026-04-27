@@ -33,6 +33,8 @@ describe('save codec', () => {
       expect(result.state.dailyRequests.completedKeys).toEqual([]);
       expect(result.state.collectionLog.discoveredCrops.turnip).toBe(true);
       expect(result.state.collectionLog.shippedCrops.turnip).toBe(false);
+      expect(result.state.collectionLog.discoveredWords.seed).toBe(true);
+      expect(result.state.collectionLog.usedWords.seed).toBe(true);
       expect(result.state.plots).toEqual(state.plots);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(false);
@@ -62,6 +64,32 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.state.location).toBe('town');
       expect(result.state.player).toEqual({ x: 0, y: 5.6 });
+    }
+  });
+
+  it('migrates a version 8 save by adding inferred word collection progress', () => {
+    const olderState = createFarmState();
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 8,
+        savedAt: '2026-04-24T00:00:00.000Z',
+        state: {
+          ...olderState,
+          collectionLog: {
+            discoveredCrops: olderState.collectionLog.discoveredCrops,
+            shippedCrops: olderState.collectionLog.shippedCrops,
+          },
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.collectionLog.discoveredWords.house).toBe(true);
+      expect(result.state.collectionLog.discoveredWords.seed).toBe(true);
+      expect(result.state.collectionLog.usedWords.seed).toBe(false);
+      expect(result.migrated).toBe(true);
     }
   });
 

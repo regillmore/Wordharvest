@@ -2,6 +2,7 @@ import { cropCatalog, emptyCropCounts, isCropId, type CropId } from '../content/
 import {
   markCropsDiscovered,
   markCropsShipped,
+  markWordsDiscovered,
   normalizeCollectionLogProgress,
   type CollectionLogProgress,
 } from '../content/collectionLog';
@@ -11,11 +12,11 @@ import { emptyUpgradeFlags, upgradeCatalog, type UpgradeFlags } from '../content
 import { normalizeWeekGoalProgress } from '../content/weekGoals';
 import { forecastForDay, isWeatherId, weatherForDay, type WeatherId } from '../content/weather';
 import { createFarmState, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
-import type { WorldPoint } from './worldTargets';
+import { listWorldTargets, type WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 8;
+export const SAVE_SCHEMA_VERSION = 9;
 
-export interface SaveDataV8 {
+export interface SaveDataV9 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -26,7 +27,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV8 = {
+  const saveData: SaveDataV9 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -49,6 +50,10 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
+    return deserializeV9(parsed);
+  }
+
+  if (parsed.schemaVersion === 8) {
     return deserializeV8(parsed);
   }
 
@@ -88,7 +93,7 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
 }
 
 export function sanitizeStateForSave(state: FarmState): FarmState {
-  return {
+  const sanitizedState = {
     ...state,
     pendingAction: null,
     seeds: normalizeInventory(state.seeds),
@@ -102,6 +107,27 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
     player: { ...state.player },
     log: state.log.slice(0, 6),
   };
+
+  return {
+    ...sanitizedState,
+    collectionLog: markWordsDiscovered(
+      sanitizedState.collectionLog,
+      listWorldTargets(sanitizedState).map((target) => target.word),
+    ).progress,
+  };
+}
+
+function deserializeV9(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: false };
 }
 
 function deserializeV8(data: Record<string, unknown>): LoadSaveResult {
@@ -114,7 +140,7 @@ function deserializeV8(data: Record<string, unknown>): LoadSaveResult {
     return { ok: false, error: 'Save data has an invalid farm state.' };
   }
 
-  return { ok: true, state, savedAt: data.savedAt, migrated: false };
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function deserializeV7(data: Record<string, unknown>): LoadSaveResult {

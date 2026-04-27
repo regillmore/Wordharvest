@@ -16,6 +16,8 @@ import {
   createCollectionLogProgress,
   markCropsDiscovered,
   markCropsShipped,
+  markWordsDiscovered,
+  markWordsUsed,
   type CollectionLogProgress,
 } from '../content/collectionLog';
 import { followUpGoalDetailText } from '../content/followUpGoals';
@@ -61,6 +63,7 @@ import { normalizeTypedWord } from './typing';
 import {
   destinationForWorldTarget,
   farmReturnPosition,
+  listWorldTargets,
   resolveWorldTarget,
   townArrivalPosition,
   type WorldPoint,
@@ -116,7 +119,7 @@ const startingPlayerPosition: WorldPoint = { x: 0, y: 5 };
 const startingDay = 1;
 
 export function createFarmState(): FarmState {
-  return {
+  return discoverVisibleWords({
     day: startingDay,
     coins: 25,
     stamina: 10,
@@ -144,7 +147,7 @@ export function createFarmState(): FarmState {
       growth: 0,
     })),
     log: ['A quiet morning begins. Type a visible word hovering in the world.'],
-  };
+  });
 }
 
 export function applyTypedWord(state: FarmState, word: string): FarmState {
@@ -172,20 +175,22 @@ export function applyTypedWord(state: FarmState, word: string): FarmState {
     return withLog(state, `No clear path to ${target.label}.`);
   }
 
+  const stateWithUsedWord = markWordUsed(state, target.word);
+
   if (pathResult.path.length === 0) {
-    return completeWorldAction(
+    return discoverVisibleWords(completeWorldAction(
       {
-        ...state,
+        ...stateWithUsedWord,
         player: destination,
         pendingAction: null,
       },
       action,
-    );
+    ));
   }
 
   return withLog(
     {
-      ...state,
+      ...stateWithUsedWord,
       pendingAction: {
         word: target.word,
         label: target.label,
@@ -239,14 +244,14 @@ export function completePendingAction(state: FarmState): FarmState {
 
   const pendingAction = state.pendingAction;
 
-  return completeWorldAction(
+  return discoverVisibleWords(completeWorldAction(
     {
       ...state,
       player: pendingAction.destination,
       pendingAction: null,
     },
     pendingAction.action,
-  );
+  ));
 }
 
 function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmState {
@@ -432,7 +437,7 @@ export function advanceDay(state: FarmState): FarmState {
   });
   const plots = applyDawnWeather(grownPlots, weather);
 
-  return withLog(
+  return discoverVisibleWords(withLog(
     {
       ...state,
       day: nextDay,
@@ -443,7 +448,7 @@ export function advanceDay(state: FarmState): FarmState {
       plots,
     },
     `${describeDawn(nextDay, weather, forecast)} ${weekGoalDawnText(nextDay)} ${dailyRequestDawnText(nextDay, state.dailyRequests)}`,
-  );
+  ));
 }
 
 export function addFarmLog(state: FarmState, message: string): FarmState {
@@ -468,6 +473,22 @@ export function cropInventorySummary(state: Pick<FarmState, 'inventory'>): strin
 
 export function packInventorySummary(state: Pick<FarmState, 'seeds' | 'inventory' | 'collectionLog'>): string {
   return `Pack: Seeds: ${seedInventorySummary(state)}. Crops: ${cropInventorySummary(state)}. ${collectionDetailText(state.collectionLog)}`;
+}
+
+function discoverVisibleWords(state: FarmState): FarmState {
+  const visibleWords = listWorldTargets(state).map((target) => target.word);
+
+  return {
+    ...state,
+    collectionLog: markWordsDiscovered(state.collectionLog, visibleWords).progress,
+  };
+}
+
+function markWordUsed(state: FarmState, word: string): FarmState {
+  return {
+    ...state,
+    collectionLog: markWordsUsed(state.collectionLog, [word]).progress,
+  };
 }
 
 function updatePlot(

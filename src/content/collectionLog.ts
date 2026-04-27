@@ -1,17 +1,33 @@
-import { cropCatalog, starterCropId, type CropId } from './crops';
+import { normalizeTypedWord } from '../core/typing';
+import { cropCatalog, shopWordForCrop, starterCropId, type CropId } from './crops';
+import { targetWordCatalog } from './targetWords';
+import { shopWordForUpgrade, upgradeCatalog } from './upgrades';
 
 export type CropCollectionFlags = Record<CropId, boolean>;
+export type WordCollectionFlags = Record<string, boolean>;
 
 export interface CollectionLogProgress {
   discoveredCrops: CropCollectionFlags;
   shippedCrops: CropCollectionFlags;
+  discoveredWords: WordCollectionFlags;
+  usedWords: WordCollectionFlags;
 }
 
 export interface CollectionLogUpdate {
   progress: CollectionLogProgress;
   newlyDiscovered: CropId[];
   newlyShipped: CropId[];
+  newlyDiscoveredWords: string[];
+  newlyUsedWords: string[];
 }
+
+export const collectionWordCatalog = [
+  ...new Set([
+    ...targetWordCatalog.flatMap((definition) => definition.words),
+    ...cropCatalog.map((crop) => shopWordForCrop(crop.id)),
+    ...upgradeCatalog.map((upgrade) => shopWordForUpgrade(upgrade.id)),
+  ]),
+];
 
 export function createCollectionLogProgress(
   initialDiscovered: readonly CropId[] = [starterCropId],
@@ -20,6 +36,8 @@ export function createCollectionLogProgress(
     {
       discoveredCrops: emptyCropCollectionFlags(),
       shippedCrops: emptyCropCollectionFlags(),
+      discoveredWords: emptyWordCollectionFlags(),
+      usedWords: emptyWordCollectionFlags(),
     },
     initialDiscovered,
   ).progress;
@@ -32,6 +50,8 @@ export function normalizeCollectionLogProgress(value: unknown): CollectionLogPro
 
   const discoveredCrops = normalizeCropFlags(value.discoveredCrops);
   const shippedCrops = normalizeCropFlags(value.shippedCrops);
+  const discoveredWords = normalizeWordFlags(value.discoveredWords);
+  const usedWords = normalizeWordFlags(value.usedWords);
 
   discoveredCrops[starterCropId] = true;
 
@@ -41,9 +61,17 @@ export function normalizeCollectionLogProgress(value: unknown): CollectionLogPro
     }
   }
 
+  for (const word of collectionWordCatalog) {
+    if (usedWords[word]) {
+      discoveredWords[word] = true;
+    }
+  }
+
   return {
     discoveredCrops,
     shippedCrops,
+    discoveredWords,
+    usedWords,
   };
 }
 
@@ -69,6 +97,8 @@ export function markCropsDiscovered(
     },
     newlyDiscovered,
     newlyShipped: [],
+    newlyDiscoveredWords: [],
+    newlyUsedWords: [],
   };
 }
 
@@ -91,17 +121,75 @@ export function markCropsShipped(
     progress: {
       discoveredCrops: discoveredUpdate.progress.discoveredCrops,
       shippedCrops,
+      discoveredWords: discoveredUpdate.progress.discoveredWords,
+      usedWords: discoveredUpdate.progress.usedWords,
     },
     newlyDiscovered: discoveredUpdate.newlyDiscovered,
     newlyShipped,
+    newlyDiscoveredWords: [],
+    newlyUsedWords: [],
+  };
+}
+
+export function markWordsDiscovered(
+  progress: CollectionLogProgress,
+  words: readonly string[],
+): CollectionLogUpdate {
+  const normalizedProgress = normalizeCollectionLogProgress(progress);
+  const discoveredWords = { ...normalizedProgress.discoveredWords };
+  const newlyDiscoveredWords: string[] = [];
+
+  for (const word of uniqueCollectionWords(words)) {
+    if (!discoveredWords[word]) {
+      discoveredWords[word] = true;
+      newlyDiscoveredWords.push(word);
+    }
+  }
+
+  return {
+    progress: {
+      ...normalizedProgress,
+      discoveredWords,
+    },
+    newlyDiscovered: [],
+    newlyShipped: [],
+    newlyDiscoveredWords,
+    newlyUsedWords: [],
+  };
+}
+
+export function markWordsUsed(progress: CollectionLogProgress, words: readonly string[]): CollectionLogUpdate {
+  const discoveredUpdate = markWordsDiscovered(progress, words);
+  const usedWords = { ...discoveredUpdate.progress.usedWords };
+  const newlyUsedWords: string[] = [];
+
+  for (const word of uniqueCollectionWords(words)) {
+    if (!usedWords[word]) {
+      usedWords[word] = true;
+      newlyUsedWords.push(word);
+    }
+  }
+
+  return {
+    progress: {
+      discoveredCrops: discoveredUpdate.progress.discoveredCrops,
+      shippedCrops: discoveredUpdate.progress.shippedCrops,
+      discoveredWords: discoveredUpdate.progress.discoveredWords,
+      usedWords,
+    },
+    newlyDiscovered: [],
+    newlyShipped: [],
+    newlyDiscoveredWords: discoveredUpdate.newlyDiscoveredWords,
+    newlyUsedWords,
   };
 }
 
 export function collectionProgressText(progress: CollectionLogProgress): string {
   const normalizedProgress = normalizeCollectionLogProgress(progress);
-  const total = cropCatalog.length;
+  const cropTotal = cropCatalog.length;
+  const wordTotal = collectionWordCatalog.length;
 
-  return `${countFlags(normalizedProgress.discoveredCrops)}/${total} found, ${countFlags(normalizedProgress.shippedCrops)}/${total} shipped`;
+  return `Crops ${countFlags(normalizedProgress.discoveredCrops)}/${cropTotal} found, ${countFlags(normalizedProgress.shippedCrops)}/${cropTotal} shipped; Words ${countWordFlags(normalizedProgress.discoveredWords)}/${wordTotal} found, ${countWordFlags(normalizedProgress.usedWords)}/${wordTotal} used`;
 }
 
 export function countDiscoveredCrops(progress: CollectionLogProgress): number {
@@ -112,10 +200,18 @@ export function countShippedCrops(progress: CollectionLogProgress): number {
   return countFlags(normalizeCollectionLogProgress(progress).shippedCrops);
 }
 
+export function countDiscoveredWords(progress: CollectionLogProgress): number {
+  return countWordFlags(normalizeCollectionLogProgress(progress).discoveredWords);
+}
+
+export function countUsedWords(progress: CollectionLogProgress): number {
+  return countWordFlags(normalizeCollectionLogProgress(progress).usedWords);
+}
+
 export function collectionDetailText(progress: CollectionLogProgress): string {
   const normalizedProgress = normalizeCollectionLogProgress(progress);
 
-  return `Collection: ${collectionProgressText(normalizedProgress)}. Found: ${cropListText(normalizedProgress.discoveredCrops)}. Shipped: ${cropListText(normalizedProgress.shippedCrops)}.`;
+  return `Collection: ${collectionProgressText(normalizedProgress)}. Found crops: ${cropListText(normalizedProgress.discoveredCrops)}. Shipped crops: ${cropListText(normalizedProgress.shippedCrops)}. Found words: ${wordListText(normalizedProgress.discoveredWords)}. Used words: ${wordListText(normalizedProgress.usedWords)}.`;
 }
 
 function emptyCropCollectionFlags(): CropCollectionFlags {
@@ -136,6 +232,24 @@ function normalizeCropFlags(value: unknown): CropCollectionFlags {
   return flags;
 }
 
+function emptyWordCollectionFlags(): WordCollectionFlags {
+  return Object.fromEntries(collectionWordCatalog.map((word) => [word, false]));
+}
+
+function normalizeWordFlags(value: unknown): WordCollectionFlags {
+  const flags = emptyWordCollectionFlags();
+
+  if (!isRecord(value)) {
+    return flags;
+  }
+
+  for (const word of collectionWordCatalog) {
+    flags[word] = value[word] === true;
+  }
+
+  return flags;
+}
+
 function cropListText(flags: CropCollectionFlags): string {
   const cropNames = cropCatalog.filter((crop) => flags[crop.id]).map((crop) => crop.name);
 
@@ -146,8 +260,30 @@ function countFlags(flags: CropCollectionFlags): number {
   return cropCatalog.filter((crop) => flags[crop.id]).length;
 }
 
+function wordListText(flags: WordCollectionFlags): string {
+  const words = collectionWordCatalog.filter((word) => flags[word]);
+
+  return words.length > 0 ? words.join(', ') : 'none';
+}
+
+function countWordFlags(flags: WordCollectionFlags): number {
+  return collectionWordCatalog.filter((word) => flags[word]).length;
+}
+
 function uniqueCropIds(cropIds: readonly CropId[]): CropId[] {
   return [...new Set(cropIds)];
+}
+
+function uniqueCollectionWords(words: readonly string[]): string[] {
+  const knownWords = new Set(collectionWordCatalog);
+
+  return [
+    ...new Set(
+      words
+        .map((word) => normalizeTypedWord(word))
+        .filter((word): word is string => Boolean(word) && knownWords.has(word)),
+    ),
+  ];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
