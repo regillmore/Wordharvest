@@ -19,6 +19,7 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#collection-value')).toHaveText(
     /Crops 1\/10 found, 0\/10 shipped; Words 11\/\d+ found, 0\/\d+ used/,
   );
+  await expect(page.locator('#achievement-value')).toHaveText('Achievements: 0/5 unlocked');
   await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: 0/3 crops shipped');
   await expect(page.locator('#objective-completion')).toBeHidden();
   await expect(page.locator('#follow-up-progress')).toBeHidden();
@@ -31,6 +32,8 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.getByText('Planted turnip seeds.')).toBeVisible();
   await expect(page.locator('#coin-value')).toHaveText('28');
   await expect(page.getByText('Day 1 goal complete: first seeds planted. Reward: 3 coins.')).toBeVisible();
+  await expect(page.getByText('Achievement unlocked: First Furrow - Plant any seed in a farm plot.')).toBeVisible();
+  await expect(page.locator('#achievement-value')).toHaveText('Achievements: 1/5 unlocked');
   await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds done (+3 coins)');
 
   await page.keyboard.type('house');
@@ -75,6 +78,7 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await expect(page.locator('#collection-value')).toHaveText(
     /Crops 2\/10 found, 0\/10 shipped; Words 27\/\d+ found, 5\/\d+ used/,
   );
+  await expect(page.locator('#achievement-value')).toHaveText('Achievements: 2/5 unlocked');
 
   await page.keyboard.type('can');
   await page.keyboard.press('Enter');
@@ -100,6 +104,7 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await expect(page.locator('#collection-value')).toHaveText(
     /Crops 2\/10 found, 0\/10 shipped; Words 28\/\d+ found, 8\/\d+ used/,
   );
+  await expect(page.locator('#achievement-value')).toHaveText('Achievements: 3/5 unlocked');
 });
 
 test('opens menu words from typed labels', async ({ page }) => {
@@ -140,6 +145,7 @@ test('shows persistent affordances for a completed Spring Basket', async ({ page
   await expect(page.locator('#collection-value')).toHaveText(
     /Crops 3\/10 found, 3\/10 shipped; Words 8\/\d+ found, 0\/\d+ used/,
   );
+  await expect(page.locator('#achievement-value')).toHaveText('Achievements: 3/5 unlocked');
 
   await page.keyboard.type('journal');
   await page.keyboard.press('Enter');
@@ -225,7 +231,7 @@ function completedSpringBasketSave(): string {
   };
 
   return JSON.stringify({
-    schemaVersion: 6,
+    schemaVersion: 10,
     savedAt: '2026-04-25T00:00:00.000Z',
     state: {
       day: 8,
@@ -253,6 +259,14 @@ function completedSpringBasketSave(): string {
         buyTinCan: true,
         completeSpringBasket: true,
       },
+      dailyRequests: { completedKeys: [] },
+      collectionLog: {
+        discoveredCrops: { ...cropCounts, turnip: true, radish: true, carrot: true },
+        shippedCrops: { ...cropCounts, turnip: true, radish: true, carrot: true },
+        discoveredWords: {},
+        usedWords: {},
+      },
+      achievements: { unlockedIds: ['firstSeed', 'cropCurious', 'firstSale'] },
       plots: [
         { id: 1, position: { x: -1, y: 3 }, crop: null, stage: 'empty', wateredToday: false, growth: 0 },
         { id: 2, position: { x: 0, y: 3 }, crop: null, stage: 'empty', wateredToday: false, growth: 0 },

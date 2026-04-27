@@ -1,6 +1,7 @@
 import { Application, Assets, Container, Graphics, Rectangle, Sprite, Text, Texture } from 'pixi.js';
 import { AudioSystem, cueForLogMessage, deserializeAudioSettings, serializeAudioSettings, type AudioSettings } from './audio/audio';
 import { playerSpriteSheet, playerSpriteSource, type PlayerSpriteFrameId } from './assets/playerSprites';
+import { achievementProgressText } from './content/achievements';
 import {
   addFarmLog,
   advanceDay,
@@ -73,6 +74,7 @@ root.innerHTML = `
         <div><dt>Seeds</dt><dd id="seed-value" class="inventory-summary"></dd></div>
         <div><dt>Crops</dt><dd id="crop-value" class="inventory-summary"></dd></div>
         <div><dt>Collection</dt><dd id="collection-value" class="inventory-summary"></dd></div>
+        <div><dt>Badges</dt><dd id="achievement-value" class="inventory-summary"></dd></div>
       </dl>
       <section class="word-panel" aria-live="polite">
         <p class="label">Spring goal</p>
@@ -133,6 +135,7 @@ const canValue = requireElement<HTMLElement>('#can-value');
 const seedValue = requireElement<HTMLElement>('#seed-value');
 const cropValue = requireElement<HTMLElement>('#crop-value');
 const collectionValue = requireElement<HTMLElement>('#collection-value');
+const achievementValue = requireElement<HTMLElement>('#achievement-value');
 const objectiveProgress = requireElement<HTMLElement>('#objective-progress');
 const objectiveCompletion = requireElement<HTMLElement>('#objective-completion');
 const followUpProgress = requireElement<HTMLElement>('#follow-up-progress');
@@ -342,6 +345,7 @@ function redrawHud(): void {
   seedValue.textContent = seedInventorySummary(farm);
   cropValue.textContent = cropInventorySummary(farm);
   collectionValue.textContent = collectionProgressText(farm.collectionLog);
+  achievementValue.textContent = achievementProgressText(farm.achievements);
   objectiveProgress.textContent = objectiveProgressText(farm.seasonObjective);
   objectiveProgress.classList.toggle('is-complete', farm.seasonObjective.completed);
   objectiveCompletion.textContent = completionText;

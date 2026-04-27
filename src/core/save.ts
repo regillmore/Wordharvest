@@ -1,5 +1,9 @@
 import { cropCatalog, emptyCropCounts, isCropId, type CropId } from '../content/crops';
 import {
+  evaluateAchievementProgress,
+  normalizeAchievementProgress,
+} from '../content/achievements';
+import {
   markCropsDiscovered,
   markCropsShipped,
   markWordsDiscovered,
@@ -14,9 +18,9 @@ import { forecastForDay, isWeatherId, weatherForDay, type WeatherId } from '../c
 import { createFarmState, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
 import { listWorldTargets, type WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 9;
+export const SAVE_SCHEMA_VERSION = 10;
 
-export interface SaveDataV9 {
+export interface SaveDataV10 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -27,7 +31,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV9 = {
+  const saveData: SaveDataV10 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -50,6 +54,10 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
+    return deserializeV10(parsed);
+  }
+
+  if (parsed.schemaVersion === 9) {
     return deserializeV9(parsed);
   }
 
@@ -103,18 +111,40 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
     weekGoals: normalizeWeekGoalProgress(state.weekGoals),
     dailyRequests: normalizeDailyRequestProgress(state.dailyRequests),
     collectionLog: normalizeCollectionLogProgress(state.collectionLog),
+    achievements: normalizeAchievementProgress(state.achievements),
     plots: state.plots.map((plot) => ({ ...plot, position: { ...plot.position } })),
     player: { ...state.player },
     log: state.log.slice(0, 6),
   };
 
-  return {
+  const stateWithVisibleWords = {
     ...sanitizedState,
     collectionLog: markWordsDiscovered(
       sanitizedState.collectionLog,
       listWorldTargets(sanitizedState).map((target) => target.word),
     ).progress,
   };
+
+  return {
+    ...stateWithVisibleWords,
+    achievements: evaluateAchievementProgress(stateWithVisibleWords.achievements, {
+      weekGoals: stateWithVisibleWords.weekGoals,
+      collectionLog: stateWithVisibleWords.collectionLog,
+    }).progress,
+  };
+}
+
+function deserializeV10(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: false };
 }
 
 function deserializeV9(data: Record<string, unknown>): LoadSaveResult {
@@ -127,7 +157,7 @@ function deserializeV9(data: Record<string, unknown>): LoadSaveResult {
     return { ok: false, error: 'Save data has an invalid farm state.' };
   }
 
-  return { ok: true, state, savedAt: data.savedAt, migrated: false };
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function deserializeV8(data: Record<string, unknown>): LoadSaveResult {
@@ -259,6 +289,7 @@ function migrateV0(data: Record<string, unknown>): LoadSaveResult {
     weekGoals: normalizeWeekGoalProgress(rawState.weekGoals),
     dailyRequests: normalizeDailyRequestProgress(rawState.dailyRequests),
     collectionLog: inferCollectionLog(base.collectionLog, seeds, inventory, plots, seasonObjective.shipped),
+    achievements: normalizeAchievementProgress(rawState.achievements),
     plots,
     log: parseLog(rawState.log) ?? ['Loaded an older Wordharvest save.'],
   };
@@ -293,6 +324,7 @@ function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null):
   const day = value.day;
   const inventory = normalizeInventory(isRecord(value.inventory) ? value.inventory : {});
   const seasonObjective = normalizeObjectiveProgress(value.seasonObjective);
+  const weekGoals = normalizeWeekGoalProgress(value.weekGoals);
   const collectionLog = inferCollectionLog(
     normalizeCollectionLogProgress(value.collectionLog),
     seeds,
@@ -314,9 +346,10 @@ function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null):
     inventory,
     upgrades: normalizeUpgrades(isRecord(value.upgrades) ? value.upgrades : {}),
     seasonObjective,
-    weekGoals: normalizeWeekGoalProgress(value.weekGoals),
+    weekGoals,
     dailyRequests: normalizeDailyRequestProgress(value.dailyRequests),
     collectionLog,
+    achievements: normalizeAchievementProgress(value.achievements),
     plots,
     log,
   });

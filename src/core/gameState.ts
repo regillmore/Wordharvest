@@ -1,4 +1,13 @@
 import {
+  achievementCatalog,
+  achievementDetailText,
+  achievementUnlockLog,
+  createAchievementProgress,
+  evaluateAchievementProgress,
+  type AchievementProgress,
+  type AchievementSnapshot,
+} from '../content/achievements';
+import {
   cropCatalog,
   cropCountsWith,
   cropDefinition,
@@ -114,6 +123,7 @@ export interface FarmState {
   weekGoals: WeekGoalProgress;
   dailyRequests: DailyRequestProgress;
   collectionLog: CollectionLogProgress;
+  achievements: AchievementProgress;
   plots: CropPlot[];
   log: string[];
 }
@@ -141,6 +151,7 @@ export function createFarmState(): FarmState {
     weekGoals: emptyWeekGoalProgress(),
     dailyRequests: createDailyRequestProgress(),
     collectionLog: createCollectionLogProgress(),
+    achievements: createAchievementProgress(),
     plots: Array.from({ length: startingPlots }, (_, index) => ({
       id: index + 1,
       position: {
@@ -481,17 +492,19 @@ export function cropInventorySummary(state: Pick<FarmState, 'inventory'>): strin
   });
 }
 
-export function packInventorySummary(state: Pick<FarmState, 'seeds' | 'inventory' | 'collectionLog'>): string {
-  return `Pack: Seeds: ${seedInventorySummary(state)}. Crops: ${cropInventorySummary(state)}. ${collectionDetailText(state.collectionLog)}`;
+export function packInventorySummary(
+  state: Pick<FarmState, 'seeds' | 'inventory' | 'collectionLog' | 'achievements'>,
+): string {
+  return `Pack: Seeds: ${seedInventorySummary(state)}. Crops: ${cropInventorySummary(state)}. ${collectionDetailText(state.collectionLog)} ${achievementDetailText(state.achievements)}`;
 }
 
 function discoverVisibleWords(state: FarmState): FarmState {
   const visibleWords = listWorldTargets(state).map((target) => target.word);
 
-  return {
+  return unlockAchievements({
     ...state,
     collectionLog: markWordsDiscovered(state.collectionLog, visibleWords).progress,
-  };
+  });
 }
 
 function markWordUsed(state: FarmState, word: string): FarmState {
@@ -665,7 +678,7 @@ function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options
     const can = state.upgrades.wateringCan ? 'tin can' : 'basic can';
     const followUpDetail = state.seasonObjective.completed ? ` ${followUpGoalDetailText(state.collectionLog)}` : '';
 
-    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}.${followUpDetail} ${weekGoalDetailText(state.day, state.weekGoals)} ${dailyRequestDetailText(state.day, state.dailyRequests)}`;
+    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}.${followUpDetail} ${weekGoalDetailText(state.day, state.weekGoals)} ${dailyRequestDetailText(state.day, state.dailyRequests)} ${achievementDetailText(state.achievements)}`;
   }
 
   if (menu === 'inventory') {
@@ -727,9 +740,36 @@ function withActionLogs(
 }
 
 function withLogs(state: FarmState, messages: readonly string[]): FarmState {
+  const nextState = unlockAchievements(state);
+
+  return {
+    ...nextState,
+    log: [...messages, ...achievementLogsSince(state, nextState), ...state.log].slice(0, maxLogEntries),
+  };
+}
+
+function unlockAchievements(state: FarmState): FarmState {
+  const update = evaluateAchievementProgress(state.achievements, achievementSnapshot(state));
+
   return {
     ...state,
-    log: [...messages, ...state.log].slice(0, maxLogEntries),
+    achievements: update.progress,
+  };
+}
+
+function achievementLogsSince(previousState: FarmState, nextState: FarmState): string[] {
+  const previousIds = new Set(previousState.achievements.unlockedIds);
+  const nextIds = new Set(nextState.achievements.unlockedIds);
+
+  return achievementCatalog
+    .filter((achievement) => nextIds.has(achievement.id) && !previousIds.has(achievement.id))
+    .map(achievementUnlockLog);
+}
+
+function achievementSnapshot(state: Pick<FarmState, 'weekGoals' | 'collectionLog'>): AchievementSnapshot {
+  return {
+    weekGoals: state.weekGoals,
+    collectionLog: state.collectionLog,
   };
 }
 

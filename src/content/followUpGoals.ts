@@ -91,6 +91,12 @@ export function validateFollowUpGoalCatalog(): FollowUpGoalCatalogValidationResu
     }
   }
 
+  for (const requiredGoal of followUpGoalIds) {
+    if (!seenIds.has(requiredGoal)) {
+      errors.push(`Missing follow-up goal id: ${requiredGoal}`);
+    }
+  }
+
   return {
     ok: errors.length === 0,
     errors,

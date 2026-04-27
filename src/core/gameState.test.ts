@@ -27,6 +27,7 @@ describe('farm state', () => {
     expect(state.collectionLog.discoveredWords.house).toBe(true);
     expect(state.collectionLog.discoveredWords.seed).toBe(true);
     expect(state.collectionLog.usedWords.seed).toBe(false);
+    expect(state.achievements.unlockedIds).toEqual([]);
   });
 
   it('summarizes seeds and harvested crops across the crop catalog', () => {
@@ -47,7 +48,7 @@ describe('farm state', () => {
     expect(seedInventorySummary(state)).toBe('3 turnip seeds, 2 radish seeds, 1 carrot seed');
     expect(cropInventorySummary(state)).toBe('1 turnip, 2 snap peas');
     expect(packInventorySummary(state)).toBe(
-      `Pack: Seeds: 3 turnip seeds, 2 radish seeds, 1 carrot seed. Crops: 1 turnip, 2 snap peas. Collection: Crops 1/10 found, 0/10 shipped; Words 11/${collectionWordCatalog.length} found, 0/${collectionWordCatalog.length} used. Found crops: turnip. Shipped crops: none. Found words: house, town, journal, pack, options, bin, seeds, seed, plant, sow, crop. Used words: none.`,
+      `Pack: Seeds: 3 turnip seeds, 2 radish seeds, 1 carrot seed. Crops: 1 turnip, 2 snap peas. Collection: Crops 1/10 found, 0/10 shipped; Words 11/${collectionWordCatalog.length} found, 0/${collectionWordCatalog.length} used. Found crops: turnip. Shipped crops: none. Found words: house, town, journal, pack, options, bin, seeds, seed, plant, sow, crop. Used words: none. Achievements: 0/5 unlocked. Badges: none yet. Next: First Furrow - Plant any seed in a farm plot.`,
     );
   });
 
@@ -68,6 +69,8 @@ describe('farm state', () => {
     expect(state.collectionLog.discoveredWords.water).toBe(true);
     expect(state.collectionLog.discoveredWords.crop).toBe(true);
     expect(state.log[1]).toBe('Day 1 goal complete: first seeds planted. Reward: 3 coins.');
+    expect(state.log[2]).toBe('Achievement unlocked: First Furrow - Plant any seed in a farm plot.');
+    expect(state.achievements.unlockedIds).toEqual(['firstSeed']);
     expect(state.pendingAction).toBeNull();
     expect(state.player).toEqual(state.plots[4].position);
   });
@@ -103,6 +106,7 @@ describe('farm state', () => {
     expect(state.seasonObjective.completed).toBe(false);
     expect(state.weekGoals.shipFirstCrop).toBe(true);
     expect(state.collectionLog.shippedCrops.turnip).toBe(true);
+    expect(state.achievements.unlockedIds).toEqual(expect.arrayContaining(['firstSeed', 'firstSale']));
     expect(state.log[0]).toBe('Shipped 1 turnip for 12 coins.');
   });
 
@@ -181,6 +185,7 @@ describe('farm state', () => {
     state = settleAction(state);
     expect(state.location).toBe('town');
     expect(state.log[0]).toBe('Followed the south path toward town.');
+    expect(state.achievements.unlockedIds).toContain('townFootsteps');
 
     state = applyTypedWord(state, 'farm');
     expect(state.pendingAction?.label).toBe('farm');
@@ -269,6 +274,7 @@ describe('farm state', () => {
     expect(state.coins).toBe(19);
     expect(state.seeds.carrot).toBe(2);
     expect(state.collectionLog.discoveredCrops.carrot).toBe(true);
+    expect(state.achievements.unlockedIds).toContain('cropCurious');
     expect(state.log[0]).toBe('Bought 2 carrot seeds for 7 coins.');
 
     state = applyTypedWord({ ...state, coins: 0 }, 'strawberry');
@@ -309,7 +315,7 @@ describe('farm state', () => {
 
     expect(state.pendingAction).toBeNull();
     expect(state.log[0]).toBe(
-      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1). First Week: 0/7 goals done. Today: Plant first seeds - Plant any seed in a farm plot. Reward: 3 coins. Town request: Mira wants 1 turnip for Pantry Turnip. Type favor in town to deliver. Status: open. Reward: 6 coins.',
+      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1). First Week: 0/7 goals done. Today: Plant first seeds - Plant any seed in a farm plot. Reward: 3 coins. Town request: Mira wants 1 turnip for Pantry Turnip. Type favor in town to deliver. Status: open. Reward: 6 coins. Achievements: 0/5 unlocked. Badges: none yet. Next: First Furrow - Plant any seed in a farm plot.',
     );
 
     const packState = applyTypedWord(
@@ -329,7 +335,7 @@ describe('farm state', () => {
 
     expect(packState.pendingAction).toBeNull();
     expect(packState.log[0]).toBe(
-      `Pack: Seeds: 3 turnip seeds, 2 radish seeds. Crops: 1 carrot. Collection: Crops 1/10 found, 0/10 shipped; Words 11/${collectionWordCatalog.length} found, 1/${collectionWordCatalog.length} used. Found crops: turnip. Shipped crops: none. Found words: house, town, journal, pack, options, bin, seeds, seed, plant, sow, crop. Used words: pack.`,
+      `Pack: Seeds: 3 turnip seeds, 2 radish seeds. Crops: 1 carrot. Collection: Crops 1/10 found, 0/10 shipped; Words 11/${collectionWordCatalog.length} found, 1/${collectionWordCatalog.length} used. Found crops: turnip. Shipped crops: none. Found words: house, town, journal, pack, options, bin, seeds, seed, plant, sow, crop. Used words: pack. Achievements: 0/5 unlocked. Badges: none yet. Next: First Furrow - Plant any seed in a farm plot.`,
     );
   });
 

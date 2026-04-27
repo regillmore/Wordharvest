@@ -120,6 +120,10 @@ export function cueForLogMessage(message: string): AudioCue | null {
     return 'ship';
   }
 
+  if (message.startsWith('Achievement unlocked')) {
+    return 'ship';
+  }
+
   if (message.startsWith('Bought')) {
     return 'ship';
   }

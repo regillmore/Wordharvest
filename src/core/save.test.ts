@@ -35,6 +35,7 @@ describe('save codec', () => {
       expect(result.state.collectionLog.shippedCrops.turnip).toBe(false);
       expect(result.state.collectionLog.discoveredWords.seed).toBe(true);
       expect(result.state.collectionLog.usedWords.seed).toBe(true);
+      expect(result.state.achievements.unlockedIds).toEqual(['firstSeed']);
       expect(result.state.plots).toEqual(state.plots);
       expect(result.state.pendingAction).toBeNull();
       expect(result.migrated).toBe(false);
@@ -64,6 +65,33 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.state.location).toBe('town');
       expect(result.state.player).toEqual({ x: 0, y: 5.6 });
+    }
+  });
+
+  it('migrates a version 9 save by adding inferred achievement progress', () => {
+    const olderState = {
+      ...createFarmState(),
+      weekGoals: {
+        ...createFarmState().weekGoals,
+        plantFirstSeeds: true,
+      },
+    };
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 9,
+        savedAt: '2026-04-25T00:00:00.000Z',
+        state: {
+          ...olderState,
+          achievements: undefined,
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.achievements.unlockedIds).toEqual(['firstSeed']);
+      expect(result.migrated).toBe(true);
     }
   });
 
