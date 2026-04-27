@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createCollectionLogProgress, markCropsShipped } from './collectionLog';
 import {
+  followUpGoalCompletionLog,
   followUpGoalDetailText,
   followUpGoalProgressText,
   isFollowUpGoalComplete,
@@ -14,6 +15,7 @@ describe('follow-up goals', () => {
     expect(postSpringBasketFollowUpGoal).toMatchObject({
       id: 'marketEncore',
       targetShippedCropVarieties: 5,
+      rewardCoins: 40,
     });
   });
 
@@ -33,6 +35,9 @@ describe('follow-up goals', () => {
     expect(followUpGoalProgressText(collectionLog)).toBe('Market Encore: complete');
     expect(followUpGoalDetailText(collectionLog)).toBe(
       'Market Encore: complete. Mira has enough variety for a proper spring stall.',
+    );
+    expect(followUpGoalCompletionLog()).toBe(
+      'Market Encore complete! Mira added 40 coins for the fuller spring stall. Reward: 40 coins.',
     );
   });
 });

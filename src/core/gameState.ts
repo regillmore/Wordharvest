@@ -20,7 +20,12 @@ import {
   markWordsUsed,
   type CollectionLogProgress,
 } from '../content/collectionLog';
-import { followUpGoalDetailText } from '../content/followUpGoals';
+import {
+  followUpGoalCompletionLog,
+  followUpGoalDetailText,
+  isFollowUpGoalComplete,
+  postSpringBasketFollowUpGoal,
+} from '../content/followUpGoals';
 import {
   createDailyRequestProgress,
   dailyRequestDawnText,
@@ -576,6 +581,16 @@ function shipInventory(state: FarmState): FarmState {
   const objectiveReward = objectiveUpdate.newlyCompleted
     ? objectiveDefinition(objectiveUpdate.progress.id).rewardCoins
     : 0;
+  const collectionUpdate = markCropsShipped(
+    state.collectionLog,
+    shipments.map((shipment) => shipment.crop.id),
+  );
+  const followUpReward =
+    objectiveUpdate.progress.completed &&
+    !isFollowUpGoalComplete(state.collectionLog) &&
+    isFollowUpGoalComplete(collectionUpdate.progress)
+      ? postSpringBasketFollowUpGoal.rewardCoins
+      : 0;
   const shippedInventory = {
     ...state.inventory,
   };
@@ -591,20 +606,20 @@ function shipInventory(state: FarmState): FarmState {
     completedGoals.push('completeSpringBasket');
   }
 
+  const completionLogs = [
+    ...(objectiveUpdate.newlyCompleted ? [objectiveDefinition(objectiveUpdate.progress.id).completedLog] : []),
+    ...(followUpReward > 0 ? [followUpGoalCompletionLog()] : []),
+  ];
+
   return withActionLogs(
     {
       ...state,
-      coins: state.coins + coinsEarned + objectiveReward,
+      coins: state.coins + coinsEarned + objectiveReward + followUpReward,
       inventory: shippedInventory,
       seasonObjective: objectiveUpdate.progress,
-      collectionLog: markCropsShipped(
-        state.collectionLog,
-        shipments.map((shipment) => shipment.crop.id),
-      ).progress,
+      collectionLog: collectionUpdate.progress,
     },
-    objectiveUpdate.newlyCompleted
-      ? [objectiveDefinition(objectiveUpdate.progress.id).completedLog, shipmentLog]
-      : [shipmentLog],
+    [...completionLogs, shipmentLog],
     completedGoals,
   );
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { collectionWordCatalog } from '../content/collectionLog';
+import { collectionWordCatalog, markCropsShipped } from '../content/collectionLog';
 import {
   advanceDay,
   advanceFarmTime,
@@ -442,6 +442,64 @@ describe('farm state', () => {
     expect(journalState.log[0]).toContain(
       "Market Encore: 3/5 crop varieties shipped. 2 more varieties will broaden Mira's market stall.",
     );
+  });
+
+  it('rewards Market Encore when five crop varieties have shipped', () => {
+    const base = createFarmState();
+    let state = applyTypedWord(
+      {
+        ...base,
+        coins: 0,
+        inventory: {
+          ...base.inventory,
+          pea: 1,
+          lettuce: 1,
+        },
+        seasonObjective: {
+          ...base.seasonObjective,
+          shipped: {
+            ...base.seasonObjective.shipped,
+            turnip: 1,
+            radish: 1,
+            carrot: 1,
+          },
+          completed: true,
+        },
+        weekGoals: {
+          ...base.weekGoals,
+          shipFirstCrop: true,
+          completeSpringBasket: true,
+        },
+        collectionLog: markCropsShipped(base.collectionLog, ['turnip', 'radish', 'carrot']).progress,
+      },
+      'bin',
+    );
+
+    state = settleAction(state);
+
+    expect(state.coins).toBe(76);
+    expect(state.inventory.pea).toBe(0);
+    expect(state.inventory.lettuce).toBe(0);
+    expect(state.collectionLog.shippedCrops.pea).toBe(true);
+    expect(state.collectionLog.shippedCrops.lettuce).toBe(true);
+    expect(state.log[0]).toBe('Market Encore complete! Mira added 40 coins for the fuller spring stall. Reward: 40 coins.');
+    expect(state.log[1]).toBe('Shipped 1 snap pea and 1 lettuce for 36 coins.');
+
+    state = settleAction(
+      applyTypedWord(
+        {
+          ...state,
+          inventory: {
+            ...state.inventory,
+            potato: 1,
+          },
+        },
+        'bin',
+      ),
+    );
+
+    expect(state.coins).toBe(100);
+    expect(state.log[0]).toBe('Shipped 1 potato for 24 coins.');
   });
 
   it('rejects visible targets when no walkable tile path exists', () => {

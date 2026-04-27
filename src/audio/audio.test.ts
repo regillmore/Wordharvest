@@ -56,6 +56,7 @@ describe('audio settings', () => {
     expect(cueForLogMessage('Bought 2 radish seeds for 8 coins.')).toBe('ship');
     expect(cueForLogMessage("Delivered 1 turnip for Mira's Pantry Turnip request. Reward: 6 coins.")).toBe('ship');
     expect(cueForLogMessage('Spring Basket complete! Mira added 25 coins for the market table.')).toBe('ship');
+    expect(cueForLogMessage('Market Encore complete! Mira added 40 coins for the fuller spring stall.')).toBe('ship');
     expect(cueForLogMessage('No visible target named "door".')).toBe('error');
     expect(cueForLogMessage('A quiet morning begins.')).toBeNull();
   });

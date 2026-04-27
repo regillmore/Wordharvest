@@ -453,6 +453,7 @@ function createFarmExterior(state: FarmState, typedWord: string): Container {
   drawSeedSource(scene, viewport);
   drawShippingBin(scene, viewport);
   drawObjectiveCompletionMarker(scene, viewport, state);
+  drawMarketEncoreMarker(scene, viewport, state);
   drawTownGate(scene, viewport);
 
   for (const plot of state.plots) {
@@ -705,6 +706,28 @@ function drawObjectiveCompletionMarker(scene: Container, viewport: Viewport, sta
   graphic.circle(marker.x - width * 0.17, marker.y - height * 0.1, width * 0.09).fill(0xf4d35e);
   graphic.circle(marker.x, marker.y - height * 0.18, width * 0.08).fill(0xf7a8a3);
   graphic.circle(marker.x + width * 0.16, marker.y - height * 0.08, width * 0.08).fill(0xe7d39f);
+
+  scene.addChild(graphic);
+}
+
+function drawMarketEncoreMarker(scene: Container, viewport: Viewport, state: FarmState): void {
+  if (!isFollowUpGoalComplete(state.collectionLog)) {
+    return;
+  }
+
+  const marker = worldToScreen(viewport, { x: shippingBinPosition.x + 1.18, y: shippingBinPosition.y + 0.22 });
+  const width = viewport.scale * 0.66;
+  const height = viewport.scale * 0.38;
+  const graphic = new Graphics();
+
+  graphic.rect(marker.x - width / 2, marker.y - height / 2, width, height).fill(0x7b4e2c);
+  graphic.rect(marker.x - width * 0.42, marker.y - height * 0.72, width * 0.84, height * 0.24).fill(0xe7d39f);
+  graphic.circle(marker.x - width * 0.28, marker.y - height * 0.1, width * 0.1).fill(0xf4d35e);
+  graphic.circle(marker.x - width * 0.08, marker.y - height * 0.14, width * 0.1).fill(0xf7a8a3);
+  graphic.circle(marker.x + width * 0.12, marker.y - height * 0.08, width * 0.1).fill(0x9bd07a);
+  graphic.circle(marker.x + width * 0.31, marker.y - height * 0.13, width * 0.1).fill(0xd85f4f);
+  graphic.rect(marker.x - width * 0.45, marker.y + height * 0.28, width * 0.12, height * 0.38).fill(0x4f3328);
+  graphic.rect(marker.x + width * 0.33, marker.y + height * 0.28, width * 0.12, height * 0.38).fill(0x4f3328);
 
   scene.addChild(graphic);
 }

@@ -11,8 +11,10 @@ export interface FollowUpGoalDefinition {
   summary: string;
   unlockedByObjectiveId: 'springBasket';
   targetShippedCropVarieties: number;
+  rewardCoins: number;
   incompleteSummary: string;
   completionSummary: string;
+  completedLog: string;
 }
 
 export interface FollowUpGoalCatalogValidationResult {
@@ -26,8 +28,10 @@ export const postSpringBasketFollowUpGoal = {
   summary: 'Ship five different spring crop varieties for Market Encore.',
   unlockedByObjectiveId: 'springBasket',
   targetShippedCropVarieties: 5,
+  rewardCoins: 40,
   incompleteSummary: "will broaden Mira's market stall.",
   completionSummary: 'Mira has enough variety for a proper spring stall.',
+  completedLog: 'Market Encore complete! Mira added 40 coins for the fuller spring stall.',
 } as const satisfies FollowUpGoalDefinition;
 
 export const followUpGoalCatalog = [postSpringBasketFollowUpGoal] as const satisfies readonly FollowUpGoalDefinition[];
@@ -56,6 +60,10 @@ export function isFollowUpGoalComplete(collectionLog: CollectionLogProgress): bo
   return countShippedCrops(collectionLog) >= postSpringBasketFollowUpGoal.targetShippedCropVarieties;
 }
 
+export function followUpGoalCompletionLog(): string {
+  return `${postSpringBasketFollowUpGoal.completedLog} Reward: ${postSpringBasketFollowUpGoal.rewardCoins} coins.`;
+}
+
 export function validateFollowUpGoalCatalog(): FollowUpGoalCatalogValidationResult {
   const errors: string[] = [];
   const seenIds = new Set<FollowUpGoalId>();
@@ -66,8 +74,12 @@ export function validateFollowUpGoalCatalog(): FollowUpGoalCatalogValidationResu
     }
     seenIds.add(goal.id);
 
-    if (!goal.title || !goal.summary || !goal.incompleteSummary || !goal.completionSummary) {
+    if (!goal.title || !goal.summary || !goal.incompleteSummary || !goal.completionSummary || !goal.completedLog) {
       errors.push(`Follow-up goal ${goal.id} is missing display text.`);
+    }
+
+    if (!Number.isInteger(goal.rewardCoins) || goal.rewardCoins < 0) {
+      errors.push(`Follow-up goal ${goal.id} must have a non-negative integer reward.`);
     }
 
     if (
