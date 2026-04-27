@@ -35,6 +35,7 @@ Useful scripts:
 - `npm run test:e2e`: run Playwright browser tests.
 - `npm run install:browsers`: install the Chromium browser used by Playwright.
 - `npm run verify`: run typecheck, unit tests, and production build.
+- `npm run verify:release`: run the full local release gate, including Playwright smoke tests.
 
 ## GitHub Pages
 
@@ -50,3 +51,4 @@ The built `dist/index.html` should reference files like `/Wordharvest/assets/ind
 - [NEXT.md](NEXT.md): milestone plan and immediate task list.
 - [AGENTS.md](AGENTS.md): Codex agent workflow for planning, implementation, testing, and handoff.
 - [docs/STYLE_GUIDE.md](docs/STYLE_GUIDE.md): visual direction, palette, sprite rules, and asset acceptance criteria.
+- [docs/RELEASE_CHECKLIST.md](docs/RELEASE_CHECKLIST.md): release verification, save migration, and GitHub Pages preview checklist.

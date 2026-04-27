@@ -2,7 +2,7 @@
 
 ## Current Focus
 
-Build the smallest lovable prototype: a farm screen where a visible player reacts to nearby world words, moves to targets, and performs planting, watering, harvesting, entering, feedback, and saving through typed labels.
+Harden the prototype toward a 1.0 beta: preserve saves across schema changes, verify GitHub Pages releases, and grow the first season without weakening the visible-word control loop.
 
 ## Milestone 0 - Project Spine
 
@@ -71,7 +71,7 @@ Complete when:
 - [ ] The first season is playable start to finish.
 - [ ] The player can continue after the main seasonal objective.
 - [ ] All 1.0 capability goals are either complete or explicitly deferred.
-- [ ] Save migration tests pass.
+- [x] Save migration tests pass.
 - [ ] GitHub Pages preview passes release verification.
 - [ ] The README has player-facing instructions and a release link.
 
@@ -79,4 +79,4 @@ Complete when:
 
 1. Add recipe and forage collection sections once their source actions exist.
 2. Expand achievement presentation with a dedicated badge view once menus grow beyond HUD logs.
-3. Start the Milestone 4 release checklist with save migration review and GitHub Pages preview notes.
+3. Run the GitHub Pages preview checklist after the next `main` deployment.

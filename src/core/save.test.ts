@@ -363,6 +363,36 @@ describe('save codec', () => {
     }
   });
 
+  it('serializes migrated saves back to the current schema', () => {
+    const migrated = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 0,
+        savedAt: '2026-01-01T00:00:00.000Z',
+        state: {
+          ...createFarmState(),
+          inventory: undefined,
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(migrated.ok).toBe(true);
+    if (migrated.ok) {
+      const rawSave = serializeSave(migrated.state, '2026-04-27T00:00:00.000Z');
+      const parsed = JSON.parse(rawSave) as { schemaVersion: number; savedAt: string };
+      const reloaded = deserializeSave(rawSave);
+
+      expect(parsed.schemaVersion).toBe(SAVE_SCHEMA_VERSION);
+      expect(parsed.savedAt).toBe('2026-04-27T00:00:00.000Z');
+      expect(reloaded.ok).toBe(true);
+      if (reloaded.ok) {
+        expect(reloaded.migrated).toBe(false);
+        expect(reloaded.state.day).toBe(migrated.state.day);
+        expect(reloaded.state.collectionLog.discoveredCrops.turnip).toBe(true);
+      }
+    }
+  });
+
   it('rejects malformed and unsupported saves', () => {
     expect(deserializeSave('not json')).toEqual({ ok: false, error: 'Save data is not valid JSON.' });
     expect(deserializeSave(JSON.stringify({ schemaVersion: 999 }))).toEqual({

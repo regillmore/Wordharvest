@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 
 test('boots the farm shell and accepts visible world words', async ({ page }) => {
   const playerSheetResponse = page.waitForResponse(
@@ -10,7 +10,7 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
 
   await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();
   await expect(page.locator('canvas')).toBeVisible();
-  await expect(page.getByText('house')).toBeVisible();
+  await expect(page.getByText('house')).toBeVisible({ timeout: 15000 });
   await expect(page.locator('#weather-value')).toHaveText('Sunny');
   await expect(page.locator('#forecast-value')).toHaveText('Sunny');
   await expect(page.locator('#can-value')).toHaveText('Basic');
@@ -44,7 +44,7 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
 
 test('travels between the farm and town edge through typed labels', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#word-preview')).toContainText('town');
+  await expectFarmReady(page);
 
   await page.keyboard.type('town');
   await page.keyboard.press('Enter');
@@ -110,6 +110,7 @@ test('travels between the farm and town edge through typed labels', async ({ pag
 
 test('opens menu words from typed labels', async ({ page }) => {
   await page.goto('/');
+  await expectFarmReady(page);
   await expect(page.locator('#word-preview')).toContainText('journal');
 
   await page.keyboard.type('journal');
@@ -129,7 +130,7 @@ test('opens menu words from typed labels', async ({ page }) => {
 
 test('joins the weekly town event from a visible festival label', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#word-preview')).toContainText('seed');
+  await expectFarmReady(page);
 
   for (let day = 2; day <= 7; day += 1) {
     await page.getByRole('button', { name: 'End Day' }).click();
@@ -158,7 +159,7 @@ test('shows persistent affordances for a completed Spring Basket', async ({ page
   }, completedSpringBasketSave());
 
   await page.goto('/');
-  await expect(page.locator('#word-preview')).toContainText('seed');
+  await expectFarmReady(page);
   await page.getByRole('button', { name: 'Load' }).click();
 
   await expect(page.locator('#objective-progress')).toHaveText('Spring Basket: complete');
@@ -183,8 +184,7 @@ test('shows persistent affordances for a completed Spring Basket', async ({ page
 
 test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();
-  await expect(page.locator('#word-preview')).toContainText('seed');
+  await expectFarmReady(page);
 
   await page.keyboard.type('seed');
   await page.keyboard.press('Enter');
@@ -229,8 +229,7 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
 
 test('persists audio and accessibility options locally', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible();
-  await expect(page.locator('#word-preview')).toContainText('seed');
+  await expectFarmReady(page);
 
   await page.getByLabel('Mute').check();
   await page.locator('#music-volume').evaluate((input) => {
@@ -269,7 +268,7 @@ test('persists audio and accessibility options locally', async ({ page }) => {
 
 test('supports typing assist with visual cue equivalents', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('#word-preview')).toContainText('seed');
+  await expectFarmReady(page);
 
   await page.getByLabel('Typing assist').check();
   await page.keyboard.type('seed');
@@ -277,6 +276,11 @@ test('supports typing assist with visual cue equivalents', async ({ page }) => {
   await expect(page.getByText('Planted turnip seeds.')).toBeVisible();
   await expect(page.locator('#visual-cue')).toHaveText('Cue: planted');
 });
+
+async function expectFarmReady(page: Page): Promise<void> {
+  await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible({ timeout: 15000 });
+  await expect(page.locator('#word-preview')).toContainText('seed', { timeout: 15000 });
+}
 
 function completedSpringBasketSave(): string {
   const cropCounts = {

@@ -16,7 +16,8 @@
     "assets:sprites": "node scripts/write-sprite-assets.mjs",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "verify": "npm run typecheck && npm run test && npm run build"
+    "verify": "npm run typecheck && npm run test && npm run build",
+    "verify:release": "npm run verify && npm run test:e2e"
   },
   "dependencies": {
     "howler": "^2.2.4",
