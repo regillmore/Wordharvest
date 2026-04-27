@@ -1,6 +1,7 @@
 import { nextWordForTargetRole, primaryWordForTargetRole, type TargetWordRole } from '../content/targetWords';
 import { cropCatalog, shopWordForCrop, starterCropId, type CropId } from '../content/crops';
 import { dailyRequestForDay, isDailyRequestComplete } from '../content/dailyRequests';
+import { isTownEventAttended, townEventForDay, type TownEventId } from '../content/townEvents';
 import { shopWordForUpgrade, upgradeCatalog, type UpgradeId } from '../content/upgrades';
 import type { CropPlot, FarmState } from './gameState';
 import { normalizeTypedWord } from './typing';
@@ -21,6 +22,7 @@ export type WorldTargetAction =
   | { kind: 'visit-shop' }
   | { kind: 'talk-villager' }
   | { kind: 'read-request-board'; destination: WorldPoint }
+  | { kind: 'join-town-event'; event: TownEventId; destination: WorldPoint }
   | { kind: 'complete-daily-request'; destination: WorldPoint }
   | { kind: 'open-menu'; menu: MenuId; destination: WorldPoint }
   | { kind: 'ship-inventory' }
@@ -51,6 +53,7 @@ export const townArrivalPosition: WorldPoint = { x: 0, y: 5.6 };
 export const farmReturnPosition: WorldPoint = { x: 0, y: 5.7 };
 export const townShopPosition: WorldPoint = { x: -2, y: 5.1 };
 export const townRequestBoardPosition: WorldPoint = { x: -0.82, y: 5.08 };
+export const townEventPosition: WorldPoint = { x: 0.78, y: 5.05 };
 export const townVillagerPosition: WorldPoint = { x: 2, y: 5.15 };
 
 const houseSightRange = 7;
@@ -91,6 +94,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
 
   if (state.location === 'town') {
     const dailyRequest = dailyRequestForDay(state.day);
+    const townEvent = townEventForDay(state.day);
     const townTargets: WorldTarget[] = [
       {
         id: 'town-farm-return',
@@ -125,6 +129,17 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
         action: { kind: 'talk-villager' },
       },
     ];
+
+    if (townEvent && !isTownEventAttended(state.day, state.townEvents)) {
+      townTargets.push({
+        id: `town-event-${townEvent.id}`,
+        word: townEvent.word,
+        label: townEvent.word,
+        position: townEventPosition,
+        distance: distanceBetween(state.player, townEventPosition),
+        action: { kind: 'join-town-event', event: townEvent.id, destination: townEventPosition },
+      });
+    }
 
     if (!isDailyRequestComplete(state.day, state.dailyRequests)) {
       townTargets.push({
@@ -245,6 +260,7 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
     target.action.kind === 'enter-town' ||
     target.action.kind === 'return-farm' ||
     target.action.kind === 'read-request-board' ||
+    target.action.kind === 'join-town-event' ||
     target.action.kind === 'complete-daily-request' ||
     target.action.kind === 'open-menu' ||
     target.action.kind === 'buy-seeds' ||

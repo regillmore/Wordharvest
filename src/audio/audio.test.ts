@@ -58,6 +58,9 @@ describe('audio settings', () => {
     expect(cueForLogMessage('Spring Basket complete! Mira added 25 coins for the market table.')).toBe('ship');
     expect(cueForLogMessage('Market Encore complete! Mira added 40 coins for the fuller spring stall.')).toBe('ship');
     expect(cueForLogMessage('Achievement unlocked: First Furrow - Plant any seed in a farm plot.')).toBe('ship');
+    expect(cueForLogMessage("Joined Spring Market Day. Mira sends you home with 10 coins for tomorrow's seeds.")).toBe(
+      'ship',
+    );
     expect(cueForLogMessage('No visible target named "door".')).toBe('error');
     expect(cueForLogMessage('A quiet morning begins.')).toBeNull();
   });

@@ -59,7 +59,7 @@ Complete when:
 Complete when:
 
 - [x] Achievements reward farming, typing, exploration, collection, and economy goals.
-- [ ] A small town edge supports NPCs, shop, requests, and a festival.
+- [x] A small town edge supports NPCs, shop, requests, and a festival.
 - [ ] Audio channels, options, and mute are complete.
 - [ ] Accessibility options cover typing assists, reduced motion, readable UI, and visual cue equivalents.
 - [ ] Playwright covers boot, input, save/load, and settings.
@@ -78,5 +78,5 @@ Complete when:
 ## Immediate Task Queue
 
 1. Add recipe and forage collection sections once their source actions exist.
-2. Add a small festival or town event hook once the daily request board loop feels clear.
-3. Expand achievement presentation with a dedicated badge view once menus grow beyond HUD logs.
+2. Expand achievement presentation with a dedicated badge view once menus grow beyond HUD logs.
+3. Add audio channel routing for music, ambience, and effects beyond the current shared authored cues.

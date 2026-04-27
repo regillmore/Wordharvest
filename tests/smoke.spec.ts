@@ -25,6 +25,7 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#follow-up-progress')).toBeHidden();
   await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds open (+3 coins)');
   await expect(page.locator('#request-progress')).toHaveText('Request: Pantry Turnip open (+6 coins)');
+  await expect(page.locator('#event-progress')).toHaveText('Event: Spring Market Day in 6 days');
 
   await page.keyboard.type('seed');
   await page.keyboard.press('Enter');
@@ -126,6 +127,30 @@ test('opens menu words from typed labels', async ({ page }) => {
   ).toBeVisible();
 });
 
+test('joins the weekly town event from a visible festival label', async ({ page }) => {
+  await page.goto('/');
+
+  for (let day = 2; day <= 7; day += 1) {
+    await page.getByRole('button', { name: 'End Day' }).click();
+  }
+
+  await expect(page.locator('#event-progress')).toHaveText('Event: Spring Market Day open (+10 coins)');
+
+  await page.keyboard.type('town');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Followed the south path toward town.')).toBeVisible();
+  await expect(page.locator('#word-preview')).toContainText('festival');
+
+  await page.keyboard.type('festival');
+  await page.keyboard.press('Enter');
+  await expect(
+    page.getByText("Joined Spring Market Day. Mira sends you home with 10 coins for tomorrow's seeds."),
+  ).toBeVisible();
+  await expect(page.locator('#coin-value')).toHaveText('35');
+  await expect(page.locator('#event-progress')).toHaveText('Event: Spring Market Day done (+10 coins)');
+  await expect(page.locator('#word-preview')).not.toContainText('festival');
+});
+
 test('shows persistent affordances for a completed Spring Basket', async ({ page }) => {
   await page.addInitScript((rawSave) => {
     localStorage.setItem('wordharvest:save:v1', rawSave);
@@ -179,6 +204,7 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.locator('#forecast-value')).toHaveText('Rain');
   await expect(page.locator('#week-progress')).toHaveText('Day 2: Water a growing crop open (+4 coins)');
   await expect(page.locator('#request-progress')).toHaveText('Request: Radish Crunch open (+8 coins)');
+  await expect(page.locator('#event-progress')).toHaveText('Event: Spring Market Day in 5 days');
 
   await page.getByRole('button', { name: 'Load' }).click();
   await expect(page.locator('#day-value')).toHaveText('1');
@@ -231,7 +257,7 @@ function completedSpringBasketSave(): string {
   };
 
   return JSON.stringify({
-    schemaVersion: 10,
+    schemaVersion: 11,
     savedAt: '2026-04-25T00:00:00.000Z',
     state: {
       day: 8,
@@ -260,6 +286,7 @@ function completedSpringBasketSave(): string {
         completeSpringBasket: true,
       },
       dailyRequests: { completedKeys: [] },
+      townEvents: { attendedKeys: [] },
       collectionLog: {
         discoveredCrops: { ...cropCounts, turnip: true, radish: true, carrot: true },
         shippedCrops: { ...cropCounts, turnip: true, radish: true, carrot: true },

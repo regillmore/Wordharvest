@@ -19,6 +19,7 @@ import { collectionProgressText } from './content/collectionLog';
 import { dailyRequestProgressText } from './content/dailyRequests';
 import { followUpGoalDetailText, isFollowUpGoalComplete } from './content/followUpGoals';
 import { objectiveCompletionText, objectiveProgressText } from './content/objectives';
+import { townEventForDay, townEventProgressText } from './content/townEvents';
 import { weekGoalProgressText } from './content/weekGoals';
 import { weatherDefinition, type WeatherId } from './content/weather';
 import {
@@ -30,6 +31,7 @@ import {
   seedSourcePosition,
   shippingBinPosition,
   townGatePosition,
+  townEventPosition,
   townRequestBoardPosition,
   townShopPosition,
   townVillagerPosition,
@@ -85,6 +87,8 @@ root.innerHTML = `
         <p id="week-progress" class="objective-progress"></p>
         <p class="label">Town request</p>
         <p id="request-progress" class="objective-progress"></p>
+        <p class="label">Town event</p>
+        <p id="event-progress" class="objective-progress"></p>
         <p class="label">Typed word</p>
         <p id="typed-word" class="typed-word"></p>
         <p class="label">Nearby words</p>
@@ -141,6 +145,7 @@ const objectiveCompletion = requireElement<HTMLElement>('#objective-completion')
 const followUpProgress = requireElement<HTMLElement>('#follow-up-progress');
 const weekProgress = requireElement<HTMLElement>('#week-progress');
 const requestProgress = requireElement<HTMLElement>('#request-progress');
+const eventProgress = requireElement<HTMLElement>('#event-progress');
 const typedWord = requireElement<HTMLElement>('#typed-word');
 const wordPreview = requireElement<HTMLElement>('#word-preview');
 const farmLog = requireElement<HTMLOListElement>('#farm-log');
@@ -358,6 +363,7 @@ function redrawHud(): void {
   );
   weekProgress.textContent = weekGoalProgressText(farm.day, farm.weekGoals);
   requestProgress.textContent = dailyRequestProgressText(farm.day, farm.dailyRequests);
+  eventProgress.textContent = townEventProgressText(farm.day, farm.townEvents);
   typedWord.textContent = typedBuffer || '...';
 
   nextDay.disabled = Boolean(farm.pendingAction);
@@ -491,6 +497,7 @@ function createTownEdge(state: FarmState, typedWord: string): Container {
   drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
   drawTownShop(scene, viewport);
   drawTownRequestBoard(scene, viewport);
+  drawTownEvent(scene, viewport, state);
   drawTownVillager(scene, viewport);
   drawPlayer(scene, viewport, state.player);
   drawTargets(scene, viewport, listWorldTargets(state));
@@ -772,6 +779,26 @@ function drawTownRequestBoard(scene: Container, viewport: Viewport): void {
   scene.addChild(rect(board.x - width * 0.4, board.y - height * 0.66, width * 0.34, height * 0.28, 0xf4e3a3));
   scene.addChild(rect(board.x + width * 0.06, board.y - height * 0.64, width * 0.32, height * 0.23, 0xe7d39f));
   scene.addChild(rect(board.x - width * 0.3, board.y - height * 0.24, width * 0.6, height * 0.08, 0xc8ad72));
+}
+
+function drawTownEvent(scene: Container, viewport: Viewport, state: FarmState): void {
+  if (!townEventForDay(state.day)) {
+    return;
+  }
+
+  const event = worldToScreen(viewport, townEventPosition);
+  const bannerWidth = viewport.scale * 0.96;
+  const bannerHeight = viewport.scale * 0.28;
+  const postHeight = viewport.scale * 0.72;
+  const postWidth = viewport.scale * 0.08;
+
+  scene.addChild(rect(event.x - bannerWidth / 2, event.y - postHeight, postWidth, postHeight, 0x4f3328));
+  scene.addChild(rect(event.x + bannerWidth / 2 - postWidth, event.y - postHeight, postWidth, postHeight, 0x4f3328));
+  scene.addChild(rect(event.x - bannerWidth / 2, event.y - postHeight, bannerWidth, bannerHeight, 0xf4d35e));
+  scene.addChild(rect(event.x - bannerWidth * 0.4, event.y - postHeight, bannerWidth * 0.22, bannerHeight, 0xd85f4f));
+  scene.addChild(rect(event.x + bannerWidth * 0.18, event.y - postHeight, bannerWidth * 0.22, bannerHeight, 0x9bd07a));
+  scene.addChild(rect(event.x - viewport.scale * 0.34, event.y - viewport.scale * 0.22, viewport.scale * 0.68, viewport.scale * 0.16, 0xe7d39f));
+  scene.addChild(rect(event.x - viewport.scale * 0.26, event.y - viewport.scale * 0.1, viewport.scale * 0.52, viewport.scale * 0.18, 0xc98c42));
 }
 
 function drawTownVillager(scene: Container, viewport: Viewport): void {

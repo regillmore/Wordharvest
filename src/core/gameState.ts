@@ -56,6 +56,16 @@ import {
   type UpgradeId,
 } from '../content/upgrades';
 import {
+  createTownEventProgress,
+  isTownEventAttended,
+  markTownEventAttended,
+  townEventDawnText,
+  townEventDetailText,
+  townEventForDay,
+  townEventJoinLog,
+  type TownEventProgress,
+} from '../content/townEvents';
+import {
   createObjectiveProgress,
   objectiveDefinition,
   objectiveDetailText,
@@ -122,6 +132,7 @@ export interface FarmState {
   seasonObjective: ObjectiveProgress;
   weekGoals: WeekGoalProgress;
   dailyRequests: DailyRequestProgress;
+  townEvents: TownEventProgress;
   collectionLog: CollectionLogProgress;
   achievements: AchievementProgress;
   plots: CropPlot[];
@@ -150,6 +161,7 @@ export function createFarmState(): FarmState {
     seasonObjective: createObjectiveProgress(),
     weekGoals: emptyWeekGoalProgress(),
     dailyRequests: createDailyRequestProgress(),
+    townEvents: createTownEventProgress(),
     collectionLog: createCollectionLogProgress(),
     achievements: createAchievementProgress(),
     plots: Array.from({ length: startingPlots }, (_, index) => ({
@@ -351,6 +363,10 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     return withLog(state, dailyRequestBoardText(state.day, state.dailyRequests));
   }
 
+  if (action.kind === 'join-town-event') {
+    return joinTownEvent(state);
+  }
+
   if (action.kind === 'complete-daily-request') {
     return completeDailyRequest(state);
   }
@@ -468,7 +484,7 @@ export function advanceDay(state: FarmState): FarmState {
       forecast,
       plots,
     },
-    `${describeDawn(nextDay, weather, forecast)} ${weekGoalDawnText(nextDay)} ${dailyRequestDawnText(nextDay, state.dailyRequests)}`,
+    `${describeDawn(nextDay, weather, forecast)} ${weekGoalDawnText(nextDay)} ${dailyRequestDawnText(nextDay, state.dailyRequests)} ${townEventDawnText(nextDay, state.townEvents)}`,
   ));
 }
 
@@ -669,6 +685,29 @@ function completeDailyRequest(state: FarmState): FarmState {
   );
 }
 
+function joinTownEvent(state: FarmState): FarmState {
+  const event = townEventForDay(state.day);
+
+  if (!event) {
+    return withLog(state, 'There is no town event today.');
+  }
+
+  if (isTownEventAttended(state.day, state.townEvents)) {
+    return withLog(state, `${event.title} is already tucked into your journal.`);
+  }
+
+  const attendance = markTownEventAttended(state.day, state.townEvents);
+
+  return withLog(
+    {
+      ...state,
+      coins: state.coins + event.rewardCoins,
+      townEvents: attendance.progress,
+    },
+    townEventJoinLog(event),
+  );
+}
+
 function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options'): string {
   const starterCrop = cropDefinition(starterCropId);
 
@@ -678,7 +717,7 @@ function describeMenu(state: FarmState, menu: 'journal' | 'inventory' | 'options
     const can = state.upgrades.wateringCan ? 'tin can' : 'basic can';
     const followUpDetail = state.seasonObjective.completed ? ` ${followUpGoalDetailText(state.collectionLog)}` : '';
 
-    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}.${followUpDetail} ${weekGoalDetailText(state.day, state.weekGoals)} ${dailyRequestDetailText(state.day, state.dailyRequests)} ${achievementDetailText(state.achievements)}`;
+    return `Journal: Day ${state.day}, ${weather.name} today, ${forecast.forecastLabel} tomorrow, ${state.coins} coins, ${state.seeds[starterCrop.id]} ${starterCrop.seedName}, ${can}. ${objectiveDetailText(state.seasonObjective)}.${followUpDetail} ${weekGoalDetailText(state.day, state.weekGoals)} ${dailyRequestDetailText(state.day, state.dailyRequests)} ${townEventDetailText(state.day, state.townEvents)} ${achievementDetailText(state.achievements)}`;
   }
 
   if (menu === 'inventory') {

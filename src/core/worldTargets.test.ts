@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { cropCatalog, shopWordForCrop } from '../content/crops';
 import { createDailyRequestProgress, markDailyRequestComplete } from '../content/dailyRequests';
+import { markTownEventAttended } from '../content/townEvents';
 import { applyTypedWord, createFarmState, type FarmState } from './gameState';
 import { listWorldTargets, townShopPosition } from './worldTargets';
 
@@ -122,6 +123,30 @@ describe('world targets', () => {
     };
 
     expect(listWorldTargets(townState).map((target) => target.word)).not.toContain('favor');
+  });
+
+  it('shows the festival target in town on event days until attended', () => {
+    const eventState: FarmState = {
+      ...createFarmState(),
+      day: 7,
+      location: 'town',
+      player: { x: 0, y: 5.6 },
+    };
+
+    const eventTarget = listWorldTargets(eventState).find((target) => target.word === 'festival');
+
+    expect(eventTarget?.action).toEqual({
+      kind: 'join-town-event',
+      event: 'springMarketDay',
+      destination: { x: 0.78, y: 5.05 },
+    });
+
+    const attendedState: FarmState = {
+      ...eventState,
+      townEvents: markTownEventAttended(7, eventState.townEvents).progress,
+    };
+
+    expect(listWorldTargets(attendedState).map((target) => target.word)).not.toContain('festival');
   });
 
   it('shows crop purchase words when the player is at the town shop shelf', () => {

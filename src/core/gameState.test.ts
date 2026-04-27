@@ -22,6 +22,7 @@ describe('farm state', () => {
     expect(state.seasonObjective.completed).toBe(false);
     expect(state.weekGoals.plantFirstSeeds).toBe(false);
     expect(state.dailyRequests.completedKeys).toEqual([]);
+    expect(state.townEvents.attendedKeys).toEqual([]);
     expect(state.collectionLog.discoveredCrops.turnip).toBe(true);
     expect(state.collectionLog.shippedCrops.turnip).toBe(false);
     expect(state.collectionLog.discoveredWords.house).toBe(true);
@@ -216,6 +217,29 @@ describe('farm state', () => {
     expect(state.log[0]).toBe('Mira says hello and asks how the turnips are growing.');
   });
 
+  it('joins the weekly town event once on festival days', () => {
+    let state: FarmState = {
+      ...createFarmState(),
+      day: 7,
+      location: 'town',
+      player: { x: 0, y: 5.6 },
+    };
+
+    state = applyTypedWord(state, 'festival');
+    expect(state.pendingAction?.label).toBe('festival');
+
+    state = settleAction(state);
+
+    expect(state.coins).toBe(35);
+    expect(state.townEvents.attendedKeys).toEqual(['7:springMarketDay']);
+    expect(state.log[0]).toBe(
+      "Joined Spring Market Day. Mira sends you home with 10 coins for tomorrow's seeds.",
+    );
+
+    state = applyTypedWord(state, 'festival');
+    expect(state.log[0]).toBe('No visible target named "festival".');
+  });
+
   it('shows and completes the current daily town request once', () => {
     let state = settleAction(
       applyTypedWord(
@@ -315,7 +339,7 @@ describe('farm state', () => {
 
     expect(state.pendingAction).toBeNull();
     expect(state.log[0]).toBe(
-      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1). First Week: 0/7 goals done. Today: Plant first seeds - Plant any seed in a farm plot. Reward: 3 coins. Town request: Mira wants 1 turnip for Pantry Turnip. Type favor in town to deliver. Status: open. Reward: 6 coins. Achievements: 0/5 unlocked. Badges: none yet. Next: First Furrow - Plant any seed in a farm plot.',
+      'Journal: Day 1, Sunny today, sunny tomorrow, 25 coins, 3 turnip seeds, basic can. Spring Basket: 0/3 crops shipped (turnip 0/1, radish 0/1, carrot 0/1). First Week: 0/7 goals done. Today: Plant first seeds - Plant any seed in a farm plot. Reward: 3 coins. Town request: Mira wants 1 turnip for Pantry Turnip. Type favor in town to deliver. Status: open. Reward: 6 coins. Town event: Spring Market Day arrives in 6 days. Achievements: 0/5 unlocked. Badges: none yet. Next: First Furrow - Plant any seed in a farm plot.',
     );
 
     const packState = applyTypedWord(
@@ -348,7 +372,7 @@ describe('farm state', () => {
     expect(state.forecast).toBe('rain');
     expect(state.plots[4].wateredToday).toBe(false);
     expect(state.log[0]).toBe(
-      'Day 2 dawns sunny. Tomorrow: rain. Goal: Water a growing crop. Water any planted crop before ending the day. Reward: 4 coins. Request: Mira wants 1 radish for Radish Crunch. Type errand in town to deliver. Reward: 8 coins.',
+      'Day 2 dawns sunny. Tomorrow: rain. Goal: Water a growing crop. Water any planted crop before ending the day. Reward: 4 coins. Request: Mira wants 1 radish for Radish Crunch. Type errand in town to deliver. Reward: 8 coins. Event: Spring Market Day arrives in 5 days.',
     );
 
     state = advanceDay(state);
@@ -357,7 +381,7 @@ describe('farm state', () => {
     expect(state.forecast).toBe('sunny');
     expect(state.plots[4].wateredToday).toBe(true);
     expect(state.log[0]).toBe(
-      'Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny. Goal: Visit the town shop. Type shop in town to inspect the seed shelf. Reward: 4 coins. Request: Mira wants 1 carrot for Carrot Bundle. Type order in town to deliver. Reward: 8 coins.',
+      'Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny. Goal: Visit the town shop. Type shop in town to inspect the seed shelf. Reward: 4 coins. Request: Mira wants 1 carrot for Carrot Bundle. Type order in town to deliver. Reward: 8 coins. Event: Spring Market Day arrives in 4 days.',
     );
   });
 

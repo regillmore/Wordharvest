@@ -31,6 +31,7 @@ describe('save codec', () => {
       expect(result.state.seasonObjective.shipped.turnip).toBe(0);
       expect(result.state.weekGoals.plantFirstSeeds).toBe(true);
       expect(result.state.dailyRequests.completedKeys).toEqual([]);
+      expect(result.state.townEvents.attendedKeys).toEqual([]);
       expect(result.state.collectionLog.discoveredCrops.turnip).toBe(true);
       expect(result.state.collectionLog.shippedCrops.turnip).toBe(false);
       expect(result.state.collectionLog.discoveredWords.seed).toBe(true);
@@ -68,6 +69,26 @@ describe('save codec', () => {
     }
   });
 
+  it('migrates a version 10 save by adding town event progress', () => {
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 10,
+        savedAt: '2026-04-26T00:00:00.000Z',
+        state: {
+          ...createFarmState(),
+          townEvents: undefined,
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.townEvents.attendedKeys).toEqual([]);
+      expect(result.migrated).toBe(true);
+    }
+  });
+
   it('migrates a version 9 save by adding inferred achievement progress', () => {
     const olderState = {
       ...createFarmState(),
@@ -83,6 +104,7 @@ describe('save codec', () => {
         state: {
           ...olderState,
           achievements: undefined,
+          townEvents: undefined,
           pendingAction: undefined,
         },
       }),
@@ -91,6 +113,7 @@ describe('save codec', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.state.achievements.unlockedIds).toEqual(['firstSeed']);
+      expect(result.state.townEvents.attendedKeys).toEqual([]);
       expect(result.migrated).toBe(true);
     }
   });

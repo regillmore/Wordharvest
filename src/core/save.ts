@@ -12,15 +12,16 @@ import {
 } from '../content/collectionLog';
 import { normalizeObjectiveProgress } from '../content/objectives';
 import { normalizeDailyRequestProgress } from '../content/dailyRequests';
+import { normalizeTownEventProgress } from '../content/townEvents';
 import { emptyUpgradeFlags, upgradeCatalog, type UpgradeFlags } from '../content/upgrades';
 import { normalizeWeekGoalProgress } from '../content/weekGoals';
 import { forecastForDay, isWeatherId, weatherForDay, type WeatherId } from '../content/weather';
 import { createFarmState, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
 import { listWorldTargets, type WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 10;
+export const SAVE_SCHEMA_VERSION = 11;
 
-export interface SaveDataV10 {
+export interface SaveDataV11 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -31,7 +32,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV10 = {
+  const saveData: SaveDataV11 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -54,6 +55,10 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
+    return deserializeV11(parsed);
+  }
+
+  if (parsed.schemaVersion === 10) {
     return deserializeV10(parsed);
   }
 
@@ -110,6 +115,7 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
     seasonObjective: normalizeObjectiveProgress(state.seasonObjective),
     weekGoals: normalizeWeekGoalProgress(state.weekGoals),
     dailyRequests: normalizeDailyRequestProgress(state.dailyRequests),
+    townEvents: normalizeTownEventProgress(state.townEvents),
     collectionLog: normalizeCollectionLogProgress(state.collectionLog),
     achievements: normalizeAchievementProgress(state.achievements),
     plots: state.plots.map((plot) => ({ ...plot, position: { ...plot.position } })),
@@ -134,7 +140,7 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
   };
 }
 
-function deserializeV10(data: Record<string, unknown>): LoadSaveResult {
+function deserializeV11(data: Record<string, unknown>): LoadSaveResult {
   if (typeof data.savedAt !== 'string') {
     return { ok: false, error: 'Save data is missing a saved timestamp.' };
   }
@@ -145,6 +151,19 @@ function deserializeV10(data: Record<string, unknown>): LoadSaveResult {
   }
 
   return { ok: true, state, savedAt: data.savedAt, migrated: false };
+}
+
+function deserializeV10(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function deserializeV9(data: Record<string, unknown>): LoadSaveResult {
@@ -288,6 +307,7 @@ function migrateV0(data: Record<string, unknown>): LoadSaveResult {
     seasonObjective,
     weekGoals: normalizeWeekGoalProgress(rawState.weekGoals),
     dailyRequests: normalizeDailyRequestProgress(rawState.dailyRequests),
+    townEvents: normalizeTownEventProgress(rawState.townEvents),
     collectionLog: inferCollectionLog(base.collectionLog, seeds, inventory, plots, seasonObjective.shipped),
     achievements: normalizeAchievementProgress(rawState.achievements),
     plots,
@@ -348,6 +368,7 @@ function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null):
     seasonObjective,
     weekGoals,
     dailyRequests: normalizeDailyRequestProgress(value.dailyRequests),
+    townEvents: normalizeTownEventProgress(value.townEvents),
     collectionLog,
     achievements: normalizeAchievementProgress(value.achievements),
     plots,
