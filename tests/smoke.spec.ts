@@ -26,6 +26,7 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#week-progress')).toHaveText('Day 1: Plant first seeds open (+3 coins)');
   await expect(page.locator('#request-progress')).toHaveText('Request: Pantry Turnip open (+6 coins)');
   await expect(page.locator('#event-progress')).toHaveText('Event: Spring Market Day in 6 days');
+  await expect(page.locator('#season-progress')).toHaveText('Spring: day 1/28');
 
   await page.keyboard.type('seed');
   await page.keyboard.press('Enter');

@@ -28,6 +28,7 @@ import { collectionProgressText } from './content/collectionLog';
 import { dailyRequestProgressText } from './content/dailyRequests';
 import { followUpGoalDetailText, isFollowUpGoalComplete } from './content/followUpGoals';
 import { objectiveCompletionText, objectiveProgressText } from './content/objectives';
+import { seasonProgressText } from './content/seasons';
 import { townEventForDay, townEventProgressText } from './content/townEvents';
 import { weekGoalProgressText } from './content/weekGoals';
 import { weatherDefinition, type WeatherId } from './content/weather';
@@ -106,6 +107,8 @@ root.innerHTML = `
         <p id="request-progress" class="objective-progress"></p>
         <p class="label">Town event</p>
         <p id="event-progress" class="objective-progress"></p>
+        <p class="label">Season</p>
+        <p id="season-progress" class="objective-progress"></p>
         <p class="label">Typed word</p>
         <p id="typed-word" class="typed-word"></p>
         <p class="label">Nearby words</p>
@@ -184,6 +187,7 @@ const followUpProgress = requireElement<HTMLElement>('#follow-up-progress');
 const weekProgress = requireElement<HTMLElement>('#week-progress');
 const requestProgress = requireElement<HTMLElement>('#request-progress');
 const eventProgress = requireElement<HTMLElement>('#event-progress');
+const seasonProgress = requireElement<HTMLElement>('#season-progress');
 const typedWord = requireElement<HTMLElement>('#typed-word');
 const wordPreview = requireElement<HTMLElement>('#word-preview');
 const farmLog = requireElement<HTMLOListElement>('#farm-log');
@@ -425,6 +429,7 @@ function redrawHud(): void {
   weekProgress.textContent = weekGoalProgressText(farm.day, farm.weekGoals);
   requestProgress.textContent = dailyRequestProgressText(farm.day, farm.dailyRequests);
   eventProgress.textContent = townEventProgressText(farm.day, farm.townEvents);
+  seasonProgress.textContent = seasonProgressText(farm.day);
   typedWord.textContent = typedBuffer || '...';
 
   nextDay.disabled = Boolean(farm.pendingAction);

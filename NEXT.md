@@ -68,15 +68,15 @@ Complete when:
 
 Complete when:
 
-- [ ] The first season is playable start to finish.
-- [ ] The player can continue after the main seasonal objective.
+- [x] The first season is playable start to finish.
+- [x] The player can continue after the main seasonal objective.
 - [ ] All 1.0 capability goals are either complete or explicitly deferred.
 - [x] Save migration tests pass.
-- [ ] GitHub Pages preview passes release verification.
-- [ ] The README has player-facing instructions and a release link.
+- [x] GitHub Pages preview passes release verification.
+- [x] The README has player-facing instructions and a release link.
 
 ## Immediate Task Queue
 
-1. Add recipe and forage collection sections once their source actions exist.
-2. Expand achievement presentation with a dedicated badge view once menus grow beyond HUD logs.
-3. Run the GitHub Pages preview checklist after the next `main` deployment.
+1. Draft 1.0 capability deferrals and beta release notes.
+2. Add recipe and forage collection sections once their source actions exist.
+3. Expand achievement presentation with a dedicated badge view once menus grow beyond HUD logs.

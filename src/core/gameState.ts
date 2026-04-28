@@ -72,6 +72,7 @@ import {
   recordObjectiveShipments,
   type ObjectiveProgress,
 } from '../content/objectives';
+import { seasonDawnText } from '../content/seasons';
 import {
   emptyWeekGoalProgress,
   weekGoalCompletionLog,
@@ -484,7 +485,7 @@ export function advanceDay(state: FarmState): FarmState {
       forecast,
       plots,
     },
-    `${describeDawn(nextDay, weather, forecast)} ${weekGoalDawnText(nextDay)} ${dailyRequestDawnText(nextDay, state.dailyRequests)} ${townEventDawnText(nextDay, state.townEvents)}`,
+    dawnLogText(nextDay, weather, forecast, state),
   ));
 }
 
@@ -880,6 +881,23 @@ function describeDawn(day: number, weather: WeatherId, forecast: WeatherId): str
   const rainText = weatherDefinition(weather).watersCrops ? ' Rain watered planted crops.' : '';
 
   return `Day ${day} dawns ${weatherText}.${rainText} Tomorrow: ${forecastText}.`;
+}
+
+function dawnLogText(
+  day: number,
+  weather: WeatherId,
+  forecast: WeatherId,
+  previousState: Pick<FarmState, 'dailyRequests' | 'townEvents'>,
+): string {
+  return [
+    describeDawn(day, weather, forecast),
+    weekGoalDawnText(day),
+    dailyRequestDawnText(day, previousState.dailyRequests),
+    townEventDawnText(day, previousState.townEvents),
+    seasonDawnText(day),
+  ]
+    .filter(Boolean)
+    .join(' ');
 }
 
 function capitalize(value: string): string {

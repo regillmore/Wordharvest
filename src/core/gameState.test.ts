@@ -385,6 +385,34 @@ describe('farm state', () => {
     );
   });
 
+  it('announces the first season finish and keeps the farm playable after spring', () => {
+    let state: FarmState = {
+      ...createFarmState(),
+      day: 27,
+      forecast: 'sunny',
+    };
+
+    state = advanceDay(state);
+
+    expect(state.day).toBe(28);
+    expect(state.log[0]).toContain(
+      'Season: Last day of spring. Ship final crops, visit town, or tuck the farm into a good stopping place.',
+    );
+
+    state = advanceDay(state);
+
+    expect(state.day).toBe(29);
+    expect(state.pendingAction).toBeNull();
+    expect(state.log[0]).toContain(
+      'Season complete: Spring rolls into a gentle post-season. Keep farming, shipping, and finishing Market Encore.',
+    );
+
+    state = settleAction(applyTypedWord(state, 'seed'));
+
+    expect(state.day).toBe(29);
+    expect(state.log[0]).toBe('Planted turnip seeds.');
+  });
+
   it('rejects words that are not visible from the player position', () => {
     const state = applyTypedWord(createFarmState(), 'door');
 

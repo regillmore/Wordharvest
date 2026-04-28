@@ -17,6 +17,12 @@ Version 1.0 should be a compact but durable farming game, not a sprawling life s
 
 See [CAPABILITIES.md](CAPABILITIES.md) for the feature catalog and [NEXT.md](NEXT.md) for the working roadmap.
 
+## Play
+
+Play the current browser build at <https://regillmore.github.io/Wordharvest/>.
+
+Wordharvest is keyboard-first. Type a visible word hovering in the world, then press Enter or Space. Good first words to try are `seed`, `house`, `door`, `town`, `shop`, `journal`, and `pack`. Use the HUD buttons to end the day, save, load, reset, and adjust audio or accessibility options.
+
 ## Development
 
 ```bash
