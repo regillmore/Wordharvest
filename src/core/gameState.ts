@@ -142,7 +142,7 @@ export interface FarmState {
 
 const startingPlots = 6;
 const maxLogEntries = 6;
-const walkSpeed = 3.2;
+const walkSpeed = 2.4;
 const startingPlayerPosition: WorldPoint = { x: 0, y: 5 };
 const startingDay = 1;
 

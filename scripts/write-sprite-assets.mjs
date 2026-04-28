@@ -6,7 +6,12 @@ import { deflateSync } from 'node:zlib';
 const outputDirectory = new URL('../public/assets/sprites/', import.meta.url);
 const cellWidth = 32;
 const cellHeight = 40;
-const frameNames = ['player_idle_down', 'player_walk_down_1', 'player_walk_down_2', 'player_idle_up'];
+const directions = ['down', 'up', 'left', 'right'];
+const frameNames = directions.flatMap((direction) => [
+  `player_idle_${direction}`,
+  `player_walk_${direction}_1`,
+  `player_walk_${direction}_2`,
+]);
 const width = cellWidth * frameNames.length;
 const height = cellHeight;
 
@@ -27,10 +32,13 @@ await mkdir(outputDirectory, { recursive: true });
 
 const image = createImage(width, height);
 
-drawPlayerFrame(image, 0, { footOffset: 0, armOffset: 0, facing: 'down' });
-drawPlayerFrame(image, 1, { footOffset: -2, armOffset: 1, facing: 'down' });
-drawPlayerFrame(image, 2, { footOffset: 2, armOffset: -1, facing: 'down' });
-drawPlayerFrame(image, 3, { footOffset: 0, armOffset: 0, facing: 'up' });
+for (const [directionIndex, direction] of directions.entries()) {
+  const frameIndex = directionIndex * 3;
+
+  drawPlayerFrame(image, frameIndex, { footOffset: 0, armOffset: 0, facing: direction });
+  drawPlayerFrame(image, frameIndex + 1, { footOffset: -2, armOffset: 1, facing: direction });
+  drawPlayerFrame(image, frameIndex + 2, { footOffset: 2, armOffset: -1, facing: direction });
+}
 
 await writeFile(new URL('player_base_v001.png', outputDirectory), encodePng(image));
 await writeFile(new URL('player_base_v001.json', outputDirectory), `${JSON.stringify(spriteMetadata(), null, 2)}\n`);
@@ -66,6 +74,11 @@ function drawPlayerFrame(image, frameIndex, options) {
 
   fillEllipse(image, cx, y + 34, 9, 3, palette.shadow, 70);
 
+  if (options.facing === 'left' || options.facing === 'right') {
+    drawSidePlayerFrame(image, cx, y, options, options.facing === 'left' ? -1 : 1);
+    return;
+  }
+
   fillRect(image, cx - 6 + leftFoot, y + 27, 5, 5, palette.boot);
   fillRect(image, cx + 1 + rightFoot, y + 27, 5, 5, palette.boot);
   fillRect(image, cx - 7, y + 22, 6, 7, palette.pants);
@@ -92,6 +105,35 @@ function drawPlayerFrame(image, frameIndex, options) {
   fillRect(image, cx - 10, y + 7, 20, 4, palette.hat);
   fillRect(image, cx - 7, y + 3, 14, 6, palette.hat);
   fillRect(image, cx - 5, y + 3, 10, 2, '#fff5cf');
+}
+
+function drawSidePlayerFrame(image, cx, y, options, directionSign) {
+  const backFoot = options.footOffset < 0 ? -2 : 0;
+  const frontFoot = options.footOffset > 0 ? 2 : 0;
+  const faceEdge = directionSign > 0 ? 4 : -8;
+  const noseX = directionSign > 0 ? cx + 6 : cx - 7;
+  const eyeX = directionSign > 0 ? cx + 3 : cx - 4;
+  const brimX = directionSign > 0 ? cx - 3 : cx - 10;
+  const highlightX = directionSign > 0 ? cx - 3 : cx - 5;
+
+  fillRect(image, cx - 5 + backFoot, y + 27, 5, 5, palette.boot);
+  fillRect(image, cx + 1 + frontFoot, y + 27, 5, 5, palette.boot);
+  fillRect(image, cx - 5, y + 22, 5, 7, palette.pants);
+  fillRect(image, cx + 1, y + 22, 5, 7, palette.pants);
+
+  fillRect(image, cx - 6, y + 16, 12, 10, palette.shirt);
+  fillRect(image, cx - 4, y + 15, 8, 2, palette.shirtLight);
+  fillRect(image, cx - 7 - directionSign, y + 18 - options.armOffset, 3, 8, palette.skin);
+  fillRect(image, cx + 4 + directionSign, y + 18 + options.armOffset, 3, 8, palette.skinShadow);
+
+  fillRect(image, cx + faceEdge, y + 8, 4, 9, palette.skinShadow);
+  fillRect(image, cx - 5, y + 8, 11, 9, palette.skin);
+  fillRect(image, noseX, y + 12, 2, 2, palette.skinShadow);
+  fillRect(image, eyeX, y + 11, 2, 2, palette.ink);
+  fillRect(image, cx - 8, y + 7, 16, 4, palette.hat);
+  fillRect(image, brimX, y + 8, 8, 3, palette.hat);
+  fillRect(image, cx - 6, y + 3, 12, 6, palette.hat);
+  fillRect(image, highlightX, y + 3, 8, 2, '#fff5cf');
 }
 
 function createImage(imageWidth, imageHeight) {

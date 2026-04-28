@@ -25,6 +25,7 @@ Complete when:
 - [x] The player sees a top-down farm scene.
 - [x] The farm scene is rendered from an authored tile map.
 - [x] The player unit is visible in the world.
+- [x] The player unit animates walking in four directions at a brisk readable pace.
 - [x] Distant and near targets can expose different words, such as `house` and `door`.
 - [x] Similar nearby crop actions can use synonyms such as `water` and `sprinkle`.
 - [x] Target labels are defined in a typed content catalog with validation tests.

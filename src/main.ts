@@ -51,6 +51,12 @@ import {
 import { farmTiles, type FarmTile, type FarmTileKind } from './world/farmMap';
 import { findFarmPath } from './world/pathfinding';
 import {
+  playerDirectionForMovement,
+  playerDirectionForState,
+  playerFrameForMotion,
+  type PlayerDirection,
+} from './rendering/playerAnimation';
+import {
   deserializeAccessibilitySettings,
   normalizeAccessibilitySettings,
   serializeAccessibilitySettings,
@@ -66,6 +72,8 @@ if (!root) {
 
 let farm = createFarmState();
 let typedBuffer = '';
+let playerFacing: PlayerDirection = 'down';
+let playerAnimationSeconds = 0;
 
 const saveKey = 'wordharvest:save:v1';
 const audioSettingsKey = 'wordharvest:audio:v1';
@@ -330,12 +338,17 @@ window.addEventListener('keydown', (event) => {
 
 app.ticker.add((ticker) => {
   if (!farm.pendingAction) {
+    playerAnimationSeconds = 0;
     return;
   }
 
   const hadPendingAction = Boolean(farm.pendingAction);
+  const previousPlayer = farm.player;
+  playerAnimationSeconds += ticker.deltaMS / 1000;
   farm = accessibilitySettings.reducedMotion ? completePendingAction(farm) : advanceFarmTime(farm, ticker.deltaMS / 1000);
+  playerFacing = playerDirectionForMovement(previousPlayer, farm.player, playerFacing);
   if (hadPendingAction && !farm.pendingAction) {
+    playerAnimationSeconds = 0;
     playCueForLatestLog();
   }
   redraw();
@@ -364,6 +377,8 @@ function submitTypedBuffer(): void {
   const wasPending = Boolean(farm.pendingAction);
   farm = applyTypedWord(farm, typedBuffer);
   if (!wasPending && farm.pendingAction) {
+    playerFacing = playerDirectionForState(farm, playerFacing);
+    playerAnimationSeconds = 0;
     playCue('walk');
   } else {
     playCueForLatestLog();
@@ -613,7 +628,7 @@ function createFarmExterior(state: FarmState, typedWord: string): Container {
     scene.addChild(cropMarker(point.x, point.y, plotSize, plot.stage));
   }
 
-  drawPlayer(scene, viewport, state.player);
+  drawPlayer(scene, viewport, state);
   drawTargets(scene, viewport, listWorldTargets(state));
 
   return scene;
@@ -638,7 +653,7 @@ function createTownEdge(state: FarmState, typedWord: string): Container {
   drawTownRequestBoard(scene, viewport);
   drawTownEvent(scene, viewport, state);
   drawTownVillager(scene, viewport);
-  drawPlayer(scene, viewport, state.player);
+  drawPlayer(scene, viewport, state);
   drawTargets(scene, viewport, listWorldTargets(state));
 
   return scene;
@@ -672,7 +687,7 @@ function createHouseInterior(state: FarmState): Container {
   scene.addChild(rect(width * 0.58, height * 0.26, width * 0.2, height * 0.14, 0x6d4b36));
   scene.addChild(rect(width * 0.43, height * 0.64, width * 0.14, height * 0.22, 0x3c5f46));
 
-  drawPlayer(scene, viewport, state.player);
+  drawPlayer(scene, viewport, state);
   drawTargets(scene, viewport, listWorldTargets(state));
 
   return scene;
@@ -964,11 +979,14 @@ function drawSeedSource(scene: Container, viewport: Viewport): void {
   scene.addChild(rect(source.x - width * 0.12, source.y + height * 0.14, width * 0.24, height * 0.18, 0x2f7d32));
 }
 
-function drawPlayer(scene: Container, viewport: Viewport, position: WorldPoint): void {
-  const point = worldToScreen(viewport, position);
+function drawPlayer(scene: Container, viewport: Viewport, state: FarmState): void {
+  const direction = state.pendingAction ? playerDirectionForState(state, playerFacing) : playerFacing;
+  const frameId = playerFrameForMotion(direction, Boolean(state.pendingAction), playerAnimationSeconds);
+  const point = worldToScreen(viewport, state.player);
+  const frame = playerSpriteSheet.frames[frameId];
   const sprite = new Sprite({
-    texture: playerTextures.player_idle_down,
-    anchor: playerSpriteSheet.frames.player_idle_down.anchor,
+    texture: playerTextures[frameId],
+    anchor: frame.anchor,
     roundPixels: true,
   });
   const spriteHeight = viewport.scale * 0.72;
