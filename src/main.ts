@@ -35,6 +35,7 @@ import {
   destinationForWorldTarget,
   doorPosition,
   houseBedPosition,
+  houseInteriorExitPosition,
   housePosition,
   listWorldTargets,
   resolveWorldTarget,
@@ -682,6 +683,7 @@ function createHouseInterior(state: FarmState, typedWord: string): Container {
   drawFloorboards(scene, wallHeight, width, height, viewport.scale);
   drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
   drawHouseBed(scene, viewport);
+  drawHouseInteriorExit(scene, viewport);
   scene.addChild(rect(width * 0.58, height * 0.24, width * 0.2, height * 0.14, 0x6d4b36));
   scene.addChild(rect(width * 0.6, height * 0.265, width * 0.16, height * 0.035, 0xe7d39f));
   scene.addChild(rect(width * 0.43, height * 0.68, width * 0.14, height * 0.2, 0x3c5f46));
@@ -716,6 +718,20 @@ function drawHouseBed(scene: Container, viewport: Viewport): void {
   graphic.rect(bed.x - width * 0.42, bed.y + height * 0.08, width * 0.84, height * 0.08).fill(0xf4d35e);
   graphic.rect(bed.x - width * 0.52, bed.y - height * 0.5, width * 0.12, height).fill(0x4f3328);
   graphic.rect(bed.x + width * 0.4, bed.y - height * 0.5, width * 0.12, height).fill(0x4f3328);
+
+  scene.addChild(graphic);
+}
+
+function drawHouseInteriorExit(scene: Container, viewport: Viewport): void {
+  const exit = worldToScreen(viewport, houseInteriorExitPosition);
+  const width = viewport.scale * 1.05;
+  const height = viewport.scale * 0.44;
+  const graphic = new Graphics();
+
+  graphic.rect(exit.x - width / 2, exit.y - height * 0.42, width, height).fill(0x4f3328);
+  graphic.rect(exit.x - width * 0.38, exit.y - height * 0.08, width * 0.76, height * 0.24).fill(0xe7d39f);
+  graphic.rect(exit.x - width * 0.5, exit.y + height * 0.08, width, height * 0.18).fill(0x6b422e);
+  graphic.rect(exit.x - width * 0.18, exit.y - height * 0.28, width * 0.36, height * 0.16).fill(0x2f261f);
 
   scene.addChild(graphic);
 }

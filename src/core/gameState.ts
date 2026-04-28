@@ -89,6 +89,7 @@ import { normalizeTypedWord } from './typing';
 import {
   destinationForWorldTarget,
   farmReturnPosition,
+  houseInteriorEntryPosition,
   houseWakePosition,
   isPlayerInBed,
   listWorldTargets,
@@ -303,7 +304,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
       {
         ...state,
         location: 'house',
-        player: { x: 0, y: 2.2 },
+        player: houseInteriorEntryPosition,
       },
       'Opened the farmhouse door and stepped inside.',
     );
@@ -314,7 +315,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
       {
         ...state,
         location: 'farm',
-        player: action.destination,
+        player: action.farmDestination,
       },
       'Stepped back into the farmyard.',
     );

@@ -20,7 +20,7 @@ export type MenuId = 'journal' | 'inventory' | 'options';
 export type WorldTargetAction =
   | { kind: 'approach-house'; destination: WorldPoint }
   | { kind: 'enter-house' }
-  | { kind: 'exit-house'; destination: WorldPoint }
+  | { kind: 'exit-house'; destination: WorldPoint; farmDestination: WorldPoint }
   | { kind: 'enter-bed'; destination: WorldPoint }
   | { kind: 'sleep-bed'; destination: WorldPoint }
   | { kind: 'leave-bed'; destination: WorldPoint }
@@ -53,6 +53,8 @@ export const housePosition: WorldPoint = { x: 0, y: 0 };
 export const doorPosition: WorldPoint = { x: 0, y: 1 };
 export const houseApproachPosition: WorldPoint = { x: 0, y: 1.7 };
 export const houseExitPosition: WorldPoint = { x: 0, y: 1.9 };
+export const houseInteriorEntryPosition: WorldPoint = { x: 0, y: 4.25 };
+export const houseInteriorExitPosition: WorldPoint = { x: 0, y: 4.6 };
 export const houseBedPosition: WorldPoint = { x: -1.2, y: 1.25 };
 export const houseWakePosition: WorldPoint = { x: -0.55, y: 1.9 };
 export const shippingBinPosition: WorldPoint = { x: 2, y: 4.4 };
@@ -303,17 +305,25 @@ function houseInteriorTargets(player: WorldPoint): WorldTarget[] {
       id: 'house-exit',
       word: primaryWordForTargetRole('exit-outside'),
       label: primaryWordForTargetRole('exit-outside'),
-      position: { x: 0, y: 2.4 },
-      distance: 0,
-      action: { kind: 'exit-house', destination: houseExitPosition },
+      position: { x: houseInteriorExitPosition.x, y: houseInteriorExitPosition.y - 0.18 },
+      distance: distanceBetween(player, houseInteriorExitPosition),
+      action: {
+        kind: 'exit-house',
+        destination: houseInteriorExitPosition,
+        farmDestination: houseExitPosition,
+      },
     },
     {
       id: 'farm-exit',
       word: primaryWordForTargetRole('exit-farm'),
       label: primaryWordForTargetRole('exit-farm'),
-      position: { x: 1.2, y: 2.1 },
-      distance: 0,
-      action: { kind: 'exit-house', destination: houseExitPosition },
+      position: { x: houseInteriorExitPosition.x + 1.1, y: houseInteriorExitPosition.y - 0.32 },
+      distance: distanceBetween(player, houseInteriorExitPosition),
+      action: {
+        kind: 'exit-house',
+        destination: houseInteriorExitPosition,
+        farmDestination: houseExitPosition,
+      },
     },
     {
       id: 'house-bed',

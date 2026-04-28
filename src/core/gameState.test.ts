@@ -10,7 +10,7 @@ import {
   seedInventorySummary,
   type FarmState,
 } from './gameState';
-import { houseBedPosition, houseWakePosition } from './worldTargets';
+import { houseBedPosition, houseExitPosition, houseInteriorEntryPosition, houseWakePosition } from './worldTargets';
 
 describe('farm state', () => {
   it('starts with current weather and a next-day forecast', () => {
@@ -174,17 +174,19 @@ describe('farm state', () => {
     state = applyTypedWord(state, 'door');
     state = settleAction(state);
     expect(state.location).toBe('house');
+    expect(state.player).toEqual(houseInteriorEntryPosition);
 
     state = applyTypedWord(state, 'outside');
     state = settleAction(state);
     expect(state.location).toBe('farm');
+    expect(state.player).toEqual(houseExitPosition);
   });
 
   it('requires entering bed before sleep and allows rising before the day ends', () => {
     let state: FarmState = {
       ...createFarmState(),
       location: 'house',
-      player: { x: 0, y: 2.2 },
+      player: houseInteriorEntryPosition,
     };
 
     state = applyTypedWord(state, 'sleep');
