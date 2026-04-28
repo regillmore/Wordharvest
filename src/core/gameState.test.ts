@@ -10,7 +10,7 @@ import {
   seedInventorySummary,
   type FarmState,
 } from './gameState';
-import { houseWakePosition } from './worldTargets';
+import { houseBedPosition, houseWakePosition } from './worldTargets';
 
 describe('farm state', () => {
   it('starts with current weather and a next-day forecast', () => {
@@ -180,7 +180,7 @@ describe('farm state', () => {
     expect(state.location).toBe('farm');
   });
 
-  it('sleeps from the farmhouse bed word and wakes inside on the next day', () => {
+  it('requires entering bed before sleep and allows rising before the day ends', () => {
     let state: FarmState = {
       ...createFarmState(),
       location: 'house',
@@ -188,8 +188,29 @@ describe('farm state', () => {
     };
 
     state = applyTypedWord(state, 'sleep');
-    expect(state.pendingAction?.label).toBe('sleep');
+    expect(state.day).toBe(1);
+    expect(state.log[0]).toBe('No visible target named "sleep".');
 
+    state = applyTypedWord(state, 'bed');
+    expect(state.pendingAction?.label).toBe('bed');
+    state = settleAction(state);
+    expect(state.day).toBe(1);
+    expect(state.player).toEqual(houseBedPosition);
+    expect(state.log[0]).toBe('Settled into bed. Type sleep to end the day, or rise to get back up.');
+    expect(state.collectionLog.usedWords.bed).toBe(true);
+    expect(state.collectionLog.discoveredWords.sleep).toBe(true);
+    expect(state.collectionLog.discoveredWords.rise).toBe(true);
+
+    state = applyTypedWord(state, 'rise');
+    expect(state.pendingAction?.label).toBe('rise');
+    state = settleAction(state);
+    expect(state.day).toBe(1);
+    expect(state.player).toEqual(houseWakePosition);
+    expect(state.log[0]).toBe('Got back out of bed.');
+    expect(state.collectionLog.usedWords.rise).toBe(true);
+
+    state = settleAction(applyTypedWord(state, 'bed'));
+    state = applyTypedWord(state, 'sleep');
     state = settleAction(state);
 
     expect(state.day).toBe(2);
@@ -198,6 +219,7 @@ describe('farm state', () => {
     expect(state.stamina).toBe(10);
     expect(state.log[0]).toMatch(/^Day 2 dawns sunny\./);
     expect(state.log[1]).toBe('Slept in the farmhouse bed.');
+    expect(state.log[2]).toBe('Settled into bed. Type sleep to end the day, or rise to get back up.');
     expect(state.collectionLog.usedWords.sleep).toBe(true);
     expect(state.collectionLog.discoveredWords.bed).toBe(true);
   });

@@ -1,7 +1,6 @@
 import {
   nextWordForTargetRole,
   primaryWordForTargetRole,
-  wordsForTargetRole,
   type TargetWordRole,
 } from '../content/targetWords';
 import { cropCatalog, shopWordForCrop, starterCropId, type CropId } from '../content/crops';
@@ -22,7 +21,9 @@ export type WorldTargetAction =
   | { kind: 'approach-house'; destination: WorldPoint }
   | { kind: 'enter-house' }
   | { kind: 'exit-house'; destination: WorldPoint }
+  | { kind: 'enter-bed'; destination: WorldPoint }
   | { kind: 'sleep-bed'; destination: WorldPoint }
+  | { kind: 'leave-bed'; destination: WorldPoint }
   | { kind: 'enter-town'; destination: WorldPoint }
   | { kind: 'return-farm'; destination: WorldPoint }
   | { kind: 'visit-shop' }
@@ -80,25 +81,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
   }
 
   if (state.location === 'house') {
-    return withMenuTargets(state, [
-      {
-        id: 'house-exit',
-        word: primaryWordForTargetRole('exit-outside'),
-        label: primaryWordForTargetRole('exit-outside'),
-        position: { x: 0, y: 2.4 },
-        distance: 0,
-        action: { kind: 'exit-house', destination: houseExitPosition },
-      },
-      {
-        id: 'farm-exit',
-        word: primaryWordForTargetRole('exit-farm'),
-        label: primaryWordForTargetRole('exit-farm'),
-        position: { x: 1.2, y: 2.1 },
-        distance: 0,
-        action: { kind: 'exit-house', destination: houseExitPosition },
-      },
-      ...sleepBedTargets(state.player),
-    ]);
+    return withMenuTargets(state, houseInteriorTargets(state.player));
   }
 
   if (state.location === 'town') {
@@ -266,7 +249,9 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
   if (
     target.action.kind === 'approach-house' ||
     target.action.kind === 'exit-house' ||
+    target.action.kind === 'enter-bed' ||
     target.action.kind === 'sleep-bed' ||
+    target.action.kind === 'leave-bed' ||
     target.action.kind === 'enter-town' ||
     target.action.kind === 'return-farm' ||
     target.action.kind === 'read-request-board' ||
@@ -287,20 +272,58 @@ export function distanceBetween(left: WorldPoint, right: WorldPoint): number {
   return Math.hypot(left.x - right.x, left.y - right.y);
 }
 
-function sleepBedTargets(player: WorldPoint): WorldTarget[] {
-  const labelPositions: readonly WorldPoint[] = [
-    { x: houseBedPosition.x, y: houseBedPosition.y - 0.58 },
-    { x: houseBedPosition.x - 0.62, y: houseBedPosition.y + 0.08 },
-  ];
+export function isPlayerInBed(player: WorldPoint): boolean {
+  return distanceBetween(player, houseBedPosition) < 0.01;
+}
 
-  return wordsForTargetRole('sleep-bed').map((word, index) => ({
-    id: `house-bed-${word}`,
-    word,
-    label: word,
-    position: labelPositions[index] ?? houseBedPosition,
-    distance: distanceBetween(player, houseBedPosition),
-    action: { kind: 'sleep-bed', destination: houseBedPosition },
-  }));
+function houseInteriorTargets(player: WorldPoint): WorldTarget[] {
+  if (isPlayerInBed(player)) {
+    return [
+      {
+        id: 'house-bed-sleep',
+        word: primaryWordForTargetRole('sleep-bed'),
+        label: primaryWordForTargetRole('sleep-bed'),
+        position: { x: houseBedPosition.x, y: houseBedPosition.y - 0.58 },
+        distance: 0,
+        action: { kind: 'sleep-bed', destination: houseBedPosition },
+      },
+      {
+        id: 'house-bed-rise',
+        word: primaryWordForTargetRole('leave-bed'),
+        label: primaryWordForTargetRole('leave-bed'),
+        position: { x: houseBedPosition.x - 0.62, y: houseBedPosition.y + 0.08 },
+        distance: 0,
+        action: { kind: 'leave-bed', destination: houseWakePosition },
+      },
+    ];
+  }
+
+  return [
+    {
+      id: 'house-exit',
+      word: primaryWordForTargetRole('exit-outside'),
+      label: primaryWordForTargetRole('exit-outside'),
+      position: { x: 0, y: 2.4 },
+      distance: 0,
+      action: { kind: 'exit-house', destination: houseExitPosition },
+    },
+    {
+      id: 'farm-exit',
+      word: primaryWordForTargetRole('exit-farm'),
+      label: primaryWordForTargetRole('exit-farm'),
+      position: { x: 1.2, y: 2.1 },
+      distance: 0,
+      action: { kind: 'exit-house', destination: houseExitPosition },
+    },
+    {
+      id: 'house-bed',
+      word: primaryWordForTargetRole('enter-bed'),
+      label: primaryWordForTargetRole('enter-bed'),
+      position: { x: houseBedPosition.x, y: houseBedPosition.y - 0.58 },
+      distance: distanceBetween(player, houseBedPosition),
+      action: { kind: 'enter-bed', destination: houseBedPosition },
+    },
+  ];
 }
 
 function withMenuTargets(state: FarmState, targets: WorldTarget[]): WorldTarget[] {

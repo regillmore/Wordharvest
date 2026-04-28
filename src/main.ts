@@ -12,14 +12,12 @@ import { playerSpriteSheet, playerSpriteSource, type PlayerSpriteFrameId } from 
 import { achievementProgressText } from './content/achievements';
 import {
   addFarmLog,
-  advanceDay,
   advanceFarmTime,
   applyTypedWord,
   completePendingAction,
   cropInventorySummary,
   createFarmState,
   seedInventorySummary,
-  sleepInFarmhouseBed,
   type CropStage,
   type FarmState,
 } from './core/gameState';
@@ -169,7 +167,6 @@ root.innerHTML = `
         <ol id="farm-log" class="farm-log"></ol>
       </section>
       <footer class="actions">
-        <button id="sleep-button" type="button">Sleep</button>
         <button id="save-game" type="button">Save</button>
         <button id="load-game" type="button">Load</button>
         <button id="reset-game" type="button">Reset</button>
@@ -202,7 +199,6 @@ const seasonProgress = requireElement<HTMLElement>('#season-progress');
 const typedWord = requireElement<HTMLElement>('#typed-word');
 const wordPreview = requireElement<HTMLElement>('#word-preview');
 const farmLog = requireElement<HTMLOListElement>('#farm-log');
-const sleepButton = requireElement<HTMLButtonElement>('#sleep-button');
 const saveGame = requireElement<HTMLButtonElement>('#save-game');
 const loadGame = requireElement<HTMLButtonElement>('#load-game');
 const resetGame = requireElement<HTMLButtonElement>('#reset-game');
@@ -228,12 +224,6 @@ await app.init({
 canvasHost.appendChild(app.canvas);
 
 const playerTextures = await loadPlayerTextures();
-
-sleepButton.addEventListener('click', () => {
-  farm = farm.location === 'house' ? sleepInFarmhouseBed(farm) : advanceDay(farm);
-  playCueForLatestLog();
-  redraw();
-});
 
 saveGame.addEventListener('click', () => {
   if (farm.pendingAction) {
@@ -450,7 +440,6 @@ function redrawHud(): void {
   seasonProgress.textContent = seasonProgressText(farm.day);
   typedWord.textContent = typedBuffer || '...';
 
-  sleepButton.disabled = Boolean(farm.pendingAction);
   saveGame.disabled = Boolean(farm.pendingAction);
   loadGame.disabled = Boolean(farm.pendingAction);
 

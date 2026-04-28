@@ -3,7 +3,7 @@ import { cropCatalog, shopWordForCrop } from '../content/crops';
 import { createDailyRequestProgress, markDailyRequestComplete } from '../content/dailyRequests';
 import { markTownEventAttended } from '../content/townEvents';
 import { applyTypedWord, createFarmState, type FarmState } from './gameState';
-import { houseApproachPosition, houseBedPosition, listWorldTargets, townShopPosition } from './worldTargets';
+import { houseApproachPosition, houseBedPosition, houseWakePosition, listWorldTargets, townShopPosition } from './worldTargets';
 
 describe('world targets', () => {
   it('shows house from range and door only when near the farmhouse', () => {
@@ -122,7 +122,7 @@ describe('world targets', () => {
     expect(words).toEqual(expect.arrayContaining(['door', 'town']));
   });
 
-  it('shows sleep labels over the farmhouse bed from inside the house', () => {
+  it('shows the bed label before sleep and rise are offered from bed', () => {
     const houseState: FarmState = {
       ...createFarmState(),
       location: 'house',
@@ -130,17 +130,32 @@ describe('world targets', () => {
     };
     const targets = listWorldTargets(houseState);
     const words = targets.map((target) => target.word);
-    const sleepTarget = targets.find((target) => target.word === 'sleep');
     const bedTarget = targets.find((target) => target.word === 'bed');
+    const inBedTargets = listWorldTargets({
+      ...houseState,
+      player: houseBedPosition,
+    });
+    const inBedWords = inBedTargets.map((target) => target.word);
+    const sleepTarget = inBedTargets.find((target) => target.word === 'sleep');
+    const riseTarget = inBedTargets.find((target) => target.word === 'rise');
 
-    expect(words).toEqual(expect.arrayContaining(['outside', 'farm', 'sleep', 'bed']));
+    expect(words).toEqual(expect.arrayContaining(['outside', 'farm', 'bed']));
+    expect(words).not.toContain('sleep');
+    expect(words).not.toContain('rise');
+    expect(bedTarget?.action).toEqual({
+      kind: 'enter-bed',
+      destination: houseBedPosition,
+    });
+    expect(inBedWords).toEqual(expect.arrayContaining(['sleep', 'rise']));
+    expect(inBedWords).not.toContain('bed');
+    expect(inBedWords).not.toContain('outside');
     expect(sleepTarget?.action).toEqual({
       kind: 'sleep-bed',
       destination: houseBedPosition,
     });
-    expect(bedTarget?.action).toEqual({
-      kind: 'sleep-bed',
-      destination: houseBedPosition,
+    expect(riseTarget?.action).toEqual({
+      kind: 'leave-bed',
+      destination: houseWakePosition,
     });
   });
 

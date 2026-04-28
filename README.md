@@ -21,7 +21,7 @@ See [CAPABILITIES.md](CAPABILITIES.md) for the feature catalog and [NEXT.md](NEX
 
 Play the current browser build at <https://regillmore.github.io/Wordharvest/>.
 
-Wordharvest is keyboard-first. Type a visible word hovering in the world, then press Enter or Space. Good first words to try are `seed`, `house`, `door`, `sleep`, `town`, `shop`, `journal`, and `pack`. Use the HUD buttons to sleep, save, load, reset, and adjust audio or accessibility options.
+Wordharvest is keyboard-first. Type a visible word hovering in the world, then press Enter or Space. Good first words to try are `seed`, `house`, `door`, `bed`, `sleep`, `rise`, `town`, `shop`, `journal`, and `pack`. Use the HUD buttons to save, load, reset, and adjust audio or accessibility options.
 
 ## Development
 

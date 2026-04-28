@@ -44,8 +44,25 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
 
   await page.keyboard.type('door');
   await page.keyboard.press('Enter');
-  await expect(page.locator('#word-preview')).toContainText('sleep');
   await expect(page.locator('#word-preview')).toContainText('bed');
+  await expect(page.locator('#word-preview')).not.toContainText('sleep');
+
+  await page.keyboard.type('bed');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Settled into bed. Type sleep to end the day, or rise to get back up.')).toBeVisible();
+  await expect(page.locator('#word-preview')).toContainText('sleep');
+  await expect(page.locator('#word-preview')).toContainText('rise');
+
+  await page.keyboard.type('rise');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Got back out of bed.')).toBeVisible();
+  await expect(page.locator('#day-value')).toHaveText('1');
+  await expect(page.locator('#word-preview')).toContainText('bed');
+  await expect(page.locator('#word-preview')).not.toContainText('sleep');
+
+  await page.keyboard.type('bed');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#word-preview')).toContainText('sleep');
 
   await page.keyboard.type('sleep');
   await page.keyboard.press('Enter');
@@ -142,13 +159,17 @@ test('opens menu words from typed labels', async ({ page }) => {
 test('joins the weekly town event from a visible festival label', async ({ page }) => {
   await page.goto('/');
   await expectFarmReady(page);
+  await page.getByLabel('Reduced motion').check();
 
-  for (let day = 2; day <= 7; day += 1) {
-    await page.getByRole('button', { name: 'Sleep' }).click();
+  await sleepFromFarm(page, 2);
+  for (let day = 3; day <= 7; day += 1) {
+    await sleepFromHouse(page, day);
   }
 
   await expect(page.locator('#event-progress')).toHaveText('Event: Spring Market Day open (+10 coins)');
 
+  await typeWorldWord(page, 'outside');
+  await expect(page.getByText('Stepped back into the farmyard.')).toBeVisible();
   await page.keyboard.type('town');
   await page.keyboard.press('Enter');
   await expect(page.getByText('Followed the south path toward town.')).toBeVisible();
@@ -212,7 +233,8 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.getByText('Saved.')).toBeVisible();
   await expect(page.locator('#save-timestamp')).toContainText(/^Last saved: \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
 
-  await page.getByRole('button', { name: 'Sleep' }).click();
+  await page.getByLabel('Reduced motion').check();
+  await sleepFromFarm(page, 2);
   await expect(page.locator('#day-value')).toHaveText('2');
   await expect(page.locator('#forecast-value')).toHaveText('Rain');
   await expect(page.locator('#week-progress')).toHaveText('Day 2: Water a growing crop open (+4 coins)');
@@ -287,6 +309,26 @@ test('supports typing assist with visual cue equivalents', async ({ page }) => {
   await expect(page.getByText('Planted turnip seeds.')).toBeVisible();
   await expect(page.locator('#visual-cue')).toHaveText('Cue: planted');
 });
+
+async function sleepFromFarm(page: Page, expectedDay: number): Promise<void> {
+  await typeWorldWord(page, 'house');
+  await expect(page.locator('#word-preview')).toContainText('door');
+  await typeWorldWord(page, 'door');
+  await expect(page.locator('#word-preview')).toContainText('bed');
+  await sleepFromHouse(page, expectedDay);
+}
+
+async function sleepFromHouse(page: Page, expectedDay: number): Promise<void> {
+  await typeWorldWord(page, 'bed');
+  await expect(page.locator('#word-preview')).toContainText('sleep');
+  await typeWorldWord(page, 'sleep');
+  await expect(page.locator('#day-value')).toHaveText(String(expectedDay));
+}
+
+async function typeWorldWord(page: Page, word: string): Promise<void> {
+  await page.keyboard.type(word);
+  await page.keyboard.press('Enter');
+}
 
 async function expectFarmReady(page: Page): Promise<void> {
   await expect(page.getByRole('heading', { name: 'Wordharvest' })).toBeVisible({ timeout: 15000 });

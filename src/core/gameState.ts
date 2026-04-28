@@ -90,6 +90,7 @@ import {
   destinationForWorldTarget,
   farmReturnPosition,
   houseWakePosition,
+  isPlayerInBed,
   listWorldTargets,
   resolveWorldTarget,
   townArrivalPosition,
@@ -319,8 +320,30 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     );
   }
 
+  if (action.kind === 'enter-bed') {
+    return withLog(
+      {
+        ...state,
+        location: 'house',
+        player: action.destination,
+      },
+      'Settled into bed. Type sleep to end the day, or rise to get back up.',
+    );
+  }
+
   if (action.kind === 'sleep-bed') {
     return sleepInFarmhouseBed(state);
+  }
+
+  if (action.kind === 'leave-bed') {
+    return withLog(
+      {
+        ...state,
+        location: 'house',
+        player: action.destination,
+      },
+      'Got back out of bed.',
+    );
   }
 
   if (action.kind === 'enter-town') {
@@ -468,6 +491,10 @@ export function advanceDay(state: FarmState): FarmState {
 export function sleepInFarmhouseBed(state: FarmState): FarmState {
   if (state.pendingAction) {
     return withLog(state, `Finish walking to ${state.pendingAction.label} before sleeping.`);
+  }
+
+  if (state.location !== 'house' || !isPlayerInBed(state.player)) {
+    return withLog(state, 'Get into bed before sleeping.');
   }
 
   const tuckedInState = withLog(

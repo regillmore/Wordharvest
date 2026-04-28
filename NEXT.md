@@ -32,7 +32,7 @@ Complete when:
 - [x] Typed labels queue walking to the target before the action completes.
 - [x] Typed targets use tile-aware paths with preview and blocked-path feedback.
 - [x] Farm/town transition boundaries use the same typed-label walking flow.
-- [x] The player can type visible labels to plant, water, harvest, enter the house, sleep in bed, and use the shipping bin.
+- [x] The player can type visible labels to plant, water, harvest, enter the house, enter or leave bed, sleep, and use the shipping bin.
 - [x] Crops visibly progress through stages over days.
 - [x] Planting consumes seed inventory and seeds come from a visible farm source.
 - [x] The player renders from a style-guide-compliant runtime sprite sheet.

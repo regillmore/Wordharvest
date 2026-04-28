@@ -20,7 +20,9 @@ describe('target word catalog', () => {
       'enter-house',
       'exit-outside',
       'exit-farm',
+      'enter-bed',
       'sleep-bed',
+      'leave-bed',
       'enter-town',
       'town-shop',
       'talk-villager',
@@ -44,7 +46,9 @@ describe('target word catalog', () => {
   it('returns primary words for single target labels', () => {
     expect(primaryWordForTargetRole('approach-house')).toBe('house');
     expect(primaryWordForTargetRole('enter-house')).toBe('door');
+    expect(primaryWordForTargetRole('enter-bed')).toBe('bed');
     expect(primaryWordForTargetRole('sleep-bed')).toBe('sleep');
+    expect(primaryWordForTargetRole('leave-bed')).toBe('rise');
     expect(primaryWordForTargetRole('enter-town')).toBe('town');
     expect(primaryWordForTargetRole('town-shop')).toBe('shop');
     expect(primaryWordForTargetRole('talk-villager')).toBe('hello');
@@ -62,6 +66,6 @@ describe('target word catalog', () => {
     expect(nextWordForTargetRole('water-crop', indexes)).toBe('water');
     expect(nextWordForTargetRole('water-crop', indexes)).toBe('sprinkle');
     expect(wordsForTargetRole('water-crop')).toContain('douse');
-    expect(wordsForTargetRole('sleep-bed')).toContain('bed');
+    expect(wordsForTargetRole('enter-bed')).toContain('bed');
   });
 });
