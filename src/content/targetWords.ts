@@ -85,7 +85,7 @@ export const targetWordCatalog = [
     role: 'enter-town',
     category: 'place',
     words: ['town'],
-    description: 'Farm boundary label that follows the south path toward the town edge.',
+    description: 'Farm boundary label that follows the south path toward the town grid.',
   },
   {
     role: 'town-shop',

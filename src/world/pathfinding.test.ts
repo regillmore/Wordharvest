@@ -1,7 +1,26 @@
 import { describe, expect, it } from 'vitest';
-import { doorPosition, houseInteriorEntryPosition, houseInteriorExitPosition, shippingBinPosition } from '../core/worldTargets';
-import { findFarmPath, isWalkableFarmTile, pointToTilePoint, walkableFarmTileKinds } from './pathfinding';
+import {
+  doorPosition,
+  houseInteriorEntryPosition,
+  houseInteriorExitPosition,
+  shippingBinPosition,
+  townArrivalPosition,
+  townRequestBoardPosition,
+  townShopPosition,
+  townVillagerPosition,
+} from '../core/worldTargets';
+import {
+  findFarmPath,
+  findPathForLocation,
+  findTownPath,
+  isWalkableFarmTile,
+  isWalkableTownTile,
+  pointToTilePoint,
+  walkableFarmTileKinds,
+  walkableTownTileKinds,
+} from './pathfinding';
 import { farmTileAt } from './farmMap';
+import { townTileAt } from './townMap';
 
 describe('farm pathfinding', () => {
   it('finds a tile route between the starting farm area and important targets', () => {
@@ -18,6 +37,35 @@ describe('farm pathfinding', () => {
     const blockedPath = findFarmPath({ x: 0, y: 5 }, { x: 3, y: 5 });
 
     expect(farmTileAt({ x: 3, y: 5 })?.kind).toBe('water');
+    expect(blockedPath).toEqual({ ok: false, path: [] });
+  });
+
+  it('finds a tile route through the authored town grid', () => {
+    const toShop = findTownPath(townArrivalPosition, townShopPosition);
+    const toBoard = findTownPath(townArrivalPosition, townRequestBoardPosition);
+    const toVillager = findTownPath(townArrivalPosition, townVillagerPosition);
+
+    expect(toShop.ok).toBe(true);
+    expect(toShop.path.at(-1)).toEqual(townShopPosition);
+    expect(toBoard.ok).toBe(true);
+    expect(toBoard.path.at(-1)).toEqual(townRequestBoardPosition);
+    expect(toVillager.ok).toBe(true);
+    expect(toVillager.path.at(-1)).toEqual(townVillagerPosition);
+  });
+
+  it('selects the town grid for town path previews and actions', () => {
+    const townOnlyDestination = { x: 3, y: 6 };
+    const townPath = findPathForLocation('town', townArrivalPosition, townOnlyDestination);
+
+    expect(townPath.ok).toBe(true);
+    expect(townPath.path.at(-1)).toEqual(townOnlyDestination);
+    expect(findPathForLocation('farm', townArrivalPosition, townOnlyDestination).ok).toBe(false);
+  });
+
+  it('rejects blocked town destination tiles', () => {
+    const blockedPath = findTownPath(townArrivalPosition, { x: -2, y: 1 });
+
+    expect(townTileAt({ x: -2, y: 1 })?.kind).toBe('foundation');
     expect(blockedPath).toEqual({ ok: false, path: [] });
   });
 
@@ -43,7 +91,10 @@ describe('farm pathfinding', () => {
 
   it('defines walkable and blocked tile kinds', () => {
     expect(walkableFarmTileKinds()).toEqual(['grass', 'meadow', 'path', 'soil']);
+    expect(walkableTownTileKinds()).toEqual(['grass', 'path', 'plaza']);
     expect(isWalkableFarmTile(farmTileAt({ x: 0, y: 5 }))).toBe(true);
     expect(isWalkableFarmTile(farmTileAt({ x: 0, y: 0 }))).toBe(false);
+    expect(isWalkableTownTile(townTileAt(townArrivalPosition))).toBe(true);
+    expect(isWalkableTownTile(townTileAt({ x: -2, y: 1 }))).toBe(false);
   });
 });

@@ -1,5 +1,6 @@
 import type { WorldPoint } from '../core/worldTargets';
 import { farmTileAt, type FarmTile, type FarmTileKind } from './farmMap';
+import { townTileAt, type TownTile, type TownTileKind } from './townMap';
 
 export interface PathResult {
   ok: boolean;
@@ -7,18 +8,44 @@ export interface PathResult {
 }
 
 const walkableTileKinds: ReadonlySet<FarmTileKind> = new Set(['grass', 'meadow', 'path', 'soil']);
+const townWalkableTileKinds: ReadonlySet<TownTileKind> = new Set(['grass', 'path', 'plaza']);
 
 export function isWalkableFarmTile(tile: FarmTile | undefined): boolean {
   return Boolean(tile && walkableTileKinds.has(tile.kind));
 }
 
+export function isWalkableTownTile(tile: TownTile | undefined): boolean {
+  return Boolean(tile && townWalkableTileKinds.has(tile.kind));
+}
+
 export function findFarmPath(origin: WorldPoint, destination: WorldPoint): PathResult {
+  return findGridPath(origin, destination, farmTileAt, isWalkableFarmTile);
+}
+
+export function findTownPath(origin: WorldPoint, destination: WorldPoint): PathResult {
+  return findGridPath(origin, destination, townTileAt, isWalkableTownTile);
+}
+
+export function findPathForLocation(
+  location: 'farm' | 'house' | 'town' | 'shop',
+  origin: WorldPoint,
+  destination: WorldPoint,
+): PathResult {
+  return location === 'town' ? findTownPath(origin, destination) : findFarmPath(origin, destination);
+}
+
+function findGridPath<TTile>(
+  origin: WorldPoint,
+  destination: WorldPoint,
+  tileAt: (point: WorldPoint) => TTile | undefined,
+  isWalkableTile: (tile: TTile | undefined) => boolean,
+): PathResult {
   const start = pointToTilePoint(origin);
   const goal = pointToTilePoint(destination);
-  const startTile = farmTileAt(start);
-  const goalTile = farmTileAt(goal);
+  const startTile = tileAt(start);
+  const goalTile = tileAt(goal);
 
-  if (!isWalkableFarmTile(startTile) || !isWalkableFarmTile(goalTile)) {
+  if (!isWalkableTile(startTile) || !isWalkableTile(goalTile)) {
     return { ok: false, path: [] };
   }
 
@@ -40,7 +67,7 @@ export function findFarmPath(origin: WorldPoint, destination: WorldPoint): PathR
       break;
     }
 
-    for (const neighbor of walkableNeighbors(current)) {
+    for (const neighbor of walkableNeighbors(current, tileAt, isWalkableTile)) {
       const key = pointKey(neighbor);
 
       if (!cameFrom.has(key)) {
@@ -73,7 +100,11 @@ export function pointToTilePoint(point: WorldPoint): WorldPoint {
   };
 }
 
-function walkableNeighbors(point: WorldPoint): WorldPoint[] {
+function walkableNeighbors<TTile>(
+  point: WorldPoint,
+  tileAt: (point: WorldPoint) => TTile | undefined,
+  isWalkableTile: (tile: TTile | undefined) => boolean,
+): WorldPoint[] {
   const candidates = [
     { x: point.x, y: point.y - 1 },
     { x: point.x + 1, y: point.y },
@@ -81,7 +112,7 @@ function walkableNeighbors(point: WorldPoint): WorldPoint[] {
     { x: point.x - 1, y: point.y },
   ];
 
-  return candidates.filter((candidate) => isWalkableFarmTile(farmTileAt(candidate)));
+  return candidates.filter((candidate) => isWalkableTile(tileAt(candidate)));
 }
 
 function reconstructPath(goal: WorldPoint, cameFrom: Map<string, string | null>): WorldPoint[] {
@@ -122,4 +153,8 @@ function pointsEqual(left: WorldPoint, right: WorldPoint): boolean {
 
 export function walkableFarmTileKinds(): readonly FarmTileKind[] {
   return [...walkableTileKinds];
+}
+
+export function walkableTownTileKinds(): readonly TownTileKind[] {
+  return [...townWalkableTileKinds];
 }

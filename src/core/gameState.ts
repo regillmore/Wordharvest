@@ -81,7 +81,7 @@ import {
   type WeekGoalProgress,
 } from '../content/weekGoals';
 import { forecastForDay, weatherDefinition, weatherForDay, type WeatherId } from '../content/weather';
-import { findFarmPath } from '../world/pathfinding';
+import { findPathForLocation } from '../world/pathfinding';
 import { normalizeTypedWord } from './typing';
 import {
   destinationForWorldTarget,
@@ -203,7 +203,7 @@ export function applyTypedWord(state: FarmState, word: string): FarmState {
 
   const action = target.action;
   const destination = destinationForWorldTarget(target);
-  const pathResult = findFarmPath(state.player, destination);
+  const pathResult = findPathForLocation(state.location, state.player, destination);
 
   if (!pathResult.ok) {
     return withLog(state, `No clear path to ${target.label}.`);

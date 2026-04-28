@@ -77,7 +77,7 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await expect(page.locator('#word-preview')).toContainText('bed');
 });
 
-test('travels between the farm and town edge through typed labels', async ({ page }) => {
+test('travels between the farm and town grid through typed labels', async ({ page }) => {
   await page.goto('/');
   await expectFarmReady(page);
 

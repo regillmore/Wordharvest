@@ -34,6 +34,7 @@ import { weatherDefinition, type WeatherId } from './content/weather';
 import {
   destinationForWorldTarget,
   doorPosition,
+  farmReturnPosition,
   houseInteriorExitPosition,
   housePosition,
   isPlayerInBed,
@@ -51,7 +52,8 @@ import {
   type WorldTarget,
 } from './core/worldTargets';
 import { farmTiles, type FarmTile, type FarmTileKind } from './world/farmMap';
-import { findFarmPath } from './world/pathfinding';
+import { findPathForLocation } from './world/pathfinding';
+import { townTiles, type TownTile, type TownTileKind } from './world/townMap';
 import {
   playerDirectionAfterCompletedAction,
   playerDirectionForMovement,
@@ -690,18 +692,14 @@ function createTownEdge(state: FarmState, typedWord: string): Container {
   const viewport = createViewport(width, height);
 
   scene.addChild(rect(0, 0, width, height, skyColorForWeather(state.weather)));
-  scene.addChild(rect(0, height * 0.54, width, height * 0.46, 0x82b66f));
 
-  const laneCenter = worldToScreen(viewport, { x: 0, y: 5.7 });
-  scene.addChild(rect(laneCenter.x - viewport.scale * 0.55, height * 0.48, viewport.scale * 1.1, height * 0.52, 0xc8ad72));
-  scene.addChild(rect(laneCenter.x - viewport.scale * 0.22, height * 0.42, viewport.scale * 0.44, viewport.scale * 0.34, 0x5f715f));
-  scene.addChild(rect(laneCenter.x - viewport.scale * 0.32, height * 0.74, viewport.scale * 0.64, viewport.scale * 0.12, 0xe7d39f));
-
+  drawTownTiles(scene, viewport);
   drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
   drawTownShop(scene, viewport);
   drawTownRequestBoard(scene, viewport);
   drawTownEvent(scene, viewport, state);
   drawTownVillager(scene, viewport);
+  drawTownExitMarker(scene, viewport);
   drawPlayer(scene, viewport, state);
   drawTargets(scene, viewport, listWorldTargets(state));
 
@@ -719,7 +717,7 @@ function pathPreviewForState(state: FarmState, typedWord: string): WorldPoint[] 
     return [];
   }
 
-  const pathResult = findFarmPath(state.player, destinationForWorldTarget(target));
+  const pathResult = findPathForLocation(state.location, state.player, destinationForWorldTarget(target));
 
   return pathResult.ok ? [state.player, ...pathResult.path] : [];
 }
@@ -1064,6 +1062,12 @@ function drawFarmTiles(scene: Container, viewport: Viewport): void {
   }
 }
 
+function drawTownTiles(scene: Container, viewport: Viewport): void {
+  for (const tile of townTiles) {
+    scene.addChild(tileGraphic(viewport, tile));
+  }
+}
+
 function drawPathPreview(scene: Container, viewport: Viewport, path: WorldPoint[]): void {
   if (path.length < 2) {
     return;
@@ -1089,7 +1093,10 @@ function drawPathPreview(scene: Container, viewport: Viewport, path: WorldPoint[
   scene.addChild(graphic);
 }
 
-function tileGraphic(viewport: Viewport, tile: FarmTile): Graphics {
+type SceneTile = FarmTile | TownTile;
+type SceneTileKind = FarmTileKind | TownTileKind;
+
+function tileGraphic(viewport: Viewport, tile: SceneTile): Graphics {
   const point = worldToScreen(viewport, { x: tile.x, y: tile.y });
   const size = viewport.scale;
   const x = point.x - size / 2;
@@ -1102,7 +1109,7 @@ function tileGraphic(viewport: Viewport, tile: FarmTile): Graphics {
   return graphic;
 }
 
-function tileColor(kind: FarmTileKind, x: number, y: number): number {
+function tileColor(kind: SceneTileKind, x: number, y: number): number {
   if (kind === 'grass') {
     return (x + y) % 2 === 0 ? 0x78b86a : 0x70ad61;
   }
@@ -1113,6 +1120,10 @@ function tileColor(kind: FarmTileKind, x: number, y: number): number {
 
   if (kind === 'path') {
     return 0xc8ad72;
+  }
+
+  if (kind === 'plaza') {
+    return (x + y) % 2 === 0 ? 0xbda26c : 0xaf9564;
   }
 
   if (kind === 'soil') {
@@ -1127,10 +1138,14 @@ function tileColor(kind: FarmTileKind, x: number, y: number): number {
     return 0x4d9bbd;
   }
 
+  if (kind === 'flower') {
+    return (x + y) % 2 === 0 ? 0x7eaa6a : 0x76a05f;
+  }
+
   return (x + y) % 2 === 0 ? 0x78b86a : 0x70ad61;
 }
 
-function drawTileDetail(graphic: Graphics, kind: FarmTileKind, x: number, y: number, size: number): void {
+function drawTileDetail(graphic: Graphics, kind: SceneTileKind, x: number, y: number, size: number): void {
   if (kind === 'soil') {
     graphic.moveTo(x + size * 0.18, y + size * 0.32).lineTo(x + size * 0.82, y + size * 0.32);
     graphic.moveTo(x + size * 0.18, y + size * 0.52).lineTo(x + size * 0.82, y + size * 0.52);
@@ -1142,6 +1157,13 @@ function drawTileDetail(graphic: Graphics, kind: FarmTileKind, x: number, y: num
   if (kind === 'path') {
     graphic.circle(x + size * 0.28, y + size * 0.68, size * 0.035).fill(0xa88a56);
     graphic.circle(x + size * 0.66, y + size * 0.34, size * 0.028).fill(0xe2c58a);
+    return;
+  }
+
+  if (kind === 'plaza') {
+    graphic.moveTo(x + size * 0.08, y + size * 0.5).lineTo(x + size * 0.92, y + size * 0.5);
+    graphic.moveTo(x + size * 0.5, y + size * 0.08).lineTo(x + size * 0.5, y + size * 0.92);
+    graphic.stroke({ color: 0x8d754d, alpha: 0.42, width: 2 });
     return;
   }
 
@@ -1159,6 +1181,14 @@ function drawTileDetail(graphic: Graphics, kind: FarmTileKind, x: number, y: num
     graphic.stroke({ color: 0x8b5a3c, alpha: 0.5, width: 2 });
     graphic.rect(x + size * 0.16, y + size * 0.16, size * 0.1, size * 0.1).fill(0xe7d39f);
     graphic.rect(x + size * 0.74, y + size * 0.72, size * 0.1, size * 0.1).fill(0xe7d39f);
+    return;
+  }
+
+  if (kind === 'flower') {
+    graphic.circle(x + size * 0.28, y + size * 0.42, size * 0.04).fill(0xf4d35e);
+    graphic.circle(x + size * 0.43, y + size * 0.36, size * 0.035).fill(0xf7a8a3);
+    graphic.circle(x + size * 0.68, y + size * 0.64, size * 0.04).fill(0xd85f4f);
+    graphic.rect(x + size * 0.22, y + size * 0.7, size * 0.56, size * 0.06).fill(0x4f3328);
     return;
   }
 
@@ -1312,6 +1342,25 @@ function drawTownVillager(scene: Container, viewport: Viewport): void {
   figure.rect(villager.x + viewport.scale * 0.02, villager.y + viewport.scale * 0.14, viewport.scale * 0.07, viewport.scale * 0.16).fill(0x4f3328);
 
   scene.addChild(figure);
+}
+
+function drawTownExitMarker(scene: Container, viewport: Viewport): void {
+  const exit = worldToScreen(viewport, farmReturnPosition);
+  const width = viewport.scale * 0.62;
+  const height = viewport.scale * 0.42;
+  const graphic = new Graphics();
+
+  graphic.rect(exit.x - width * 0.08, exit.y - height * 0.38, width * 0.16, height * 0.86).fill(0x4f3328);
+  graphic.rect(exit.x - width * 0.5, exit.y - height * 0.76, width, height * 0.32).fill(0xe7d39f);
+  graphic.moveTo(exit.x - width * 0.28, exit.y - height * 0.6);
+  graphic.lineTo(exit.x + width * 0.16, exit.y - height * 0.6);
+  graphic.moveTo(exit.x + width * 0.02, exit.y - height * 0.72);
+  graphic.lineTo(exit.x + width * 0.22, exit.y - height * 0.6);
+  graphic.lineTo(exit.x + width * 0.02, exit.y - height * 0.48);
+  graphic.stroke({ color: 0x7b4e2c, width: 2 });
+  graphic.rect(exit.x - width * 0.36, exit.y + height * 0.28, width * 0.72, height * 0.1).fill(0xc8ad72);
+
+  scene.addChild(graphic);
 }
 
 function drawSeedSource(scene: Container, viewport: Viewport): void {

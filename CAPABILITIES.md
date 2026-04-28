@@ -36,7 +36,7 @@ Complete when a player can:
 ## World and Exploration
 
 - Farm map: Complete when the farm supports plots, paths, house, shipping bin, storage, and upgrade locations.
-- Town edge: Complete when there is at least one connected non-farm area with shops, an interior shop space, NPCs, and seasonal decoration.
+- Town grid: Complete when there is at least one connected non-farm area with authored tiles, shops, an interior shop space, NPCs, and seasonal decoration.
 - Interaction: Complete when signs, doors, chests, shops, and NPCs all share consistent interaction feedback.
 - Navigation: Complete when movement is handled by typing visible place, object, and character labels rather than direct directional commands.
 - Secrets: Complete when optional discoveries reward observation, typing skill, or seasonal timing.

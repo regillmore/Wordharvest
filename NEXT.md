@@ -32,6 +32,7 @@ Complete when:
 - [x] Typed labels queue walking to the target before the action completes.
 - [x] Typed targets use tile-aware paths with preview and blocked-path feedback.
 - [x] Farm/town transition boundaries use the same typed-label walking flow.
+- [x] The town edge is rendered from an authored tile grid.
 - [x] The player can type visible labels to plant, water, harvest, enter the house, enter or leave bed, sleep, and use the shipping bin.
 - [x] Crops visibly progress through stages over days.
 - [x] Planting consumes seed inventory and seeds come from a visible farm source.
@@ -60,7 +61,7 @@ Complete when:
 Complete when:
 
 - [x] Achievements reward farming, typing, exploration, collection, and economy goals.
-- [x] A small town edge supports NPCs, shop, requests, and a festival.
+- [x] A small town grid supports NPCs, shop, requests, and a festival.
 - [x] Audio channels, options, and mute are complete.
 - [x] Accessibility options cover typing assists, reduced motion, readable UI, and visual cue equivalents.
 - [x] Playwright covers boot, input, save/load, and settings.

@@ -14,6 +14,7 @@ import {
   shopCounterPosition,
   shopInteriorEntryPosition,
   shopInteriorExitPosition,
+  townEventPosition,
   townShopPosition,
 } from './worldTargets';
 
@@ -217,7 +218,7 @@ describe('world targets', () => {
     expect(eventTarget?.action).toEqual({
       kind: 'join-town-event',
       event: 'springMarketDay',
-      destination: { x: 0.78, y: 5.05 },
+      destination: townEventPosition,
     });
 
     const attendedState: FarmState = {

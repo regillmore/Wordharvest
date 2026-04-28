@@ -63,13 +63,13 @@ export const seedSourcePosition: WorldPoint = { x: -2, y: 2.4 };
 export const townGatePosition: WorldPoint = { x: 0, y: 6 };
 export const townArrivalPosition: WorldPoint = { x: 0, y: 5.6 };
 export const farmReturnPosition: WorldPoint = { x: 0, y: 5.7 };
-export const townShopPosition: WorldPoint = { x: -2, y: 5.1 };
+export const townShopPosition: WorldPoint = { x: -2.1, y: 2.35 };
 export const shopInteriorEntryPosition: WorldPoint = { x: 0, y: 4.25 };
 export const shopInteriorExitPosition: WorldPoint = { x: 0, y: 4.6 };
 export const shopCounterPosition: WorldPoint = { x: 0, y: 2.85 };
-export const townRequestBoardPosition: WorldPoint = { x: -0.82, y: 5.08 };
-export const townEventPosition: WorldPoint = { x: 0.78, y: 5.05 };
-export const townVillagerPosition: WorldPoint = { x: 2, y: 5.15 };
+export const townRequestBoardPosition: WorldPoint = { x: -0.1, y: 3.55 };
+export const townEventPosition: WorldPoint = { x: 1.35, y: 3.3 };
+export const townVillagerPosition: WorldPoint = { x: 2.2, y: 4.55 };
 
 const houseSightRange = 7;
 const doorActionRange = 2;
