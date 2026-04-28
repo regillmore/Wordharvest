@@ -55,7 +55,8 @@ export function findFarmPath(origin: WorldPoint, destination: WorldPoint): PathR
   }
 
   const tilePath = reconstructPath(goal, cameFrom).slice(1);
-  const path = tilePath.map(tilePointToWorldPoint);
+  const intermediateTilePath = tilePath.slice(0, -1);
+  const path = intermediateTilePath.map(tilePointToWorldPoint);
   const lastPoint = path[path.length - 1];
 
   if (!lastPoint || !pointsEqual(lastPoint, destination)) {

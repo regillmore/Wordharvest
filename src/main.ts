@@ -34,7 +34,6 @@ import { weatherDefinition, type WeatherId } from './content/weather';
 import {
   destinationForWorldTarget,
   doorPosition,
-  houseBedPosition,
   houseInteriorExitPosition,
   housePosition,
   listWorldTargets,
@@ -57,6 +56,11 @@ import {
   playerFrameForMotion,
   type PlayerDirection,
 } from './rendering/playerAnimation';
+import {
+  houseBedScreenBounds,
+  houseWallHeightForScreen,
+} from './rendering/houseInteriorLayout';
+import { createViewport, worldToScreen, type Viewport } from './rendering/viewport';
 import { visibleWorldLabelTargets } from './rendering/worldLabels';
 import {
   deserializeAccessibilitySettings,
@@ -353,12 +357,6 @@ syncAccessibilityControls();
 applyAccessibilitySettings();
 syncSaveTimestampFromStorage();
 redraw();
-
-interface Viewport {
-  originX: number;
-  originY: number;
-  scale: number;
-}
 
 function redraw(): void {
   app.stage.removeChildren();
@@ -673,7 +671,7 @@ function createHouseInterior(state: FarmState, typedWord: string): Container {
   const width = app.renderer.width;
   const height = app.renderer.height;
   const viewport = createViewport(width, height);
-  const wallHeight = Math.floor(height * 0.34);
+  const wallHeight = houseWallHeightForScreen(height);
 
   scene.addChild(rect(0, 0, width, height, 0xcaa66f));
   scene.addChild(rect(0, 0, width, wallHeight, 0x9b6848));
@@ -707,17 +705,23 @@ function drawFloorboards(scene: Container, wallHeight: number, width: number, he
 }
 
 function drawHouseBed(scene: Container, viewport: Viewport): void {
-  const bed = worldToScreen(viewport, houseBedPosition);
-  const width = viewport.scale * 1.08;
-  const height = viewport.scale * 1.2;
+  const bed = houseBedScreenBounds(viewport);
+  const bedCenterX = bed.x + bed.width / 2;
+  const bedCenterY = bed.y + bed.height / 2;
   const graphic = new Graphics();
 
-  graphic.rect(bed.x - width / 2, bed.y - height / 2, width, height).fill(0x7b4e2c);
-  graphic.rect(bed.x - width * 0.42, bed.y - height * 0.42, width * 0.84, height * 0.28).fill(0xf4e3a3);
-  graphic.rect(bed.x - width * 0.42, bed.y - height * 0.08, width * 0.84, height * 0.48).fill(0x668a9c);
-  graphic.rect(bed.x - width * 0.42, bed.y + height * 0.08, width * 0.84, height * 0.08).fill(0xf4d35e);
-  graphic.rect(bed.x - width * 0.52, bed.y - height * 0.5, width * 0.12, height).fill(0x4f3328);
-  graphic.rect(bed.x + width * 0.4, bed.y - height * 0.5, width * 0.12, height).fill(0x4f3328);
+  graphic.rect(bed.x, bed.y, bed.width, bed.height).fill(0x7b4e2c);
+  graphic
+    .rect(bedCenterX - bed.width * 0.42, bedCenterY - bed.height * 0.42, bed.width * 0.84, bed.height * 0.28)
+    .fill(0xf4e3a3);
+  graphic
+    .rect(bedCenterX - bed.width * 0.42, bedCenterY - bed.height * 0.08, bed.width * 0.84, bed.height * 0.48)
+    .fill(0x668a9c);
+  graphic
+    .rect(bedCenterX - bed.width * 0.42, bedCenterY + bed.height * 0.08, bed.width * 0.84, bed.height * 0.08)
+    .fill(0xf4d35e);
+  graphic.rect(bedCenterX - bed.width * 0.52, bedCenterY - bed.height * 0.5, bed.width * 0.12, bed.height).fill(0x4f3328);
+  graphic.rect(bedCenterX + bed.width * 0.4, bedCenterY - bed.height * 0.5, bed.width * 0.12, bed.height).fill(0x4f3328);
 
   scene.addChild(graphic);
 }
@@ -734,21 +738,6 @@ function drawHouseInteriorExit(scene: Container, viewport: Viewport): void {
   graphic.rect(exit.x - width * 0.18, exit.y - height * 0.28, width * 0.36, height * 0.16).fill(0x2f261f);
 
   scene.addChild(graphic);
-}
-
-function createViewport(width: number, height: number): Viewport {
-  return {
-    originX: width / 2,
-    originY: Math.max(88, height * 0.16),
-    scale: Math.max(56, Math.min(92, Math.floor(Math.min(width / 6, height / 6.4)))),
-  };
-}
-
-function worldToScreen(viewport: Viewport, point: WorldPoint): WorldPoint {
-  return {
-    x: viewport.originX + point.x * viewport.scale,
-    y: viewport.originY + point.y * viewport.scale,
-  };
 }
 
 function skyColorForWeather(weather: WeatherId): number {

@@ -55,7 +55,7 @@ export const houseApproachPosition: WorldPoint = { x: 0, y: 1.7 };
 export const houseExitPosition: WorldPoint = { x: 0, y: 1.9 };
 export const houseInteriorEntryPosition: WorldPoint = { x: 0, y: 4.25 };
 export const houseInteriorExitPosition: WorldPoint = { x: 0, y: 4.6 };
-export const houseBedPosition: WorldPoint = { x: -1.2, y: 1.25 };
+export const houseBedPosition: WorldPoint = { x: -1.2, y: 2.1 };
 export const houseWakePosition: WorldPoint = { x: -0.55, y: 1.9 };
 export const shippingBinPosition: WorldPoint = { x: 2, y: 4.4 };
 export const seedSourcePosition: WorldPoint = { x: -2, y: 2.4 };
@@ -306,18 +306,6 @@ function houseInteriorTargets(player: WorldPoint): WorldTarget[] {
       word: primaryWordForTargetRole('exit-outside'),
       label: primaryWordForTargetRole('exit-outside'),
       position: { x: houseInteriorExitPosition.x, y: houseInteriorExitPosition.y - 0.18 },
-      distance: distanceBetween(player, houseInteriorExitPosition),
-      action: {
-        kind: 'exit-house',
-        destination: houseInteriorExitPosition,
-        farmDestination: houseExitPosition,
-      },
-    },
-    {
-      id: 'farm-exit',
-      word: primaryWordForTargetRole('exit-farm'),
-      label: primaryWordForTargetRole('exit-farm'),
-      position: { x: houseInteriorExitPosition.x + 1.1, y: houseInteriorExitPosition.y - 0.32 },
       distance: distanceBetween(player, houseInteriorExitPosition),
       action: {
         kind: 'exit-house',

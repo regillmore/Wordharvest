@@ -149,7 +149,8 @@ describe('world targets', () => {
     const sleepTarget = inBedTargets.find((target) => target.word === 'sleep');
     const riseTarget = inBedTargets.find((target) => target.word === 'rise');
 
-    expect(words).toEqual(expect.arrayContaining(['outside', 'farm', 'bed']));
+    expect(words).toEqual(expect.arrayContaining(['outside', 'bed']));
+    expect(words).not.toContain('farm');
     expect(words).not.toContain('sleep');
     expect(words).not.toContain('rise');
     expect(bedTarget?.action).toEqual({

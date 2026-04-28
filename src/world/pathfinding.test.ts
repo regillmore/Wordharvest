@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { doorPosition, shippingBinPosition } from '../core/worldTargets';
+import { doorPosition, houseInteriorEntryPosition, houseInteriorExitPosition, shippingBinPosition } from '../core/worldTargets';
 import { findFarmPath, isWalkableFarmTile, pointToTilePoint, walkableFarmTileKinds } from './pathfinding';
 import { farmTileAt } from './farmMap';
 
@@ -32,6 +32,13 @@ describe('farm pathfinding', () => {
 
   it('rounds world points to tile coordinates for path lookup', () => {
     expect(pointToTilePoint({ x: 2, y: 4.4 })).toEqual({ x: 2, y: 4 });
+  });
+
+  it('walks directly to fractional destinations instead of overshooting the goal tile center', () => {
+    const toHouseExit = findFarmPath(houseInteriorEntryPosition, houseInteriorExitPosition);
+
+    expect(toHouseExit.ok).toBe(true);
+    expect(toHouseExit.path).toEqual([houseInteriorExitPosition]);
   });
 
   it('defines walkable and blocked tile kinds', () => {
