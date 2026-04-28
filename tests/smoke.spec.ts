@@ -172,7 +172,7 @@ test('shows persistent affordances for a completed Spring Basket', async ({ page
     "Market Encore: 3/5 crop varieties shipped. 2 more varieties will broaden Mira's market stall.",
   );
   await expect(page.locator('#collection-value')).toHaveText(
-    /Crops 3\/10 found, 3\/10 shipped; Words 8\/\d+ found, 0\/\d+ used/,
+    /Crops 3\/10 found, 3\/10 shipped; Words 9\/\d+ found, 0\/\d+ used/,
   );
   await expect(page.locator('#achievement-value')).toHaveText('Achievements: 3/5 unlocked');
 

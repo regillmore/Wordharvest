@@ -3,7 +3,7 @@ import { cropCatalog, shopWordForCrop } from '../content/crops';
 import { createDailyRequestProgress, markDailyRequestComplete } from '../content/dailyRequests';
 import { markTownEventAttended } from '../content/townEvents';
 import { applyTypedWord, createFarmState, type FarmState } from './gameState';
-import { listWorldTargets, townShopPosition } from './worldTargets';
+import { houseApproachPosition, listWorldTargets, townShopPosition } from './worldTargets';
 
 describe('world targets', () => {
   it('shows house from range and door only when near the farmhouse', () => {
@@ -111,6 +111,15 @@ describe('world targets', () => {
       'pack',
       'options',
     ]);
+  });
+
+  it('keeps the town landmark visible from the farmhouse approach', () => {
+    const words = listWorldTargets({
+      ...createFarmState(),
+      player: houseApproachPosition,
+    }).map((target) => target.word);
+
+    expect(words).toEqual(expect.arrayContaining(['door', 'town']));
   });
 
   it('hides the daily request label after the current request is complete', () => {

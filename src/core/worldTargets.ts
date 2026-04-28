@@ -61,7 +61,7 @@ const doorActionRange = 2;
 const cropActionRange = 2.15;
 const shippingBinRange = 3.2;
 const seedSourceRange = 4;
-const townGateRange = 2.4;
+const townGateRange = 4.8;
 const shopShelfRange = 1.2;
 
 const shopUpgradeLabelOffsets: readonly WorldPoint[] = [{ x: 1.55, y: 0.21 }];
