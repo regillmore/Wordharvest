@@ -57,8 +57,9 @@ import {
   type PlayerDirection,
 } from './rendering/playerAnimation';
 import {
-  houseBedScreenBounds,
-  houseWallHeightForScreen,
+  houseInteriorScreenLayout,
+  type HouseInteriorScreenLayout,
+  type ScreenBounds,
 } from './rendering/houseInteriorLayout';
 import { createViewport, worldToScreen, type Viewport } from './rendering/viewport';
 import { visibleWorldLabelTargets } from './rendering/worldLabels';
@@ -670,21 +671,19 @@ function createHouseInterior(state: FarmState, typedWord: string): Container {
   const scene = new Container();
   const width = app.renderer.width;
   const height = app.renderer.height;
-  const viewport = createViewport(width, height);
-  const wallHeight = houseWallHeightForScreen(height);
+  const layout = houseInteriorScreenLayout(width, height);
+  const { viewport } = layout;
 
-  scene.addChild(rect(0, 0, width, height, 0xcaa66f));
-  scene.addChild(rect(0, 0, width, wallHeight, 0x9b6848));
-  scene.addChild(rect(0, 0, width * 0.08, height, 0x70452f));
-  scene.addChild(rect(width * 0.92, 0, width * 0.08, height, 0x70452f));
-  scene.addChild(rect(width * 0.08, wallHeight - viewport.scale * 0.08, width * 0.84, viewport.scale * 0.12, 0x6b422e));
-  drawFloorboards(scene, wallHeight, width, height, viewport.scale);
+  scene.addChild(rect(0, 0, width, height, 0x3a2a20));
+  drawHouseInteriorShell(scene, layout);
+  drawFloorboards(scene, layout.floor, viewport.scale);
+  drawHouseRug(scene, layout.rug);
   drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
-  drawHouseBed(scene, viewport);
-  drawHouseInteriorExit(scene, viewport);
-  scene.addChild(rect(width * 0.58, height * 0.24, width * 0.2, height * 0.14, 0x6d4b36));
-  scene.addChild(rect(width * 0.6, height * 0.265, width * 0.16, height * 0.035, 0xe7d39f));
-  scene.addChild(rect(width * 0.43, height * 0.68, width * 0.14, height * 0.2, 0x3c5f46));
+  drawHouseBed(scene, layout.bed);
+  drawHouseTable(scene, layout.table);
+  drawHouseShelf(scene, layout.shelf);
+  drawHouseCrate(scene, layout.crate);
+  drawHouseInteriorExit(scene, layout);
 
   drawPlayer(scene, viewport, state);
   drawTargets(scene, viewport, listWorldTargets(state));
@@ -692,20 +691,60 @@ function createHouseInterior(state: FarmState, typedWord: string): Container {
   return scene;
 }
 
-function drawFloorboards(scene: Container, wallHeight: number, width: number, height: number, scale: number): void {
-  const floorboards = new Graphics();
-  const boardHeight = Math.max(18, scale * 0.32);
+function drawHouseInteriorShell(scene: Container, layout: HouseInteriorScreenLayout): void {
+  const graphic = new Graphics();
+  const floor = layout.floor;
+  const doorway = layout.doorway;
+  const southWall = layout.southWall;
+  const leftSouthWallWidth = Math.max(0, doorway.x - southWall.x);
+  const rightSouthWallX = doorway.x + doorway.width;
+  const rightSouthWallWidth = Math.max(0, southWall.x + southWall.width - rightSouthWallX);
 
-  for (let y = wallHeight + boardHeight; y < height; y += boardHeight) {
-    floorboards.moveTo(width * 0.08, y).lineTo(width * 0.92, y);
+  graphic.rect(floor.x, floor.y, floor.width, floor.height).fill(0xcaa66f);
+  graphic.rect(layout.northWall.x, layout.northWall.y, layout.northWall.width, layout.northWall.height).fill(0x8b5a3c);
+  graphic.rect(layout.westWall.x, layout.westWall.y, layout.westWall.width, layout.westWall.height).fill(0x70452f);
+  graphic.rect(layout.eastWall.x, layout.eastWall.y, layout.eastWall.width, layout.eastWall.height).fill(0x70452f);
+  graphic.rect(floor.x, floor.y - layout.viewport.scale * 0.08, floor.width, layout.viewport.scale * 0.1).fill(0x5c3a28);
+  graphic.rect(southWall.x, southWall.y, leftSouthWallWidth, southWall.height).fill(0x70452f);
+  graphic.rect(rightSouthWallX, southWall.y, rightSouthWallWidth, southWall.height).fill(0x70452f);
+  graphic.rect(southWall.x, southWall.y, southWall.width, southWall.height).stroke({
+    color: 0x4f3328,
+    alpha: 0.36,
+    width: 2,
+  });
+
+  scene.addChild(graphic);
+}
+
+function drawFloorboards(scene: Container, floor: ScreenBounds, scale: number): void {
+  const floorboards = new Graphics();
+  const boardHeight = Math.max(16, scale * 0.32);
+  const boardWidth = Math.max(42, scale * 0.78);
+
+  for (let y = floor.y + boardHeight; y < floor.y + floor.height; y += boardHeight) {
+    floorboards.moveTo(floor.x, y).lineTo(floor.x + floor.width, y);
   }
 
-  floorboards.stroke({ color: 0x8e6d45, alpha: 0.3, width: 2 });
+  for (let x = floor.x + boardWidth; x < floor.x + floor.width; x += boardWidth) {
+    floorboards.moveTo(x, floor.y + scale * 0.08).lineTo(x, floor.y + floor.height - scale * 0.08);
+  }
+
+  floorboards.stroke({ color: 0x8e6d45, alpha: 0.34, width: 2 });
   scene.addChild(floorboards);
 }
 
-function drawHouseBed(scene: Container, viewport: Viewport): void {
-  const bed = houseBedScreenBounds(viewport);
+function drawHouseRug(scene: Container, rug: ScreenBounds): void {
+  const graphic = new Graphics();
+
+  graphic.roundRect(rug.x, rug.y, rug.width, rug.height, 5).fill(0x7d3f2a);
+  graphic.rect(rug.x + rug.width * 0.1, rug.y + rug.height * 0.16, rug.width * 0.8, rug.height * 0.68).fill(0xc98c42);
+  graphic.rect(rug.x + rug.width * 0.18, rug.y + rug.height * 0.28, rug.width * 0.64, rug.height * 0.12).fill(0xe7d39f);
+  graphic.rect(rug.x + rug.width * 0.18, rug.y + rug.height * 0.58, rug.width * 0.64, rug.height * 0.1).fill(0x9b6848);
+
+  scene.addChild(graphic);
+}
+
+function drawHouseBed(scene: Container, bed: ScreenBounds): void {
   const bedCenterX = bed.x + bed.width / 2;
   const bedCenterY = bed.y + bed.height / 2;
   const graphic = new Graphics();
@@ -726,16 +765,57 @@ function drawHouseBed(scene: Container, viewport: Viewport): void {
   scene.addChild(graphic);
 }
 
-function drawHouseInteriorExit(scene: Container, viewport: Viewport): void {
-  const exit = worldToScreen(viewport, houseInteriorExitPosition);
-  const width = viewport.scale * 1.05;
-  const height = viewport.scale * 0.44;
+function drawHouseTable(scene: Container, table: ScreenBounds): void {
   const graphic = new Graphics();
 
-  graphic.rect(exit.x - width / 2, exit.y - height * 0.42, width, height).fill(0x4f3328);
-  graphic.rect(exit.x - width * 0.38, exit.y - height * 0.08, width * 0.76, height * 0.24).fill(0xe7d39f);
-  graphic.rect(exit.x - width * 0.5, exit.y + height * 0.08, width, height * 0.18).fill(0x6b422e);
-  graphic.rect(exit.x - width * 0.18, exit.y - height * 0.28, width * 0.36, height * 0.16).fill(0x2f261f);
+  graphic.rect(table.x, table.y, table.width, table.height).fill(0x6d4b36);
+  graphic.rect(table.x + table.width * 0.12, table.y + table.height * 0.16, table.width * 0.76, table.height * 0.16).fill(0xe7d39f);
+  graphic.rect(table.x + table.width * 0.14, table.y + table.height * 0.76, table.width * 0.14, table.height * 0.34).fill(0x4f3328);
+  graphic.rect(table.x + table.width * 0.72, table.y + table.height * 0.76, table.width * 0.14, table.height * 0.34).fill(0x4f3328);
+
+  scene.addChild(graphic);
+}
+
+function drawHouseShelf(scene: Container, shelf: ScreenBounds): void {
+  const graphic = new Graphics();
+
+  graphic.rect(shelf.x, shelf.y + shelf.height * 0.58, shelf.width, shelf.height * 0.18).fill(0x4f3328);
+  graphic.rect(shelf.x + shelf.width * 0.08, shelf.y + shelf.height * 0.18, shelf.width * 0.24, shelf.height * 0.36).fill(0xc98c42);
+  graphic.rect(shelf.x + shelf.width * 0.42, shelf.y + shelf.height * 0.06, shelf.width * 0.18, shelf.height * 0.48).fill(0xe7d39f);
+  graphic.rect(shelf.x + shelf.width * 0.72, shelf.y + shelf.height * 0.22, shelf.width * 0.18, shelf.height * 0.32).fill(0x668a9c);
+
+  scene.addChild(graphic);
+}
+
+function drawHouseCrate(scene: Container, crate: ScreenBounds): void {
+  const graphic = new Graphics();
+
+  graphic.rect(crate.x, crate.y, crate.width, crate.height).fill(0x8b5a3c);
+  graphic.rect(crate.x + crate.width * 0.12, crate.y + crate.height * 0.12, crate.width * 0.76, crate.height * 0.76).stroke({
+    color: 0x5c3a28,
+    width: 2,
+  });
+  graphic.moveTo(crate.x + crate.width * 0.14, crate.y + crate.height * 0.18);
+  graphic.lineTo(crate.x + crate.width * 0.84, crate.y + crate.height * 0.82);
+  graphic.moveTo(crate.x + crate.width * 0.84, crate.y + crate.height * 0.18);
+  graphic.lineTo(crate.x + crate.width * 0.14, crate.y + crate.height * 0.82);
+  graphic.stroke({ color: 0x5c3a28, width: 2 });
+
+  scene.addChild(graphic);
+}
+
+function drawHouseInteriorExit(scene: Container, layout: HouseInteriorScreenLayout): void {
+  const exit = worldToScreen(layout.viewport, houseInteriorExitPosition);
+  const doorway = layout.doorway;
+  const graphic = new Graphics();
+
+  graphic.rect(doorway.x, doorway.y + doorway.height * 0.34, doorway.width, doorway.height * 0.5).fill(0x2f261f);
+  graphic.rect(doorway.x, layout.southWall.y - doorway.height * 0.1, doorway.width, doorway.height * 0.22).fill(0xe7d39f);
+  graphic.rect(doorway.x, doorway.y + doorway.height * 0.18, doorway.width * 0.12, doorway.height * 0.68).fill(0x4f3328);
+  graphic
+    .rect(doorway.x + doorway.width * 0.88, doorway.y + doorway.height * 0.18, doorway.width * 0.12, doorway.height * 0.68)
+    .fill(0x4f3328);
+  graphic.rect(exit.x - doorway.width * 0.28, exit.y - doorway.height * 0.22, doorway.width * 0.56, doorway.height * 0.16).fill(0x6b422e);
 
   scene.addChild(graphic);
 }
