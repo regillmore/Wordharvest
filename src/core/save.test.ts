@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { advanceFarmTime, applyTypedWord, createFarmState } from './gameState';
 import { deserializeSave, SAVE_SCHEMA_VERSION, serializeSave } from './save';
-import { houseBedPosition } from './worldTargets';
+import { houseBedPosition, shopCounterPosition } from './worldTargets';
 
 describe('save codec', () => {
   it('round-trips a farm state with schema metadata', () => {
@@ -72,6 +72,23 @@ describe('save codec', () => {
     }
   });
 
+  it('round-trips the shop location', () => {
+    const state = {
+      ...createFarmState(),
+      location: 'shop' as const,
+      player: shopCounterPosition,
+    };
+    const result = deserializeSave(serializeSave(state));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.location).toBe('shop');
+      expect(result.state.player).toEqual(shopCounterPosition);
+      expect(result.state.bedState).toBe('none');
+      expect(result.migrated).toBe(false);
+    }
+  });
+
   it('round-trips waking in bed after sleep', () => {
     const state = {
       ...createFarmState(),
@@ -86,6 +103,25 @@ describe('save codec', () => {
       expect(result.state.location).toBe('house');
       expect(result.state.player).toEqual(houseBedPosition);
       expect(result.state.bedState).toBe('waking');
+    }
+  });
+
+  it('migrates a version 12 save into the shop interior schema', () => {
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 12,
+        savedAt: '2026-04-28T00:00:00.000Z',
+        state: {
+          ...createFarmState(),
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.location).toBe('farm');
+      expect(result.migrated).toBe(true);
     }
   });
 

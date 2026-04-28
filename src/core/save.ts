@@ -27,9 +27,9 @@ import {
 } from './gameState';
 import { isPlayerInBed, listWorldTargets, type WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 12;
+export const SAVE_SCHEMA_VERSION = 13;
 
-export interface SaveDataV12 {
+export interface SaveDataV13 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -40,7 +40,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV12 = {
+  const saveData: SaveDataV13 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -63,6 +63,10 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
+    return deserializeV13(parsed);
+  }
+
+  if (parsed.schemaVersion === 12) {
     return deserializeV12(parsed);
   }
 
@@ -153,7 +157,7 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
   };
 }
 
-function deserializeV12(data: Record<string, unknown>): LoadSaveResult {
+function deserializeV13(data: Record<string, unknown>): LoadSaveResult {
   if (typeof data.savedAt !== 'string') {
     return { ok: false, error: 'Save data is missing a saved timestamp.' };
   }
@@ -164,6 +168,19 @@ function deserializeV12(data: Record<string, unknown>): LoadSaveResult {
   }
 
   return { ok: true, state, savedAt: data.savedAt, migrated: false };
+}
+
+function deserializeV12(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function deserializeV11(data: Record<string, unknown>): LoadSaveResult {
@@ -476,7 +493,7 @@ function parseWorldPoint(value: unknown): WorldPoint | null {
 }
 
 function parseLocation(value: unknown): PlayerLocation | null {
-  return value === 'farm' || value === 'house' || value === 'town' ? value : null;
+  return value === 'farm' || value === 'house' || value === 'town' || value === 'shop' ? value : null;
 }
 
 function parseBedState(value: unknown, location: PlayerLocation, player: WorldPoint): BedState {

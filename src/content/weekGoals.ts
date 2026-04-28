@@ -51,7 +51,7 @@ export const firstWeekGoalCatalog = [
     id: 'visitTownShop',
     day: 3,
     title: 'Visit the town shop',
-    prompt: 'Type shop in town to inspect the seed shelf.',
+    prompt: 'Type shop in town to step inside the seed shop.',
     rewardCoins: 4,
     completedLog: 'Day 3 goal complete: the town shop is on your route now.',
   },

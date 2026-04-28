@@ -41,6 +41,7 @@ import {
   resolveWorldTarget,
   seedSourcePosition,
   shippingBinPosition,
+  shopInteriorExitPosition,
   townGatePosition,
   townEventPosition,
   townRequestBoardPosition,
@@ -63,6 +64,10 @@ import {
   type HouseInteriorScreenLayout,
   type ScreenBounds,
 } from './rendering/houseInteriorLayout';
+import {
+  shopInteriorScreenLayout,
+  type ShopInteriorScreenLayout,
+} from './rendering/shopInteriorLayout';
 import {
   advanceSleepTransition,
   createSleepTransition,
@@ -561,9 +566,13 @@ function syncAudioScene(): void {
 
 function audioBedsForFarm(state: FarmState): AudioBedSelection {
   const music =
-    state.location === 'town' ? (townEventForDay(state.day) ? 'festivalMusic' : 'townMusic') : 'farmMusic';
+    state.location === 'town' || state.location === 'shop'
+      ? (townEventForDay(state.day) ? 'festivalMusic' : 'townMusic')
+      : 'farmMusic';
   const ambience =
-    state.location === 'house' ? 'indoorAmbience' : weatherDefinition(state.weather).watersCrops ? 'rainAmbience' : 'springAmbience';
+    state.location === 'house' || state.location === 'shop'
+      ? 'indoorAmbience'
+      : weatherDefinition(state.weather).watersCrops ? 'rainAmbience' : 'springAmbience';
 
   return {
     music,
@@ -631,6 +640,10 @@ function visualCueText(cue: AudioCue): string {
 function createScene(state: FarmState, typedWord: string): Container {
   if (state.location === 'house') {
     return createHouseInterior(state, typedWord);
+  }
+
+  if (state.location === 'shop') {
+    return createShopInterior(state, typedWord);
   }
 
   if (state.location === 'town') {
@@ -737,6 +750,147 @@ function createHouseInterior(state: FarmState, typedWord: string): Container {
   drawTargets(scene, viewport, listWorldTargets(state));
 
   return scene;
+}
+
+function createShopInterior(state: FarmState, typedWord: string): Container {
+  const scene = new Container();
+  const width = app.renderer.width;
+  const height = app.renderer.height;
+  const layout = shopInteriorScreenLayout(width, height);
+  const { viewport } = layout;
+
+  scene.addChild(rect(0, 0, width, height, 0x2e2a24));
+  drawShopInteriorShell(scene, layout);
+  drawFloorboards(scene, layout.floor, viewport.scale);
+  drawShopWallShelves(scene, layout);
+  drawShopRug(scene, layout.rug);
+  drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
+  drawShopSeedBins(scene, layout.seedBins);
+  drawShopUpgradeDisplay(scene, layout.upgradeDisplay);
+  drawShopCounter(scene, layout.counter);
+  drawHouseCrate(scene, layout.crate);
+  drawShopInteriorExit(scene, layout);
+  drawPlayer(scene, viewport, state);
+  drawTargets(scene, viewport, listWorldTargets(state));
+
+  return scene;
+}
+
+function drawShopInteriorShell(scene: Container, layout: ShopInteriorScreenLayout): void {
+  const graphic = new Graphics();
+  const floor = layout.floor;
+  const doorway = layout.doorway;
+  const southWall = layout.southWall;
+  const leftSouthWallWidth = Math.max(0, doorway.x - southWall.x);
+  const rightSouthWallX = doorway.x + doorway.width;
+  const rightSouthWallWidth = Math.max(0, southWall.x + southWall.width - rightSouthWallX);
+
+  graphic.rect(floor.x, floor.y, floor.width, floor.height).fill(0xc8a769);
+  graphic.rect(layout.northWall.x, layout.northWall.y, layout.northWall.width, layout.northWall.height).fill(0x766448);
+  graphic.rect(layout.westWall.x, layout.westWall.y, layout.westWall.width, layout.westWall.height).fill(0x5f503c);
+  graphic.rect(layout.eastWall.x, layout.eastWall.y, layout.eastWall.width, layout.eastWall.height).fill(0x5f503c);
+  graphic.rect(floor.x, floor.y - layout.viewport.scale * 0.08, floor.width, layout.viewport.scale * 0.1).fill(0x384f43);
+  graphic.rect(southWall.x, southWall.y, leftSouthWallWidth, southWall.height).fill(0x5f503c);
+  graphic.rect(rightSouthWallX, southWall.y, rightSouthWallWidth, southWall.height).fill(0x5f503c);
+  graphic.rect(southWall.x, southWall.y, southWall.width, southWall.height).stroke({
+    color: 0x3f3528,
+    alpha: 0.36,
+    width: 2,
+  });
+
+  scene.addChild(graphic);
+}
+
+function drawShopWallShelves(scene: Container, layout: ShopInteriorScreenLayout): void {
+  const graphic = new Graphics();
+
+  drawShopShelfGraphic(graphic, layout.leftShelf, [0xd85f4f, 0xf4d35e, 0x9bd07a]);
+  drawShopShelfGraphic(graphic, layout.rightShelf, [0x668a9c, 0xf7a8a3, 0xe7d39f]);
+  scene.addChild(graphic);
+}
+
+function drawShopShelfGraphic(graphic: Graphics, shelf: ScreenBounds, packetColors: readonly number[]): void {
+  graphic.rect(shelf.x, shelf.y + shelf.height * 0.62, shelf.width, shelf.height * 0.16).fill(0x4f3328);
+  graphic.rect(shelf.x + shelf.width * 0.04, shelf.y + shelf.height * 0.78, shelf.width * 0.92, shelf.height * 0.1).fill(0x2f261f);
+
+  for (let index = 0; index < packetColors.length; index += 1) {
+    const packetWidth = shelf.width * 0.16;
+    const packetHeight = shelf.height * 0.46;
+    const x = shelf.x + shelf.width * (0.16 + index * 0.28);
+    const y = shelf.y + shelf.height * (0.2 - (index % 2) * 0.06);
+
+    graphic.rect(x, y, packetWidth, packetHeight).fill(packetColors[index] ?? 0xe7d39f);
+    graphic.rect(x + packetWidth * 0.18, y + packetHeight * 0.18, packetWidth * 0.64, packetHeight * 0.1).fill(0xfff5cf);
+  }
+}
+
+function drawShopRug(scene: Container, rug: ScreenBounds): void {
+  const graphic = new Graphics();
+
+  graphic.roundRect(rug.x, rug.y, rug.width, rug.height, 5).fill(0x384f43);
+  graphic.rect(rug.x + rug.width * 0.1, rug.y + rug.height * 0.16, rug.width * 0.8, rug.height * 0.68).fill(0x668a9c);
+  graphic.rect(rug.x + rug.width * 0.18, rug.y + rug.height * 0.32, rug.width * 0.64, rug.height * 0.1).fill(0xe7d39f);
+  graphic.rect(rug.x + rug.width * 0.18, rug.y + rug.height * 0.58, rug.width * 0.64, rug.height * 0.1).fill(0xf4d35e);
+
+  scene.addChild(graphic);
+}
+
+function drawShopSeedBins(scene: Container, bins: ScreenBounds): void {
+  const graphic = new Graphics();
+  const binWidth = bins.width * 0.28;
+  const colors = [0x8f5f34, 0xd85f4f, 0x9bd07a] as const;
+
+  for (let index = 0; index < colors.length; index += 1) {
+    const x = bins.x + bins.width * 0.04 + index * binWidth * 1.12;
+
+    graphic.rect(x, bins.y + bins.height * 0.26, binWidth, bins.height * 0.58).fill(0x7b4e2c);
+    graphic.rect(x + binWidth * 0.08, bins.y + bins.height * 0.16, binWidth * 0.84, bins.height * 0.18).fill(0xe7d39f);
+    graphic.circle(x + binWidth * 0.5, bins.y + bins.height * 0.46, binWidth * 0.19).fill(colors[index]);
+    graphic.rect(x + binWidth * 0.2, bins.y + bins.height * 0.68, binWidth * 0.6, bins.height * 0.08).fill(0x4f3328);
+  }
+
+  scene.addChild(graphic);
+}
+
+function drawShopUpgradeDisplay(scene: Container, display: ScreenBounds): void {
+  const graphic = new Graphics();
+
+  graphic.rect(display.x, display.y + display.height * 0.18, display.width, display.height * 0.62).fill(0x7b4e2c);
+  graphic.rect(display.x + display.width * 0.1, display.y + display.height * 0.3, display.width * 0.8, display.height * 0.1).fill(0xe7d39f);
+  graphic.rect(display.x + display.width * 0.44, display.y, display.width * 0.12, display.height * 0.62).fill(0x668a9c);
+  graphic.ellipse(display.x + display.width * 0.5, display.y + display.height * 0.72, display.width * 0.22, display.height * 0.12).fill(0x8dccd8);
+  graphic.rect(display.x + display.width * 0.18, display.y + display.height * 0.84, display.width * 0.64, display.height * 0.08).fill(0x4f3328);
+
+  scene.addChild(graphic);
+}
+
+function drawShopCounter(scene: Container, counter: ScreenBounds): void {
+  const graphic = new Graphics();
+
+  graphic.rect(counter.x, counter.y + counter.height * 0.18, counter.width, counter.height * 0.72).fill(0x6d4b36);
+  graphic.rect(counter.x + counter.width * 0.06, counter.y, counter.width * 0.88, counter.height * 0.26).fill(0xe7d39f);
+  graphic.rect(counter.x + counter.width * 0.12, counter.y + counter.height * 0.42, counter.width * 0.22, counter.height * 0.12).fill(0xf4d35e);
+  graphic.rect(counter.x + counter.width * 0.46, counter.y + counter.height * 0.38, counter.width * 0.18, counter.height * 0.18).fill(0x384f43);
+  graphic.circle(counter.x + counter.width * 0.78, counter.y + counter.height * 0.48, counter.height * 0.11).fill(0xc98c42);
+  graphic.rect(counter.x + counter.width * 0.08, counter.y + counter.height * 0.78, counter.width * 0.84, counter.height * 0.08).fill(0x4f3328);
+
+  scene.addChild(graphic);
+}
+
+function drawShopInteriorExit(scene: Container, layout: ShopInteriorScreenLayout): void {
+  const exit = worldToScreen(layout.viewport, shopInteriorExitPosition);
+  const doorway = layout.doorway;
+  const graphic = new Graphics();
+
+  graphic.rect(doorway.x, doorway.y + doorway.height * 0.34, doorway.width, doorway.height * 0.5).fill(0x242320);
+  graphic.rect(doorway.x, layout.southWall.y - doorway.height * 0.1, doorway.width, doorway.height * 0.22).fill(0xe7d39f);
+  graphic.rect(doorway.x, doorway.y + doorway.height * 0.18, doorway.width * 0.12, doorway.height * 0.68).fill(0x384f43);
+  graphic
+    .rect(doorway.x + doorway.width * 0.88, doorway.y + doorway.height * 0.18, doorway.width * 0.12, doorway.height * 0.68)
+    .fill(0x384f43);
+  graphic.rect(exit.x - doorway.width * 0.28, exit.y - doorway.height * 0.22, doorway.width * 0.56, doorway.height * 0.16).fill(0x6b422e);
+
+  scene.addChild(graphic);
 }
 
 function drawHouseInteriorShell(scene: Container, layout: HouseInteriorScreenLayout): void {

@@ -100,7 +100,8 @@ test('travels between the farm and town edge through typed labels', async ({ pag
 
   await page.keyboard.type('shop');
   await page.keyboard.press('Enter');
-  await expect(page.getByText(/The shop shelf is open:/)).toBeVisible();
+  await expect(page.getByText("Stepped into Mira's seed shop.")).toBeVisible();
+  await expect(page.locator('#word-preview')).toContainText('outside');
   await expect(page.locator('#word-preview')).toContainText('radish');
   await expect(page.locator('#word-preview')).toContainText('carrot');
   await expect(page.locator('#word-preview')).toContainText('can');
@@ -112,7 +113,7 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await expect(page.locator('#coin-value')).toHaveText('26');
   await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds, 2 radish seeds');
   await expect(page.locator('#collection-value')).toHaveText(
-    /Crops 2\/10 found, 0\/10 shipped; Words 27\/\d+ found, 5\/\d+ used/,
+    /Crops 2\/10 found, 0\/10 shipped; Words 28\/\d+ found, 5\/\d+ used/,
   );
   await expect(page.locator('#achievement-value')).toHaveText('Achievements: 2/5 unlocked');
 
@@ -122,6 +123,10 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await expect(page.getByText('Day 6 goal complete: the tin watering can is ready. Reward: 8 coins.')).toBeVisible();
   await expect(page.locator('#coin-value')).toHaveText('22');
   await expect(page.locator('#can-value')).toHaveText('Tin');
+
+  await page.keyboard.type('outside');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Stepped back onto the town lane.')).toBeVisible();
 
   await page.keyboard.type('hello');
   await page.keyboard.press('Enter');
@@ -138,7 +143,7 @@ test('travels between the farm and town edge through typed labels', async ({ pag
   await expect(page.getByText('Planted radish seeds.')).toBeVisible();
   await expect(page.locator('#seed-value')).toHaveText('3 turnip seeds, 1 radish seed');
   await expect(page.locator('#collection-value')).toHaveText(
-    /Crops 2\/10 found, 0\/10 shipped; Words 28\/\d+ found, 8\/\d+ used/,
+    /Crops 2\/10 found, 0\/10 shipped; Words 29\/\d+ found, 9\/\d+ used/,
   );
   await expect(page.locator('#achievement-value')).toHaveText('Achievements: 3/5 unlocked');
 });
@@ -361,7 +366,7 @@ function completedSpringBasketSave(): string {
   };
 
   return JSON.stringify({
-    schemaVersion: 12,
+    schemaVersion: 13,
     savedAt: '2026-04-25T00:00:00.000Z',
     state: {
       day: 8,

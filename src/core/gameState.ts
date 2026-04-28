@@ -12,7 +12,6 @@ import {
   cropCountsWith,
   cropDefinition,
   emptyCropCounts,
-  shopWordForCrop,
   stageForCropGrowth,
   starterCropId,
   type CropDefinition,
@@ -49,8 +48,6 @@ import {
 } from '../content/dailyRequests';
 import {
   emptyUpgradeFlags,
-  shopWordForUpgrade,
-  upgradeCatalog,
   upgradeDefinition,
   type UpgradeFlags,
   type UpgradeId,
@@ -94,13 +91,14 @@ import {
   isPlayerInBed,
   listWorldTargets,
   resolveWorldTarget,
+  shopInteriorEntryPosition,
   townArrivalPosition,
   type WorldPoint,
   type WorldTargetAction,
 } from './worldTargets';
 
 export type CropStage = 'empty' | CropGrowthStage;
-export type PlayerLocation = 'farm' | 'house' | 'town';
+export type PlayerLocation = 'farm' | 'house' | 'town' | 'shop';
 export type BedState = 'none' | 'tucked' | 'waking';
 
 export type Inventory = CropCounts;
@@ -378,6 +376,31 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     );
   }
 
+  if (action.kind === 'enter-shop') {
+    return withActionLogs(
+      {
+        ...state,
+        location: 'shop',
+        player: shopInteriorEntryPosition,
+        bedState: 'none',
+      },
+      ["Stepped into Mira's seed shop."],
+      ['visitTownShop'],
+    );
+  }
+
+  if (action.kind === 'exit-shop') {
+    return withLog(
+      {
+        ...state,
+        location: 'town',
+        player: action.townDestination,
+        bedState: 'none',
+      },
+      'Stepped back onto the town lane.',
+    );
+  }
+
   if (action.kind === 'ship-inventory') {
     return shipInventory(state);
   }
@@ -388,10 +411,6 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
 
   if (action.kind === 'buy-upgrade') {
     return buyUpgrade(state, action.upgrade);
-  }
-
-  if (action.kind === 'visit-shop') {
-    return withActionLogs(state, [`The shop shelf is open: ${shopWordSummary(state)}.`], ['visitTownShop']);
   }
 
   if (action.kind === 'talk-villager') {
@@ -917,20 +936,6 @@ function cropCountSummary(
 
 function singularItemName(name: string): string {
   return name.endsWith('s') ? name.slice(0, -1) : name;
-}
-
-function shopWordSummary(state: FarmState): string {
-  const words = cropCatalog.map((crop) => shopWordForCrop(crop.id));
-  const upgradeWords = upgradeCatalog
-    .filter((upgrade) => !state.upgrades[upgrade.id])
-    .map((upgrade) => shopWordForUpgrade(upgrade.id));
-  const shopWords = [...words, ...upgradeWords];
-
-  if (shopWords.length <= 1) {
-    return shopWords.join('');
-  }
-
-  return `${shopWords.slice(0, -1).join(', ')}, or ${shopWords[shopWords.length - 1]}`;
 }
 
 function wateringStaminaCost(state: FarmState): number {

@@ -49,7 +49,7 @@ Complete when:
 
 - [x] Spring has 10-15 crop definitions with growth times, prices, and word tags.
 - [x] Spring crop catalog schema exists with the first four crop definitions and validation coverage.
-- [x] The town shop sells crop seed packets through typed crop labels.
+- [x] The town shop sells crop seed packets through typed crop labels inside a compact shop interior.
 - [x] Weather changes crop planning through visible forecasts and rainy dawn watering.
 - [x] A shop sells seeds and at least one upgrade.
 - [x] The player has a first-season objective with progress tracking.

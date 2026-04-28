@@ -26,7 +26,8 @@ export type WorldTargetAction =
   | { kind: 'leave-bed'; destination: WorldPoint }
   | { kind: 'enter-town'; destination: WorldPoint }
   | { kind: 'return-farm'; destination: WorldPoint }
-  | { kind: 'visit-shop' }
+  | { kind: 'enter-shop'; destination: WorldPoint }
+  | { kind: 'exit-shop'; destination: WorldPoint; townDestination: WorldPoint }
   | { kind: 'talk-villager' }
   | { kind: 'read-request-board'; destination: WorldPoint }
   | { kind: 'join-town-event'; event: TownEventId; destination: WorldPoint }
@@ -63,6 +64,9 @@ export const townGatePosition: WorldPoint = { x: 0, y: 6 };
 export const townArrivalPosition: WorldPoint = { x: 0, y: 5.6 };
 export const farmReturnPosition: WorldPoint = { x: 0, y: 5.7 };
 export const townShopPosition: WorldPoint = { x: -2, y: 5.1 };
+export const shopInteriorEntryPosition: WorldPoint = { x: 0, y: 4.25 };
+export const shopInteriorExitPosition: WorldPoint = { x: 0, y: 4.6 };
+export const shopCounterPosition: WorldPoint = { x: 0, y: 2.85 };
 export const townRequestBoardPosition: WorldPoint = { x: -0.82, y: 5.08 };
 export const townEventPosition: WorldPoint = { x: 0.78, y: 5.05 };
 export const townVillagerPosition: WorldPoint = { x: 2, y: 5.15 };
@@ -73,8 +77,8 @@ const cropActionRange = 2.15;
 const shippingBinRange = 3.2;
 const seedSourceRange = 4;
 const townGateRange = 4.8;
-const shopShelfRange = 1.2;
 
+const shopShelfLabelOrigin: WorldPoint = { x: 0, y: 3.32 };
 const shopUpgradeLabelOffsets: readonly WorldPoint[] = [{ x: 1.55, y: 0.21 }];
 
 export function listWorldTargets(state: FarmState): WorldTarget[] {
@@ -84,6 +88,10 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
 
   if (state.location === 'house') {
     return withMenuTargets(state, houseInteriorTargets(state));
+  }
+
+  if (state.location === 'shop') {
+    return withMenuTargets(state, shopInteriorTargets(state));
   }
 
   if (state.location === 'town') {
@@ -104,7 +112,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
         label: primaryWordForTargetRole('town-shop'),
         position: townShopPosition,
         distance: distanceBetween(state.player, townShopPosition),
-        action: { kind: 'visit-shop' },
+        action: { kind: 'enter-shop', destination: townShopPosition },
       },
       {
         id: 'town-request-board',
@@ -144,11 +152,6 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
         distance: distanceBetween(state.player, townVillagerPosition),
         action: { kind: 'complete-daily-request', destination: townVillagerPosition },
       });
-    }
-
-    if (distanceBetween(state.player, townShopPosition) <= shopShelfRange) {
-      townTargets.push(...shopSeedTargets(state.player));
-      townTargets.push(...shopUpgradeTargets(state.player));
     }
 
     return withMenuTargets(state, townTargets);
@@ -256,6 +259,8 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
     target.action.kind === 'leave-bed' ||
     target.action.kind === 'enter-town' ||
     target.action.kind === 'return-farm' ||
+    target.action.kind === 'enter-shop' ||
+    target.action.kind === 'exit-shop' ||
     target.action.kind === 'read-request-board' ||
     target.action.kind === 'join-town-event' ||
     target.action.kind === 'complete-daily-request' ||
@@ -332,6 +337,27 @@ function houseInteriorTargets(state: FarmState): WorldTarget[] {
   ];
 }
 
+function shopInteriorTargets(state: FarmState): WorldTarget[] {
+  const player = state.player;
+
+  return [
+    {
+      id: 'shop-exit',
+      word: primaryWordForTargetRole('exit-outside'),
+      label: primaryWordForTargetRole('exit-outside'),
+      position: { x: shopInteriorExitPosition.x + 0.68, y: shopInteriorExitPosition.y - 0.08 },
+      distance: distanceBetween(player, shopInteriorExitPosition),
+      action: {
+        kind: 'exit-shop',
+        destination: shopInteriorExitPosition,
+        townDestination: townShopPosition,
+      },
+    },
+    ...shopSeedTargets(player, shopShelfLabelOrigin, shopCounterPosition, 'shop'),
+    ...shopUpgradeTargets(player, shopShelfLabelOrigin, shopCounterPosition, 'shop'),
+  ];
+}
+
 function withMenuTargets(state: FarmState, targets: WorldTarget[]): WorldTarget[] {
   const menuTargets = [
     menuTarget(state.player, 'open-journal', 'journal', -0.88),
@@ -360,22 +386,27 @@ function menuTarget(
   };
 }
 
-function shopSeedTargets(player: WorldPoint): WorldTarget[] {
+function shopSeedTargets(
+  player: WorldPoint,
+  labelOrigin: WorldPoint,
+  destination: WorldPoint,
+  idPrefix: string,
+): WorldTarget[] {
   return cropCatalog.map((crop, index) => {
     const offset = shopSeedLabelOffset(index);
     const position = {
-      x: townShopPosition.x + offset.x,
-      y: townShopPosition.y + offset.y,
+      x: labelOrigin.x + offset.x,
+      y: labelOrigin.y + offset.y,
     };
     const word = shopWordForCrop(crop.id);
 
     return {
-      id: `town-shop-seeds-${crop.id}`,
+      id: `${idPrefix}-seeds-${crop.id}`,
       word,
       label: word,
       position,
-      distance: distanceBetween(player, townShopPosition),
-      action: { kind: 'buy-seeds', crop: crop.id, destination: townShopPosition },
+      distance: distanceBetween(player, destination),
+      action: { kind: 'buy-seeds', crop: crop.id, destination },
     };
   });
 }
@@ -391,22 +422,27 @@ function shopSeedLabelOffset(index: number): WorldPoint {
   };
 }
 
-function shopUpgradeTargets(player: WorldPoint): WorldTarget[] {
+function shopUpgradeTargets(
+  player: WorldPoint,
+  labelOrigin: WorldPoint,
+  destination: WorldPoint,
+  idPrefix: string,
+): WorldTarget[] {
   return upgradeCatalog.map((upgrade, index) => {
     const offset = shopUpgradeLabelOffsets[index % shopUpgradeLabelOffsets.length] ?? { x: 0, y: 0 };
     const position = {
-      x: townShopPosition.x + offset.x,
-      y: townShopPosition.y + offset.y,
+      x: labelOrigin.x + offset.x,
+      y: labelOrigin.y + offset.y,
     };
     const word = shopWordForUpgrade(upgrade.id);
 
     return {
-      id: `town-shop-upgrade-${upgrade.id}`,
+      id: `${idPrefix}-upgrade-${upgrade.id}`,
       word,
       label: word,
       position,
-      distance: distanceBetween(player, townShopPosition),
-      action: { kind: 'buy-upgrade', upgrade: upgrade.id, destination: townShopPosition },
+      distance: distanceBetween(player, destination),
+      action: { kind: 'buy-upgrade', upgrade: upgrade.id, destination },
     };
   });
 }

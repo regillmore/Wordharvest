@@ -11,6 +11,9 @@ import {
   houseInteriorExitPosition,
   houseWakePosition,
   listWorldTargets,
+  shopCounterPosition,
+  shopInteriorEntryPosition,
+  shopInteriorExitPosition,
   townShopPosition,
 } from './worldTargets';
 
@@ -120,6 +123,10 @@ describe('world targets', () => {
       'pack',
       'options',
     ]);
+    expect(listWorldTargets(townState).find((target) => target.word === 'shop')?.action).toEqual({
+      kind: 'enter-shop',
+      destination: townShopPosition,
+    });
   });
 
   it('keeps the town landmark visible from the farmhouse approach', () => {
@@ -221,34 +228,41 @@ describe('world targets', () => {
     expect(listWorldTargets(attendedState).map((target) => target.word)).not.toContain('festival');
   });
 
-  it('shows crop purchase words when the player is at the town shop shelf', () => {
+  it('shows crop purchase words inside the town shop interior', () => {
     const shopState: FarmState = {
       ...createFarmState(),
-      location: 'town',
-      player: townShopPosition,
+      location: 'shop',
+      player: shopInteriorEntryPosition,
     };
     const targets = listWorldTargets(shopState);
     const words = targets.map((target) => target.word);
     const radishTarget = targets.find((target) => target.word === 'radish');
     const canTarget = targets.find((target) => target.word === 'can');
-    const seedTargets = targets.filter((target) => target.id.startsWith('town-shop-seeds-'));
+    const outsideTarget = targets.find((target) => target.word === 'outside');
+    const seedTargets = targets.filter((target) => target.id.startsWith('shop-seeds-'));
     const seedPositions = new Set(seedTargets.map((target) => `${target.position.x},${target.position.y}`));
 
     expect(words).toEqual(
-      expect.arrayContaining([...cropCatalog.map((crop) => shopWordForCrop(crop.id)), 'can']),
+      expect.arrayContaining(['outside', ...cropCatalog.map((crop) => shopWordForCrop(crop.id)), 'can']),
     );
+    expect(words).not.toContain('farm');
     expect(seedTargets).toHaveLength(cropCatalog.length);
     expect(seedPositions.size).toBe(cropCatalog.length);
     expect(seedPositions.has(`${canTarget?.position.x},${canTarget?.position.y}`)).toBe(false);
+    expect(outsideTarget?.action).toEqual({
+      kind: 'exit-shop',
+      destination: shopInteriorExitPosition,
+      townDestination: townShopPosition,
+    });
     expect(radishTarget?.action).toEqual({
       kind: 'buy-seeds',
       crop: 'radish',
-      destination: townShopPosition,
+      destination: shopCounterPosition,
     });
     expect(canTarget?.action).toEqual({
       kind: 'buy-upgrade',
       upgrade: 'wateringCan',
-      destination: townShopPosition,
+      destination: shopCounterPosition,
     });
   });
 

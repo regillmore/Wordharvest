@@ -10,7 +10,15 @@ import {
   seedInventorySummary,
   type FarmState,
 } from './gameState';
-import { houseBedPosition, houseExitPosition, houseInteriorEntryPosition, houseWakePosition } from './worldTargets';
+import {
+  houseBedPosition,
+  houseExitPosition,
+  houseInteriorEntryPosition,
+  houseWakePosition,
+  shopCounterPosition,
+  shopInteriorEntryPosition,
+  townShopPosition,
+} from './worldTargets';
 
 describe('farm state', () => {
   it('starts with current weather and a next-day forecast', () => {
@@ -265,12 +273,18 @@ describe('farm state', () => {
     );
 
     state = settleAction(applyTypedWord(state, 'shop'));
-    expect(state.location).toBe('town');
+    expect(state.location).toBe('shop');
+    expect(state.player).toEqual(shopInteriorEntryPosition);
     expect(state.weekGoals.visitTownShop).toBe(true);
-    expect(state.log[0]).toMatch(/^The shop shelf is open:/);
-    expect(state.log[0]).toContain('turnip');
-    expect(state.log[0]).toContain('spinach');
-    expect(state.log[0]).toContain('can');
+    expect(state.log[0]).toBe("Stepped into Mira's seed shop.");
+    expect(state.collectionLog.discoveredWords.outside).toBe(true);
+    expect(state.collectionLog.discoveredWords.radish).toBe(true);
+    expect(state.collectionLog.discoveredWords.can).toBe(true);
+
+    state = settleAction(applyTypedWord(state, 'outside'));
+    expect(state.location).toBe('town');
+    expect(state.player).toEqual(townShopPosition);
+    expect(state.log[0]).toBe('Stepped back onto the town lane.');
 
     state = settleAction(applyTypedWord(state, 'hello'));
     expect(state.location).toBe('town');
@@ -345,7 +359,10 @@ describe('farm state', () => {
     state = settleAction(applyTypedWord(state, 'shop'));
     state = applyTypedWord(state, 'radish');
 
-    expect(state.pendingAction).toBeNull();
+    expect(state.pendingAction?.label).toBe('radish');
+    state = settleAction(state);
+    expect(state.location).toBe('shop');
+    expect(state.player).toEqual(shopCounterPosition);
     expect(state.coins).toBe(26);
     expect(state.seeds.radish).toBe(2);
     expect(state.weekGoals.buySpringSeeds).toBe(true);
@@ -372,7 +389,7 @@ describe('farm state', () => {
     let state = settleAction(applyTypedWord(createFarmState(), 'town'));
 
     state = settleAction(applyTypedWord(state, 'shop'));
-    state = applyTypedWord(state, 'can');
+    state = settleAction(applyTypedWord(state, 'can'));
 
     expect(state.coins).toBe(25);
     expect(state.upgrades.wateringCan).toBe(true);
@@ -385,6 +402,7 @@ describe('farm state', () => {
     expect(state.coins).toBe(25);
     expect(state.log[0]).toBe('The tin watering can is already yours.');
 
+    state = settleAction(applyTypedWord(state, 'outside'));
     state = settleAction(applyTypedWord(state, 'farm'));
     state = settleAction(applyTypedWord(state, 'seed'));
     state = settleAction(applyTypedWord(state, 'water'));
@@ -441,7 +459,7 @@ describe('farm state', () => {
     expect(state.forecast).toBe('sunny');
     expect(state.plots[4].wateredToday).toBe(true);
     expect(state.log[0]).toBe(
-      'Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny. Goal: Visit the town shop. Type shop in town to inspect the seed shelf. Reward: 4 coins. Request: Mira wants 1 carrot for Carrot Bundle. Type order in town to deliver. Reward: 8 coins. Event: Spring Market Day arrives in 4 days.',
+      'Day 3 dawns with rain. Rain watered planted crops. Tomorrow: sunny. Goal: Visit the town shop. Type shop in town to step inside the seed shop. Reward: 4 coins. Request: Mira wants 1 carrot for Carrot Bundle. Type order in town to deliver. Reward: 8 coins. Event: Spring Market Day arrives in 4 days.',
     );
   });
 

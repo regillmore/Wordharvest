@@ -62,11 +62,11 @@ export function playerDirectionAfterCompletedAction(
   action: WorldTargetAction,
   fallback: PlayerDirection,
 ): PlayerDirection {
-  if (action.kind === 'enter-house') {
+  if (action.kind === 'enter-house' || action.kind === 'enter-shop') {
     return 'up';
   }
 
-  if (action.kind === 'exit-house') {
+  if (action.kind === 'exit-house' || action.kind === 'exit-shop') {
     return 'down';
   }
 

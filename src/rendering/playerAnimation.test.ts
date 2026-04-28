@@ -34,11 +34,18 @@ describe('player animation', () => {
     ).toBe('up');
   });
 
-  it('uses authored facing after farmhouse scene transitions', () => {
+  it('uses authored facing after interior scene transitions', () => {
     expect(playerDirectionAfterCompletedAction({ kind: 'enter-house' }, 'down')).toBe('up');
     expect(
       playerDirectionAfterCompletedAction(
         { kind: 'exit-house', destination: { x: 0, y: 4.6 }, farmDestination: { x: 0, y: 1.9 } },
+        'up',
+      ),
+    ).toBe('down');
+    expect(playerDirectionAfterCompletedAction({ kind: 'enter-shop', destination: { x: -2, y: 5.1 } }, 'down')).toBe('up');
+    expect(
+      playerDirectionAfterCompletedAction(
+        { kind: 'exit-shop', destination: { x: 0, y: 4.6 }, townDestination: { x: -2, y: 5.1 } },
         'up',
       ),
     ).toBe('down');
