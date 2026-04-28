@@ -144,8 +144,15 @@ describe('world targets', () => {
     const inBedTargets = listWorldTargets({
       ...houseState,
       player: houseBedPosition,
+      bedState: 'tucked',
+    });
+    const wakingTargets = listWorldTargets({
+      ...houseState,
+      player: houseBedPosition,
+      bedState: 'waking',
     });
     const inBedWords = inBedTargets.map((target) => target.word);
+    const wakingWords = wakingTargets.map((target) => target.word);
     const sleepTarget = inBedTargets.find((target) => target.word === 'sleep');
     const riseTarget = inBedTargets.find((target) => target.word === 'rise');
 
@@ -166,6 +173,8 @@ describe('world targets', () => {
     expect(inBedWords).toEqual(expect.arrayContaining(['sleep', 'rise']));
     expect(inBedWords).not.toContain('bed');
     expect(inBedWords).not.toContain('outside');
+    expect(wakingWords).toEqual(expect.arrayContaining(['rise']));
+    expect(wakingWords).not.toContain('sleep');
     expect(sleepTarget?.action).toEqual({
       kind: 'sleep-bed',
       destination: houseBedPosition,

@@ -83,7 +83,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
   }
 
   if (state.location === 'house') {
-    return withMenuTargets(state, houseInteriorTargets(state.player));
+    return withMenuTargets(state, houseInteriorTargets(state));
   }
 
   if (state.location === 'town') {
@@ -278,8 +278,23 @@ export function isPlayerInBed(player: WorldPoint): boolean {
   return distanceBetween(player, houseBedPosition) < 0.01;
 }
 
-function houseInteriorTargets(player: WorldPoint): WorldTarget[] {
+function houseInteriorTargets(state: FarmState): WorldTarget[] {
+  const player = state.player;
+
   if (isPlayerInBed(player)) {
+    const riseTarget: WorldTarget = {
+      id: 'house-bed-rise',
+      word: primaryWordForTargetRole('leave-bed'),
+      label: primaryWordForTargetRole('leave-bed'),
+      position: { x: houseBedPosition.x + 0.48, y: houseBedPosition.y + 0.08 },
+      distance: 0,
+      action: { kind: 'leave-bed', destination: houseWakePosition },
+    };
+
+    if (state.bedState === 'waking') {
+      return [riseTarget];
+    }
+
     return [
       {
         id: 'house-bed-sleep',
@@ -289,14 +304,7 @@ function houseInteriorTargets(player: WorldPoint): WorldTarget[] {
         distance: 0,
         action: { kind: 'sleep-bed', destination: houseBedPosition },
       },
-      {
-        id: 'house-bed-rise',
-        word: primaryWordForTargetRole('leave-bed'),
-        label: primaryWordForTargetRole('leave-bed'),
-        position: { x: houseBedPosition.x + 0.48, y: houseBedPosition.y + 0.08 },
-        distance: 0,
-        action: { kind: 'leave-bed', destination: houseWakePosition },
-      },
+      riseTarget,
     ];
   }
 

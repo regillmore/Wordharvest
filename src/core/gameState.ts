@@ -101,6 +101,7 @@ import {
 
 export type CropStage = 'empty' | CropGrowthStage;
 export type PlayerLocation = 'farm' | 'house' | 'town';
+export type BedState = 'none' | 'tucked' | 'waking';
 
 export type Inventory = CropCounts;
 
@@ -127,6 +128,7 @@ export interface FarmState {
   stamina: number;
   player: WorldPoint;
   location: PlayerLocation;
+  bedState: BedState;
   weather: WeatherId;
   forecast: WeatherId;
   pendingAction: PendingWorldAction | null;
@@ -156,6 +158,7 @@ export function createFarmState(): FarmState {
     stamina: 10,
     player: startingPlayerPosition,
     location: 'farm',
+    bedState: 'none',
     weather: weatherForDay(startingDay),
     forecast: forecastForDay(startingDay),
     pendingAction: null,
@@ -305,6 +308,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
         ...state,
         location: 'house',
         player: houseInteriorEntryPosition,
+        bedState: 'none',
       },
       'Opened the farmhouse door and stepped inside.',
     );
@@ -316,6 +320,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
         ...state,
         location: 'farm',
         player: action.farmDestination,
+        bedState: 'none',
       },
       'Stepped back into the farmyard.',
     );
@@ -327,6 +332,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
         ...state,
         location: 'house',
         player: action.destination,
+        bedState: 'tucked',
       },
       'Settled into bed. Type sleep to end the day, or rise to get back up.',
     );
@@ -342,6 +348,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
         ...state,
         location: 'house',
         player: action.destination,
+        bedState: 'none',
       },
       'Got back out of bed.',
     );
@@ -353,6 +360,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
         ...state,
         location: 'town',
         player: townArrivalPosition,
+        bedState: 'none',
       },
       'Followed the south path toward town.',
     );
@@ -364,6 +372,7 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
         ...state,
         location: 'farm',
         player: farmReturnPosition,
+        bedState: 'none',
       },
       'Walked back up the lane to the farm.',
     );
@@ -486,7 +495,7 @@ export function advanceDay(state: FarmState): FarmState {
     return withLog(state, `Finish walking to ${state.pendingAction.label} before sleeping.`);
   }
 
-  return advanceToNextDawn(state, { location: 'farm' });
+  return advanceToNextDawn(state, { location: 'farm', bedState: 'none' });
 }
 
 export function sleepInFarmhouseBed(state: FarmState): FarmState {
@@ -498,23 +507,28 @@ export function sleepInFarmhouseBed(state: FarmState): FarmState {
     return withLog(state, 'Get into bed before sleeping.');
   }
 
+  if (state.bedState === 'waking') {
+    return withLog(state, 'Rise from bed before sleeping again.');
+  }
+
   const tuckedInState = withLog(
     {
       ...state,
       location: 'house',
     },
-    'Slept in the farmhouse bed.',
+    'Slept in the farmhouse bed. Type rise when you are ready to start the day.',
   );
 
   return advanceToNextDawn(tuckedInState, {
     location: 'house',
-    player: houseWakePosition,
+    player: state.player,
+    bedState: 'waking',
   });
 }
 
 function advanceToNextDawn(
   state: FarmState,
-  wakePatch: Partial<Pick<FarmState, 'location' | 'player'>>,
+  wakePatch: Partial<Pick<FarmState, 'location' | 'player' | 'bedState'>>,
 ): FarmState {
   const nextDay = state.day + 1;
   const weather = state.forecast;

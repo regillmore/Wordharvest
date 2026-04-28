@@ -68,6 +68,13 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await page.keyboard.press('Enter');
   await expect(page.getByText('Slept in the farmhouse bed.')).toBeVisible();
   await expect(page.locator('#day-value')).toHaveText('2');
+  await expect(page.locator('#word-preview')).toContainText('rise');
+  await expect(page.locator('#word-preview')).not.toContainText('sleep');
+
+  await page.keyboard.type('rise');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Got back out of bed.')).toBeVisible();
+  await expect(page.locator('#word-preview')).toContainText('bed');
 });
 
 test('travels between the farm and town edge through typed labels', async ({ page }) => {
@@ -323,6 +330,10 @@ async function sleepFromHouse(page: Page, expectedDay: number): Promise<void> {
   await expect(page.locator('#word-preview')).toContainText('sleep');
   await typeWorldWord(page, 'sleep');
   await expect(page.locator('#day-value')).toHaveText(String(expectedDay));
+  await expect(page.locator('#word-preview')).toContainText('rise');
+  await expect(page.locator('#word-preview')).not.toContainText('sleep');
+  await typeWorldWord(page, 'rise');
+  await expect(page.locator('#word-preview')).toContainText('bed');
 }
 
 async function typeWorldWord(page: Page, word: string): Promise<void> {
@@ -350,7 +361,7 @@ function completedSpringBasketSave(): string {
   };
 
   return JSON.stringify({
-    schemaVersion: 11,
+    schemaVersion: 12,
     savedAt: '2026-04-25T00:00:00.000Z',
     state: {
       day: 8,
@@ -358,6 +369,7 @@ function completedSpringBasketSave(): string {
       stamina: 10,
       player: { x: 2, y: 4.4 },
       location: 'farm',
+      bedState: 'none',
       weather: 'sunny',
       forecast: 'sunny',
       pendingAction: null,

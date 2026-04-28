@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { advanceFarmTime, applyTypedWord, createFarmState } from './gameState';
 import { deserializeSave, SAVE_SCHEMA_VERSION, serializeSave } from './save';
+import { houseBedPosition } from './worldTargets';
 
 describe('save codec', () => {
   it('round-trips a farm state with schema metadata', () => {
@@ -26,6 +27,7 @@ describe('save codec', () => {
       expect(result.state.seeds.carrot).toBe(0);
       expect(result.state.weather).toBe(state.weather);
       expect(result.state.forecast).toBe(state.forecast);
+      expect(result.state.bedState).toBe('none');
       expect(result.state.upgrades.wateringCan).toBe(state.upgrades.wateringCan);
       expect(result.state.seasonObjective.id).toBe('springBasket');
       expect(result.state.seasonObjective.shipped.turnip).toBe(0);
@@ -66,6 +68,44 @@ describe('save codec', () => {
     if (result.ok) {
       expect(result.state.location).toBe('town');
       expect(result.state.player).toEqual({ x: 0, y: 5.6 });
+      expect(result.state.bedState).toBe('none');
+    }
+  });
+
+  it('round-trips waking in bed after sleep', () => {
+    const state = {
+      ...createFarmState(),
+      location: 'house' as const,
+      player: houseBedPosition,
+      bedState: 'waking' as const,
+    };
+    const result = deserializeSave(serializeSave(state));
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.location).toBe('house');
+      expect(result.state.player).toEqual(houseBedPosition);
+      expect(result.state.bedState).toBe('waking');
+    }
+  });
+
+  it('migrates a version 11 save by adding bed state', () => {
+    const result = deserializeSave(
+      JSON.stringify({
+        schemaVersion: 11,
+        savedAt: '2026-04-27T00:00:00.000Z',
+        state: {
+          ...createFarmState(),
+          bedState: undefined,
+          pendingAction: undefined,
+        },
+      }),
+    );
+
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.state.bedState).toBe('none');
+      expect(result.migrated).toBe(true);
     }
   });
 

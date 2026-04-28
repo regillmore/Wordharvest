@@ -16,12 +16,20 @@ import { normalizeTownEventProgress } from '../content/townEvents';
 import { emptyUpgradeFlags, upgradeCatalog, type UpgradeFlags } from '../content/upgrades';
 import { normalizeWeekGoalProgress } from '../content/weekGoals';
 import { forecastForDay, isWeatherId, weatherForDay, type WeatherId } from '../content/weather';
-import { createFarmState, type CropPlot, type CropStage, type FarmState, type Inventory, type PlayerLocation } from './gameState';
-import { listWorldTargets, type WorldPoint } from './worldTargets';
+import {
+  createFarmState,
+  type BedState,
+  type CropPlot,
+  type CropStage,
+  type FarmState,
+  type Inventory,
+  type PlayerLocation,
+} from './gameState';
+import { isPlayerInBed, listWorldTargets, type WorldPoint } from './worldTargets';
 
-export const SAVE_SCHEMA_VERSION = 11;
+export const SAVE_SCHEMA_VERSION = 12;
 
-export interface SaveDataV11 {
+export interface SaveDataV12 {
   schemaVersion: typeof SAVE_SCHEMA_VERSION;
   savedAt: string;
   state: FarmState;
@@ -32,7 +40,7 @@ export type LoadSaveResult =
   | { ok: false; error: string };
 
 export function serializeSave(state: FarmState, savedAt = new Date().toISOString()): string {
-  const saveData: SaveDataV11 = {
+  const saveData: SaveDataV12 = {
     schemaVersion: SAVE_SCHEMA_VERSION,
     savedAt,
     state: sanitizeStateForSave(state),
@@ -55,6 +63,10 @@ export function deserializeSave(rawSave: string): LoadSaveResult {
   }
 
   if (parsed.schemaVersion === SAVE_SCHEMA_VERSION) {
+    return deserializeV12(parsed);
+  }
+
+  if (parsed.schemaVersion === 11) {
     return deserializeV11(parsed);
   }
 
@@ -109,6 +121,7 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
   const sanitizedState = {
     ...state,
     pendingAction: null,
+    bedState: normalizeBedState(state.bedState, state.location, state.player),
     seeds: normalizeInventory(state.seeds),
     inventory: normalizeInventory(state.inventory),
     upgrades: normalizeUpgrades(state.upgrades),
@@ -140,7 +153,7 @@ export function sanitizeStateForSave(state: FarmState): FarmState {
   };
 }
 
-function deserializeV11(data: Record<string, unknown>): LoadSaveResult {
+function deserializeV12(data: Record<string, unknown>): LoadSaveResult {
   if (typeof data.savedAt !== 'string') {
     return { ok: false, error: 'Save data is missing a saved timestamp.' };
   }
@@ -151,6 +164,19 @@ function deserializeV11(data: Record<string, unknown>): LoadSaveResult {
   }
 
   return { ok: true, state, savedAt: data.savedAt, migrated: false };
+}
+
+function deserializeV11(data: Record<string, unknown>): LoadSaveResult {
+  if (typeof data.savedAt !== 'string') {
+    return { ok: false, error: 'Save data is missing a saved timestamp.' };
+  }
+
+  const state = parseFarmState(data.state);
+  if (!state) {
+    return { ok: false, error: 'Save data has an invalid farm state.' };
+  }
+
+  return { ok: true, state, savedAt: data.savedAt, migrated: true };
 }
 
 function deserializeV10(data: Record<string, unknown>): LoadSaveResult {
@@ -298,6 +324,11 @@ function migrateV0(data: Record<string, unknown>): LoadSaveResult {
     stamina: readNumber(rawState.stamina, base.stamina),
     player: parseWorldPoint(rawState.player) ?? base.player,
     location: parseLocation(rawState.location) ?? base.location,
+    bedState: parseBedState(
+      rawState.bedState,
+      parseLocation(rawState.location) ?? base.location,
+      parseWorldPoint(rawState.player) ?? base.player,
+    ),
     weather: parseWeatherId(rawState.weather) ?? weatherForDay(day),
     forecast: parseWeatherId(rawState.forecast) ?? forecastForDay(day),
     pendingAction: null,
@@ -359,6 +390,7 @@ function parseFarmState(value: unknown, fallbackSeeds: Inventory | null = null):
     stamina: value.stamina,
     player,
     location,
+    bedState: parseBedState(value.bedState, location, player),
     weather: parseWeatherId(value.weather) ?? weatherForDay(day),
     forecast: parseWeatherId(value.forecast) ?? forecastForDay(day),
     pendingAction: null,
@@ -445,6 +477,22 @@ function parseWorldPoint(value: unknown): WorldPoint | null {
 
 function parseLocation(value: unknown): PlayerLocation | null {
   return value === 'farm' || value === 'house' || value === 'town' ? value : null;
+}
+
+function parseBedState(value: unknown, location: PlayerLocation, player: WorldPoint): BedState {
+  if (value === 'none' || value === 'tucked' || value === 'waking') {
+    return normalizeBedState(value, location, player);
+  }
+
+  return location === 'house' && isPlayerInBed(player) ? 'tucked' : 'none';
+}
+
+function normalizeBedState(value: BedState, location: PlayerLocation, player: WorldPoint): BedState {
+  if (location !== 'house' || !isPlayerInBed(player)) {
+    return 'none';
+  }
+
+  return value;
 }
 
 function parseWeatherId(value: unknown): WeatherId | null {

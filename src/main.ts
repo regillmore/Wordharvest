@@ -36,6 +36,7 @@ import {
   doorPosition,
   houseInteriorExitPosition,
   housePosition,
+  isPlayerInBed,
   listWorldTargets,
   resolveWorldTarget,
   seedSourcePosition,
@@ -61,6 +62,12 @@ import {
   type HouseInteriorScreenLayout,
   type ScreenBounds,
 } from './rendering/houseInteriorLayout';
+import {
+  advanceSleepTransition,
+  createSleepTransition,
+  sleepTransitionFrame,
+  type SleepTransition,
+} from './rendering/sleepTransition';
 import { createViewport, worldToScreen, type Viewport } from './rendering/viewport';
 import { visibleWorldLabelTargets } from './rendering/worldLabels';
 import {
@@ -81,6 +88,7 @@ let farm = createFarmState();
 let typedBuffer = '';
 let playerFacing: PlayerDirection = 'down';
 let playerAnimationSeconds = 0;
+let sleepTransition: SleepTransition | null = null;
 
 const saveKey = 'wordharvest:save:v1';
 const audioSettingsKey = 'wordharvest:audio:v1';
@@ -276,6 +284,7 @@ loadGame.addEventListener('click', () => {
     return;
   }
 
+  sleepTransition = null;
   farm = addFarmLog(result.state, result.migrated ? 'Loaded and migrated the farm.' : 'Loaded the farm.');
   saveStatus.textContent = result.migrated ? 'Loaded migrated save.' : 'Loaded.';
   saveTimestamp.textContent = `${result.migrated ? 'Restored migrated save' : 'Restored save'}: ${formatSaveTimestamp(result.savedAt)}`;
@@ -287,6 +296,7 @@ resetGame.addEventListener('click', () => {
   localStorage.removeItem(saveKey);
   farm = addFarmLog(createFarmState(), 'Reset the local save.');
   typedBuffer = '';
+  sleepTransition = null;
   saveStatus.textContent = 'Reset.';
   saveTimestamp.textContent = 'No save restored.';
   playCue('load');
@@ -336,15 +346,26 @@ window.addEventListener('keydown', (event) => {
 });
 
 app.ticker.add((ticker) => {
+  const deltaSeconds = ticker.deltaMS / 1000;
+  let shouldRedraw = false;
+
+  if (sleepTransition) {
+    sleepTransition = advanceSleepTransition(sleepTransition, deltaSeconds);
+    shouldRedraw = true;
+  }
+
   if (!farm.pendingAction) {
     playerAnimationSeconds = 0;
+    if (shouldRedraw) {
+      redraw();
+    }
     return;
   }
 
   const hadPendingAction = Boolean(farm.pendingAction);
   const previousPlayer = farm.player;
-  playerAnimationSeconds += ticker.deltaMS / 1000;
-  farm = accessibilitySettings.reducedMotion ? completePendingAction(farm) : advanceFarmTime(farm, ticker.deltaMS / 1000);
+  playerAnimationSeconds += deltaSeconds;
+  farm = accessibilitySettings.reducedMotion ? completePendingAction(farm) : advanceFarmTime(farm, deltaSeconds);
   playerFacing = playerDirectionForMovement(previousPlayer, farm.player, playerFacing);
   if (hadPendingAction && !farm.pendingAction) {
     playerAnimationSeconds = 0;
@@ -361,14 +382,28 @@ redraw();
 
 function redraw(): void {
   app.stage.removeChildren();
-  app.stage.addChild(createScene(farm, typedBuffer));
+  const scene = createScene(farm, typedBuffer);
+  drawSleepTransitionOverlay(scene, app.renderer.width, app.renderer.height, sleepTransition);
+  app.stage.addChild(scene);
   redrawHud();
   syncAudioScene();
 }
 
 function submitTypedBuffer(): void {
+  const submittedWord = normalizeTypedWord(typedBuffer);
+  const previousDay = farm.day;
   const wasPending = Boolean(farm.pendingAction);
   farm = applyTypedWord(farm, typedBuffer);
+
+  if (
+    submittedWord === 'sleep' &&
+    farm.location === 'house' &&
+    farm.day > previousDay &&
+    !accessibilitySettings.reducedMotion
+  ) {
+    sleepTransition = createSleepTransition();
+  }
+
   if (!wasPending && farm.pendingAction) {
     playerFacing = playerDirectionForState(farm, playerFacing);
     playerAnimationSeconds = 0;
@@ -505,6 +540,10 @@ function syncAccessibilityControls(): void {
 function applyAccessibilitySettings(): void {
   gameShell.classList.toggle('is-reduced-motion', accessibilitySettings.reducedMotion);
   gameShell.classList.toggle('is-readable-ui', accessibilitySettings.readableUi);
+
+  if (accessibilitySettings.reducedMotion) {
+    sleepTransition = null;
+  }
 
   if (!accessibilitySettings.visualCues) {
     visualCue.textContent = '';
@@ -685,7 +724,11 @@ function createHouseInterior(state: FarmState, typedWord: string): Container {
   drawHouseCrate(scene, layout.crate);
   drawHouseInteriorExit(scene, layout);
 
-  drawPlayer(scene, viewport, state);
+  if (isPlayerInBed(state.player) && !state.pendingAction) {
+    drawRestingPlayer(scene, layout, sleepTransition);
+  } else {
+    drawPlayer(scene, viewport, state);
+  }
   drawTargets(scene, viewport, listWorldTargets(state));
 
   return scene;
@@ -761,6 +804,38 @@ function drawHouseBed(scene: Container, bed: ScreenBounds): void {
     .fill(0xf4d35e);
   graphic.rect(bedCenterX - bed.width * 0.52, bedCenterY - bed.height * 0.5, bed.width * 0.12, bed.height).fill(0x4f3328);
   graphic.rect(bedCenterX + bed.width * 0.4, bedCenterY - bed.height * 0.5, bed.width * 0.12, bed.height).fill(0x4f3328);
+
+  scene.addChild(graphic);
+}
+
+function drawRestingPlayer(
+  scene: Container,
+  layout: HouseInteriorScreenLayout,
+  transition: SleepTransition | null,
+): void {
+  const bed = layout.bed;
+  const frame = transition ? sleepTransitionFrame(transition) : null;
+  const wakeLift = frame?.wakeLift ?? 0;
+  const dawnAlpha = frame?.dawnAlpha ?? 0;
+  const graphic = new Graphics();
+  const headX = bed.x + bed.width * 0.28;
+  const headY = bed.y + bed.height * (0.27 - wakeLift * 0.05);
+  const headRadius = bed.width * 0.1;
+
+  if (dawnAlpha > 0) {
+    graphic.rect(bed.x + bed.width * 0.18, bed.y - bed.height * 0.16, bed.width * 0.62, bed.height * 0.08).fill({
+      color: 0xf4d35e,
+      alpha: dawnAlpha,
+    });
+    graphic.rect(bed.x + bed.width * 0.28, bed.y - bed.height * 0.29, bed.width * 0.42, bed.height * 0.06).fill({
+      color: 0xfff5cf,
+      alpha: dawnAlpha * 0.8,
+    });
+  }
+
+  graphic.ellipse(headX, headY + bed.height * 0.04, headRadius * 1.24, headRadius * 0.92).fill(0xf1c27d);
+  graphic.rect(headX - headRadius * 1.1, headY - headRadius * 1.1, headRadius * 2.2, headRadius * 0.58).fill(0xf4d35e);
+  graphic.rect(bed.x + bed.width * 0.22, bed.y + bed.height * 0.44, bed.width * 0.54, bed.height * 0.12).fill(0x486c7e);
 
   scene.addChild(graphic);
 }
@@ -1141,6 +1216,30 @@ function wordLabel(word: string, x: number, y: number): Container {
   container.y = y - height;
 
   return container;
+}
+
+function drawSleepTransitionOverlay(
+  scene: Container,
+  width: number,
+  height: number,
+  transition: SleepTransition | null,
+): void {
+  if (!transition) {
+    return;
+  }
+
+  const frame = sleepTransitionFrame(transition);
+  const graphic = new Graphics();
+
+  if (frame.dawnAlpha > 0) {
+    graphic.rect(0, 0, width, height).fill({ color: 0xf4d35e, alpha: frame.dawnAlpha });
+  }
+
+  if (frame.nightAlpha > 0) {
+    graphic.rect(0, 0, width, height).fill({ color: 0x0f1424, alpha: frame.nightAlpha });
+  }
+
+  scene.addChild(graphic);
 }
 
 function rect(x: number, y: number, width: number, height: number, color: number): Graphics {
