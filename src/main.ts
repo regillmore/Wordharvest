@@ -56,6 +56,7 @@ import {
   playerFrameForMotion,
   type PlayerDirection,
 } from './rendering/playerAnimation';
+import { visibleWorldLabelTargets } from './rendering/worldLabels';
 import {
   deserializeAccessibilitySettings,
   normalizeAccessibilitySettings,
@@ -999,7 +1000,7 @@ function drawPlayer(scene: Container, viewport: Viewport, state: FarmState): voi
 }
 
 function drawTargets(scene: Container, viewport: Viewport, targets: WorldTarget[]): void {
-  for (const target of targets) {
+  for (const target of visibleWorldLabelTargets(targets)) {
     const point = worldToScreen(viewport, target.position);
     scene.addChild(wordLabel(target.label, point.x, point.y - viewport.scale * 0.34));
   }
