@@ -5,6 +5,7 @@ export type TargetWordRole =
   | 'enter-house'
   | 'exit-outside'
   | 'exit-farm'
+  | 'sleep-bed'
   | 'enter-town'
   | 'town-shop'
   | 'talk-villager'
@@ -59,6 +60,12 @@ export const targetWordCatalog = [
     category: 'place',
     words: ['farm'],
     description: 'Contextual label that returns from an interior or neighboring area to the farm.',
+  },
+  {
+    role: 'sleep-bed',
+    category: 'object',
+    words: ['sleep', 'bed'],
+    description: 'Farmhouse bed labels that end the day from the player house interior.',
   },
   {
     role: 'enter-town',
@@ -239,6 +246,7 @@ const requiredTargetWordRoles: readonly TargetWordRole[] = [
   'enter-house',
   'exit-outside',
   'exit-farm',
+  'sleep-bed',
   'enter-town',
   'town-shop',
   'talk-villager',

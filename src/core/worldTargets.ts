@@ -1,4 +1,9 @@
-import { nextWordForTargetRole, primaryWordForTargetRole, type TargetWordRole } from '../content/targetWords';
+import {
+  nextWordForTargetRole,
+  primaryWordForTargetRole,
+  wordsForTargetRole,
+  type TargetWordRole,
+} from '../content/targetWords';
 import { cropCatalog, shopWordForCrop, starterCropId, type CropId } from '../content/crops';
 import { dailyRequestForDay, isDailyRequestComplete } from '../content/dailyRequests';
 import { isTownEventAttended, townEventForDay, type TownEventId } from '../content/townEvents';
@@ -17,6 +22,7 @@ export type WorldTargetAction =
   | { kind: 'approach-house'; destination: WorldPoint }
   | { kind: 'enter-house' }
   | { kind: 'exit-house'; destination: WorldPoint }
+  | { kind: 'sleep-bed'; destination: WorldPoint }
   | { kind: 'enter-town'; destination: WorldPoint }
   | { kind: 'return-farm'; destination: WorldPoint }
   | { kind: 'visit-shop' }
@@ -46,6 +52,8 @@ export const housePosition: WorldPoint = { x: 0, y: 0 };
 export const doorPosition: WorldPoint = { x: 0, y: 1 };
 export const houseApproachPosition: WorldPoint = { x: 0, y: 1.7 };
 export const houseExitPosition: WorldPoint = { x: 0, y: 1.9 };
+export const houseBedPosition: WorldPoint = { x: -1.2, y: 1.25 };
+export const houseWakePosition: WorldPoint = { x: -0.55, y: 1.9 };
 export const shippingBinPosition: WorldPoint = { x: 2, y: 4.4 };
 export const seedSourcePosition: WorldPoint = { x: -2, y: 2.4 };
 export const townGatePosition: WorldPoint = { x: 0, y: 6 };
@@ -89,6 +97,7 @@ export function listWorldTargets(state: FarmState): WorldTarget[] {
         distance: 0,
         action: { kind: 'exit-house', destination: houseExitPosition },
       },
+      ...sleepBedTargets(state.player),
     ]);
   }
 
@@ -257,6 +266,7 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
   if (
     target.action.kind === 'approach-house' ||
     target.action.kind === 'exit-house' ||
+    target.action.kind === 'sleep-bed' ||
     target.action.kind === 'enter-town' ||
     target.action.kind === 'return-farm' ||
     target.action.kind === 'read-request-board' ||
@@ -275,6 +285,22 @@ export function destinationForWorldTarget(target: WorldTarget): WorldPoint {
 
 export function distanceBetween(left: WorldPoint, right: WorldPoint): number {
   return Math.hypot(left.x - right.x, left.y - right.y);
+}
+
+function sleepBedTargets(player: WorldPoint): WorldTarget[] {
+  const labelPositions: readonly WorldPoint[] = [
+    { x: houseBedPosition.x, y: houseBedPosition.y - 0.58 },
+    { x: houseBedPosition.x - 0.62, y: houseBedPosition.y + 0.08 },
+  ];
+
+  return wordsForTargetRole('sleep-bed').map((word, index) => ({
+    id: `house-bed-${word}`,
+    word,
+    label: word,
+    position: labelPositions[index] ?? houseBedPosition,
+    distance: distanceBetween(player, houseBedPosition),
+    action: { kind: 'sleep-bed', destination: houseBedPosition },
+  }));
 }
 
 function withMenuTargets(state: FarmState, targets: WorldTarget[]): WorldTarget[] {

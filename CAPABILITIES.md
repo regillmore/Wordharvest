@@ -18,7 +18,7 @@ Complete when a player can:
 - Planting: Complete when the player can prepare soil, plant seeds, see crop stages, and understand what each plot needs.
 - Watering: Complete when watering is readable, has feedback, consumes stamina or time, and affects growth.
 - Harvesting: Complete when ripe crops can be collected, sold, stored, gifted, or used in recipes.
-- Time: Complete when days start and end predictably, with a bedtime or end-day action.
+- Time: Complete when days start and end predictably through a clear bedtime action.
 - Weather: Complete when rain, sun, and at least one special weather event affect planning.
 - Economy: Complete when the player can earn, spend, and save enough currency to make upgrade choices meaningful.
 

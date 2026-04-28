@@ -89,6 +89,7 @@ import { normalizeTypedWord } from './typing';
 import {
   destinationForWorldTarget,
   farmReturnPosition,
+  houseWakePosition,
   listWorldTargets,
   resolveWorldTarget,
   townArrivalPosition,
@@ -318,6 +319,10 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
     );
   }
 
+  if (action.kind === 'sleep-bed') {
+    return sleepInFarmhouseBed(state);
+  }
+
   if (action.kind === 'enter-town') {
     return withLog(
       {
@@ -454,9 +459,35 @@ function completeWorldAction(state: FarmState, action: WorldTargetAction): FarmS
 
 export function advanceDay(state: FarmState): FarmState {
   if (state.pendingAction) {
-    return withLog(state, `Finish walking to ${state.pendingAction.label} before ending the day.`);
+    return withLog(state, `Finish walking to ${state.pendingAction.label} before sleeping.`);
   }
 
+  return advanceToNextDawn(state, { location: 'farm' });
+}
+
+export function sleepInFarmhouseBed(state: FarmState): FarmState {
+  if (state.pendingAction) {
+    return withLog(state, `Finish walking to ${state.pendingAction.label} before sleeping.`);
+  }
+
+  const tuckedInState = withLog(
+    {
+      ...state,
+      location: 'house',
+    },
+    'Slept in the farmhouse bed.',
+  );
+
+  return advanceToNextDawn(tuckedInState, {
+    location: 'house',
+    player: houseWakePosition,
+  });
+}
+
+function advanceToNextDawn(
+  state: FarmState,
+  wakePatch: Partial<Pick<FarmState, 'location' | 'player'>>,
+): FarmState {
   const nextDay = state.day + 1;
   const weather = state.forecast;
   const forecast = forecastForDay(nextDay);
@@ -478,9 +509,9 @@ export function advanceDay(state: FarmState): FarmState {
   return discoverVisibleWords(withLog(
     {
       ...state,
+      ...wakePatch,
       day: nextDay,
       stamina: 10,
-      location: 'farm',
       weather,
       forecast,
       plots,

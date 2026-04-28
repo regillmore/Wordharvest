@@ -10,6 +10,7 @@ import {
   seedInventorySummary,
   type FarmState,
 } from './gameState';
+import { houseWakePosition } from './worldTargets';
 
 describe('farm state', () => {
   it('starts with current weather and a next-day forecast', () => {
@@ -177,6 +178,28 @@ describe('farm state', () => {
     state = applyTypedWord(state, 'outside');
     state = settleAction(state);
     expect(state.location).toBe('farm');
+  });
+
+  it('sleeps from the farmhouse bed word and wakes inside on the next day', () => {
+    let state: FarmState = {
+      ...createFarmState(),
+      location: 'house',
+      player: { x: 0, y: 2.2 },
+    };
+
+    state = applyTypedWord(state, 'sleep');
+    expect(state.pendingAction?.label).toBe('sleep');
+
+    state = settleAction(state);
+
+    expect(state.day).toBe(2);
+    expect(state.location).toBe('house');
+    expect(state.player).toEqual(houseWakePosition);
+    expect(state.stamina).toBe(10);
+    expect(state.log[0]).toMatch(/^Day 2 dawns sunny\./);
+    expect(state.log[1]).toBe('Slept in the farmhouse bed.');
+    expect(state.collectionLog.usedWords.sleep).toBe(true);
+    expect(state.collectionLog.discoveredWords.bed).toBe(true);
   });
 
   it('travels through the farm boundary to town and back', () => {
@@ -420,7 +443,7 @@ describe('farm state', () => {
     expect(state.log[0]).toBe('No visible target named "door".');
   });
 
-  it('waits for the current walk before accepting another target or ending the day', () => {
+  it('waits for the current walk before accepting another target or sleeping', () => {
     let state = applyTypedWord(createFarmState(), 'house');
 
     state = applyTypedWord(state, 'seed');
@@ -428,7 +451,7 @@ describe('farm state', () => {
 
     state = advanceDay(state);
     expect(state.day).toBe(1);
-    expect(state.log[0]).toBe('Finish walking to house before ending the day.');
+    expect(state.log[0]).toBe('Finish walking to house before sleeping.');
   });
 
   it('keeps coins unchanged when the shipping bin is empty', () => {

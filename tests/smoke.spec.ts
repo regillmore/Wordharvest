@@ -41,6 +41,16 @@ test('boots the farm shell and accepts visible world words', async ({ page }) =>
   await page.keyboard.type('house');
   await page.keyboard.press('Enter');
   await expect(page.getByText('door')).toBeVisible();
+
+  await page.keyboard.type('door');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#word-preview')).toContainText('sleep');
+  await expect(page.locator('#word-preview')).toContainText('bed');
+
+  await page.keyboard.type('sleep');
+  await page.keyboard.press('Enter');
+  await expect(page.getByText('Slept in the farmhouse bed.')).toBeVisible();
+  await expect(page.locator('#day-value')).toHaveText('2');
 });
 
 test('travels between the farm and town edge through typed labels', async ({ page }) => {
@@ -134,7 +144,7 @@ test('joins the weekly town event from a visible festival label', async ({ page 
   await expectFarmReady(page);
 
   for (let day = 2; day <= 7; day += 1) {
-    await page.getByRole('button', { name: 'End Day' }).click();
+    await page.getByRole('button', { name: 'Sleep' }).click();
   }
 
   await expect(page.locator('#event-progress')).toHaveText('Event: Spring Market Day open (+10 coins)');
@@ -202,7 +212,7 @@ test('saves, loads, and resets the local farm slot', async ({ page }) => {
   await expect(page.getByText('Saved.')).toBeVisible();
   await expect(page.locator('#save-timestamp')).toContainText(/^Last saved: \d{4}-\d{2}-\d{2} \d{2}:\d{2} UTC$/);
 
-  await page.getByRole('button', { name: 'End Day' }).click();
+  await page.getByRole('button', { name: 'Sleep' }).click();
   await expect(page.locator('#day-value')).toHaveText('2');
   await expect(page.locator('#forecast-value')).toHaveText('Rain');
   await expect(page.locator('#week-progress')).toHaveText('Day 2: Water a growing crop open (+4 coins)');

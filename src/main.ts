@@ -19,6 +19,7 @@ import {
   cropInventorySummary,
   createFarmState,
   seedInventorySummary,
+  sleepInFarmhouseBed,
   type CropStage,
   type FarmState,
 } from './core/gameState';
@@ -35,6 +36,7 @@ import { weatherDefinition, type WeatherId } from './content/weather';
 import {
   destinationForWorldTarget,
   doorPosition,
+  houseBedPosition,
   housePosition,
   listWorldTargets,
   resolveWorldTarget,
@@ -167,7 +169,7 @@ root.innerHTML = `
         <ol id="farm-log" class="farm-log"></ol>
       </section>
       <footer class="actions">
-        <button id="next-day" type="button">End Day</button>
+        <button id="sleep-button" type="button">Sleep</button>
         <button id="save-game" type="button">Save</button>
         <button id="load-game" type="button">Load</button>
         <button id="reset-game" type="button">Reset</button>
@@ -200,7 +202,7 @@ const seasonProgress = requireElement<HTMLElement>('#season-progress');
 const typedWord = requireElement<HTMLElement>('#typed-word');
 const wordPreview = requireElement<HTMLElement>('#word-preview');
 const farmLog = requireElement<HTMLOListElement>('#farm-log');
-const nextDay = requireElement<HTMLButtonElement>('#next-day');
+const sleepButton = requireElement<HTMLButtonElement>('#sleep-button');
 const saveGame = requireElement<HTMLButtonElement>('#save-game');
 const loadGame = requireElement<HTMLButtonElement>('#load-game');
 const resetGame = requireElement<HTMLButtonElement>('#reset-game');
@@ -227,8 +229,8 @@ canvasHost.appendChild(app.canvas);
 
 const playerTextures = await loadPlayerTextures();
 
-nextDay.addEventListener('click', () => {
-  farm = advanceDay(farm);
+sleepButton.addEventListener('click', () => {
+  farm = farm.location === 'house' ? sleepInFarmhouseBed(farm) : advanceDay(farm);
   playCueForLatestLog();
   redraw();
 });
@@ -448,7 +450,7 @@ function redrawHud(): void {
   seasonProgress.textContent = seasonProgressText(farm.day);
   typedWord.textContent = typedBuffer || '...';
 
-  nextDay.disabled = Boolean(farm.pendingAction);
+  sleepButton.disabled = Boolean(farm.pendingAction);
   saveGame.disabled = Boolean(farm.pendingAction);
   loadGame.disabled = Boolean(farm.pendingAction);
 
@@ -595,7 +597,7 @@ function visualCueText(cue: AudioCue): string {
 
 function createScene(state: FarmState, typedWord: string): Container {
   if (state.location === 'house') {
-    return createHouseInterior(state);
+    return createHouseInterior(state, typedWord);
   }
 
   if (state.location === 'town') {
@@ -676,22 +678,57 @@ function pathPreviewForState(state: FarmState, typedWord: string): WorldPoint[] 
   return pathResult.ok ? [state.player, ...pathResult.path] : [];
 }
 
-function createHouseInterior(state: FarmState): Container {
+function createHouseInterior(state: FarmState, typedWord: string): Container {
   const scene = new Container();
   const width = app.renderer.width;
   const height = app.renderer.height;
   const viewport = createViewport(width, height);
+  const wallHeight = Math.floor(height * 0.34);
 
-  scene.addChild(rect(0, 0, width, height, 0xd8c49a));
-  scene.addChild(rect(0, 0, width, Math.floor(height * 0.18), 0xa96f48));
-  scene.addChild(rect(width * 0.18, height * 0.22, width * 0.24, height * 0.18, 0x7f5138));
-  scene.addChild(rect(width * 0.58, height * 0.26, width * 0.2, height * 0.14, 0x6d4b36));
-  scene.addChild(rect(width * 0.43, height * 0.64, width * 0.14, height * 0.22, 0x3c5f46));
+  scene.addChild(rect(0, 0, width, height, 0xcaa66f));
+  scene.addChild(rect(0, 0, width, wallHeight, 0x9b6848));
+  scene.addChild(rect(0, 0, width * 0.08, height, 0x70452f));
+  scene.addChild(rect(width * 0.92, 0, width * 0.08, height, 0x70452f));
+  scene.addChild(rect(width * 0.08, wallHeight - viewport.scale * 0.08, width * 0.84, viewport.scale * 0.12, 0x6b422e));
+  drawFloorboards(scene, wallHeight, width, height, viewport.scale);
+  drawPathPreview(scene, viewport, pathPreviewForState(state, typedWord));
+  drawHouseBed(scene, viewport);
+  scene.addChild(rect(width * 0.58, height * 0.24, width * 0.2, height * 0.14, 0x6d4b36));
+  scene.addChild(rect(width * 0.6, height * 0.265, width * 0.16, height * 0.035, 0xe7d39f));
+  scene.addChild(rect(width * 0.43, height * 0.68, width * 0.14, height * 0.2, 0x3c5f46));
 
   drawPlayer(scene, viewport, state);
   drawTargets(scene, viewport, listWorldTargets(state));
 
   return scene;
+}
+
+function drawFloorboards(scene: Container, wallHeight: number, width: number, height: number, scale: number): void {
+  const floorboards = new Graphics();
+  const boardHeight = Math.max(18, scale * 0.32);
+
+  for (let y = wallHeight + boardHeight; y < height; y += boardHeight) {
+    floorboards.moveTo(width * 0.08, y).lineTo(width * 0.92, y);
+  }
+
+  floorboards.stroke({ color: 0x8e6d45, alpha: 0.3, width: 2 });
+  scene.addChild(floorboards);
+}
+
+function drawHouseBed(scene: Container, viewport: Viewport): void {
+  const bed = worldToScreen(viewport, houseBedPosition);
+  const width = viewport.scale * 1.08;
+  const height = viewport.scale * 1.2;
+  const graphic = new Graphics();
+
+  graphic.rect(bed.x - width / 2, bed.y - height / 2, width, height).fill(0x7b4e2c);
+  graphic.rect(bed.x - width * 0.42, bed.y - height * 0.42, width * 0.84, height * 0.28).fill(0xf4e3a3);
+  graphic.rect(bed.x - width * 0.42, bed.y - height * 0.08, width * 0.84, height * 0.48).fill(0x668a9c);
+  graphic.rect(bed.x - width * 0.42, bed.y + height * 0.08, width * 0.84, height * 0.08).fill(0xf4d35e);
+  graphic.rect(bed.x - width * 0.52, bed.y - height * 0.5, width * 0.12, height).fill(0x4f3328);
+  graphic.rect(bed.x + width * 0.4, bed.y - height * 0.5, width * 0.12, height).fill(0x4f3328);
+
+  scene.addChild(graphic);
 }
 
 function createViewport(width: number, height: number): Viewport {

@@ -3,7 +3,7 @@ import { cropCatalog, shopWordForCrop } from '../content/crops';
 import { createDailyRequestProgress, markDailyRequestComplete } from '../content/dailyRequests';
 import { markTownEventAttended } from '../content/townEvents';
 import { applyTypedWord, createFarmState, type FarmState } from './gameState';
-import { houseApproachPosition, listWorldTargets, townShopPosition } from './worldTargets';
+import { houseApproachPosition, houseBedPosition, listWorldTargets, townShopPosition } from './worldTargets';
 
 describe('world targets', () => {
   it('shows house from range and door only when near the farmhouse', () => {
@@ -120,6 +120,28 @@ describe('world targets', () => {
     }).map((target) => target.word);
 
     expect(words).toEqual(expect.arrayContaining(['door', 'town']));
+  });
+
+  it('shows sleep labels over the farmhouse bed from inside the house', () => {
+    const houseState: FarmState = {
+      ...createFarmState(),
+      location: 'house',
+      player: { x: 0, y: 2.2 },
+    };
+    const targets = listWorldTargets(houseState);
+    const words = targets.map((target) => target.word);
+    const sleepTarget = targets.find((target) => target.word === 'sleep');
+    const bedTarget = targets.find((target) => target.word === 'bed');
+
+    expect(words).toEqual(expect.arrayContaining(['outside', 'farm', 'sleep', 'bed']));
+    expect(sleepTarget?.action).toEqual({
+      kind: 'sleep-bed',
+      destination: houseBedPosition,
+    });
+    expect(bedTarget?.action).toEqual({
+      kind: 'sleep-bed',
+      destination: houseBedPosition,
+    });
   });
 
   it('hides the daily request label after the current request is complete', () => {
