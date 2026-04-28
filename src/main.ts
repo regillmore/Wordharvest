@@ -52,6 +52,7 @@ import {
 import { farmTiles, type FarmTile, type FarmTileKind } from './world/farmMap';
 import { findFarmPath } from './world/pathfinding';
 import {
+  playerDirectionAfterCompletedAction,
   playerDirectionForMovement,
   playerDirectionForState,
   playerFrameForMotion,
@@ -363,10 +364,14 @@ app.ticker.add((ticker) => {
   }
 
   const hadPendingAction = Boolean(farm.pendingAction);
+  const pendingAction = farm.pendingAction?.action;
   const previousPlayer = farm.player;
   playerAnimationSeconds += deltaSeconds;
   farm = accessibilitySettings.reducedMotion ? completePendingAction(farm) : advanceFarmTime(farm, deltaSeconds);
-  playerFacing = playerDirectionForMovement(previousPlayer, farm.player, playerFacing);
+  const movementFacing = playerDirectionForMovement(previousPlayer, farm.player, playerFacing);
+  playerFacing = hadPendingAction && !farm.pendingAction && pendingAction
+    ? playerDirectionAfterCompletedAction(pendingAction, movementFacing)
+    : movementFacing;
   if (hadPendingAction && !farm.pendingAction) {
     playerAnimationSeconds = 0;
     playCueForLatestLog();

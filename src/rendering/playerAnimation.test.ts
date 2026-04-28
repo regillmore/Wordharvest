@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { playerSpriteSheet } from '../assets/playerSprites';
-import { playerDirectionForMovement, playerDirectionForState, playerFrameForMotion } from './playerAnimation';
+import {
+  playerDirectionAfterCompletedAction,
+  playerDirectionForMovement,
+  playerDirectionForState,
+  playerFrameForMotion,
+} from './playerAnimation';
 
 describe('player animation', () => {
   it('chooses four-direction movement from world deltas', () => {
@@ -27,6 +32,17 @@ describe('player animation', () => {
         'down',
       ),
     ).toBe('up');
+  });
+
+  it('uses authored facing after farmhouse scene transitions', () => {
+    expect(playerDirectionAfterCompletedAction({ kind: 'enter-house' }, 'down')).toBe('up');
+    expect(
+      playerDirectionAfterCompletedAction(
+        { kind: 'exit-house', destination: { x: 0, y: 4.6 }, farmDestination: { x: 0, y: 1.9 } },
+        'up',
+      ),
+    ).toBe('down');
+    expect(playerDirectionAfterCompletedAction({ kind: 'ship-inventory' }, 'left')).toBe('left');
   });
 
   it('returns runtime sprite frames for idle and walking states', () => {

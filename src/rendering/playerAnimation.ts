@@ -1,6 +1,6 @@
 import type { PlayerSpriteFrameId } from '../assets/playerSprites';
 import type { FarmState } from '../core/gameState';
-import type { WorldPoint } from '../core/worldTargets';
+import type { WorldPoint, WorldTargetAction } from '../core/worldTargets';
 
 export type PlayerDirection = 'down' | 'up' | 'left' | 'right';
 
@@ -56,4 +56,19 @@ export function playerDirectionForState(state: Pick<FarmState, 'pendingAction' |
   const nextPoint = state.pendingAction?.path[0] ?? state.pendingAction?.destination;
 
   return nextPoint ? playerDirectionForMovement(state.player, nextPoint, fallback) : fallback;
+}
+
+export function playerDirectionAfterCompletedAction(
+  action: WorldTargetAction,
+  fallback: PlayerDirection,
+): PlayerDirection {
+  if (action.kind === 'enter-house') {
+    return 'up';
+  }
+
+  if (action.kind === 'exit-house') {
+    return 'down';
+  }
+
+  return fallback;
 }
